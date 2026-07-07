@@ -1,0 +1,13 @@
+category,question,option_a,option_b,option_c,option_d,correct
+geography,Capital de Francia,Paris,Lyon,Burdeos,Niza,0
+geography,Que oceano bana la costa oeste de America,Atlantico,Indico,Pacifico,Artico,2
+art,Quien escribio Don Quijote,Miguel de Cervantes,Federico Garcia Lorca,Lope de Vega,Benito Perez Galdos,0
+art,Que museo esta en Madrid,Prado,Louvre,Uffizi,Rijksmuseum,0
+history,En que ano llego Colon a America,1492,1519,1789,1812,0
+history,Que civilizacion construyo las piramides de Giza,Egipcia,Romana,Griega,Fenicia,0
+entertainment,Que instrumento tiene teclas blancas y negras,Guitarra,Piano,Violin,Trompeta,1
+entertainment,Que saga tiene un personaje llamado Darth Vader,Star Wars,Matrix,El Senor de los Anillos,Indiana Jones,0
+science,Que planeta es conocido como el planeta rojo,Venus,Marte,Jupiter,Mercurio,1
+science,Cuantos estados principales tiene el agua,Tres,Dos,Cuatro,Cinco,0
+sports,Cuantos jugadores tiene un equipo de futbol en el campo,9,10,11,12,2
+sports,En que deporte se usa una raqueta de tenis,Tenis,Natacion,Ciclismo,Boxeo,0
