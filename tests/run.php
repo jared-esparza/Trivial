@@ -163,6 +163,7 @@ $runner->test('board visual metadata uses straight spokes and a hexagonal center
     $hub = $spaces['center']['visual'];
 
     assertTrueValue(isset($hub['radius']), 'center missing hex radius');
+    assertTrueValue(isset($hub['sideLength']), 'center missing hex side length');
 
     foreach (GameEngine::categories() as $spoke => $category) {
         $wedge = $spaces["wedge_{$category['slug']}"];
@@ -178,6 +179,10 @@ $runner->test('board visual metadata uses straight spokes and a hexagonal center
 
         assertSameValue('straight_spoke', $firstSpoke['visual']['shape'], $firstSpoke['id'] . ' should render as a straight spoke');
         assertSameValue($hub['radius'], $firstSpoke['visual']['inner'], $firstSpoke['id'] . ' should touch the hexagonal center');
+        assertTrueValue(
+            abs($hub['sideLength'] - $firstSpoke['visual']['width']) < 0.001,
+            $firstSpoke['id'] . ' should match the side length of the hexagonal center'
+        );
         assertSameValue($firstSpoke['visual']['width'], $finalSpoke['visual']['width'], $finalSpoke['id'] . ' should keep radial width');
         assertTrueValue(
             $finalSpoke['visual']['width'] <= $wedge['visual']['arcWidth'],
@@ -186,6 +191,15 @@ $runner->test('board visual metadata uses straight spokes and a hexagonal center
         assertTrueValue(
             $wedge['visual']['angleWidth'] > $spaces["o{$spoke}_1"]['visual']['angleWidth'],
             $wedge['id'] . ' should be wider than normal outer spaces'
+        );
+        assertTrueValue(
+            $spaces["o{$spoke}_1"]['visual']['angleWidth'] >= 6.0,
+            "sector {$spoke} normal outer spaces should have enough visual width"
+        );
+        assertSameValue(
+            $spaces["o{$spoke}_1"]['visual']['outer'],
+            $wedge['visual']['outer'],
+            $wedge['id'] . ' should stay inside the same outer circle as normal spaces'
         );
         assertSameValue(
             $finalSpoke['visual']['outer'],

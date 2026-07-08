@@ -207,16 +207,17 @@ final class GameEngine
         }
         $categorySlugs = array_column($categories, 'slug');
         $hubRadius = 42.0;
-        $spokeWidth = 42.0;
-        $wedgeAngleWidth = 18.0;
-        $outerAngleWidth = 5.6;
+        $hubSideLength = $hubRadius / cos(deg2rad(30));
+        $spokeWidth = $hubSideLength;
+        $wedgeAngleWidth = 15.0;
+        $outerAngleWidth = 6.4;
         $outerAngleOffsets = [
-            1 => 13.0,
-            2 => 20.0,
-            3 => 27.0,
-            4 => 33.0,
-            5 => 40.0,
-            6 => 47.0,
+            1 => 12.0,
+            2 => 19.2,
+            3 => 26.4,
+            4 => 33.6,
+            5 => 40.8,
+            6 => 48.0,
         ];
         $spaces = [[
             'id' => 'center',
@@ -229,6 +230,7 @@ final class GameEngine
             'visual' => [
                 'shape' => 'hex_hub',
                 'radius' => $hubRadius,
+                'sideLength' => $hubSideLength,
             ],
         ]];
 
@@ -274,7 +276,7 @@ final class GameEngine
                 'visual' => [
                     'shape' => 'wedge_headquarters',
                     'inner' => 222,
-                    'outer' => 294,
+                    'outer' => 286,
                     'angleWidth' => $wedgeAngleWidth,
                     'arcWidth' => 2 * 222 * sin(deg2rad($wedgeAngleWidth / 2)),
                     'angleOffset' => $spoke * 60.0,
