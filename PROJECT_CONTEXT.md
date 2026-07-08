@@ -11,15 +11,16 @@ El nombre `trivial` es provisional. El usuario lo cambiara cuando tenga el nombr
 ## Estado Git
 
 - Rama principal: `main`
-- Ultimo commit conocido al actualizar este archivo: `477ebda Fix medidas de casillas de radios`
+- Ultimo commit conocido al actualizar este archivo: `30c48c0 Mejora tablero fullscreen e indicadores visuales`
 - Estado antes de actualizar este archivo: limpio contra `origin/main`.
+- El commit `30c48c0` ya fue pusheado a `origin/main`.
 - Este archivo quedara como cambio pendiente hasta que se haga commit.
 - Commits recientes relevantes:
+  - `30c48c0 Mejora tablero fullscreen e indicadores visuales`
+  - `b959b54 Update PROJECT_CONTEXT for board geometry changes`
   - `477ebda Fix medidas de casillas de radios`
   - `c994a1f Añadir preferencias -> bordes blancos en tablero`
   - `5179c1d Mejora visual tablero y fix overlab bordes al seleccionar casillas`
-  - `82a9d6f Reducciín casillas q`
-  - `0bee91a Mejora visual radios tablero`
 
 ## Stack y Despliegue
 
@@ -148,6 +149,30 @@ Preferencia actual:
 
 Los bordes negros de seleccion/jugador se renderizan en una capa superior separada (`space-highlight`) para evitar que casillas vecinas los tapen.
 
+## Interfaz Visual del Tablero
+
+Mejoras actuales del tablero en `public/assets/app.js` y `public/assets/styles.css`:
+
+- Boton `fullscreenBoardButton` en la cabecera del tablero.
+- Pantalla completa jugable sobre `#gameView`:
+  - Usa Fullscreen API cuando el navegador lo permite.
+  - Usa clase `fullscreen-fallback` si el navegador bloquea fullscreen nativo.
+  - Integra tablero, estado, preferencias, equipos y controles/pregunta.
+- Casillas `wedge_*`:
+  - Ya no muestran letra `Q`.
+  - Renderizan un icono inline SVG minimalista de quesito con `renderWedgeIcon()`.
+- Casillas `roll_again`:
+  - Ya no muestran letra `R`.
+  - Renderizan un icono inline SVG de dado con flecha usando `renderRerollIcon()`.
+- Hover/focus de casillas:
+  - `labelForSpace()` genera etiquetas de categoria/accion.
+  - Cada casilla lleva `data-space-label`, `aria-label` y un `<title>`.
+  - Tooltip visual propio: `#spaceTooltip`.
+- Dado visual:
+  - `renderDiceResult()` sustituye el texto del resultado en Estado.
+  - `renderDiceFace()` pinta puntos fisicos del dado.
+  - `lastAnimatedDiceKey` evita reanimar el mismo resultado en cada render.
+
 ## API Principal
 
 Rutas en `public/api.php`.
@@ -197,7 +222,7 @@ C:\xampp\php\php.exe tests\run.php
 Resultado esperado actual:
 
 ```text
-20 passed, 0 failed
+23 passed, 0 failed
 ```
 
 Lint PHP:
@@ -216,7 +241,13 @@ Verificacion visual reciente:
 
 - App levantada por el usuario en `http://127.0.0.1:4181/?room=XPLDN8`.
 - Se uso el navegador integrado para recargar la sala y medir elementos SVG.
-- La ultima casilla del radio mantiene curvatura, pero su tamano base coincide con el resto de casillas del radio.
+- La sala `XPLDN8` quedo restaurada en el navegador integrado despues de las pruebas.
+- Verificado:
+  - 6 iconos de quesito.
+  - 12 iconos de reroll.
+  - Tooltips de casilla.
+  - Fallback fullscreen.
+  - Dado visual animado en una sala temporal.
 
 ## Puntos Delicados
 
@@ -233,6 +264,9 @@ Verificacion visual reciente:
   - `spokeLength`
 - No volver a usar alturas fijas tipo `36` para las casillas de radio si se quiere mantener igualdad entre vertices.
 - La forma `curved_spoke_end` requiere que los vertices exteriores de la ultima casilla caigan en la curva interior del anillo, no que se anada una extension extra.
+- El fullscreen nativo puede fallar en el navegador integrado; `fullscreen-fallback` es parte esperada del comportamiento.
+- Los iconos de quesito/reroll son SVG inline, no assets externos.
+- El resultado del dado se muestra visualmente en Estado; evitar reintroducir texto duplicado `Dado: N` en controles.
 - Si cambian IDs de casilla, actualizar tests y frontend juntos.
 - El navegador integrado de Codex esta funcionando para la app local. Si hay problemas, reconectar el browser runtime y usar el tab in-app abierto por el usuario.
 
