@@ -202,9 +202,13 @@ $runner->test('board visual metadata uses straight spokes and a hexagonal center
             $wedge['id'] . ' should stay inside the same outer circle as normal spaces'
         );
         assertSameValue(
-            $finalSpoke['visual']['outer'],
+            $spaces["o{$spoke}_1"]['visual']['inner'],
             $wedge['visual']['inner'],
-            $finalSpoke['id'] . ' should touch the inner edge of its wedge'
+            $wedge['id'] . ' should use the same inner radius as normal outer spaces'
+        );
+        assertTrueValue(
+            $wedge['visual']['inner'] > $finalSpoke['visual']['outer'],
+            $wedge['id'] . ' should keep the normal board gap after the final spoke'
         );
 
         for ($outer = 1; $outer <= 6; $outer++) {

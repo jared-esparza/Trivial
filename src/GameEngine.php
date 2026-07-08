@@ -275,10 +275,10 @@ final class GameEngine
                 'index' => $outerIndex++,
                 'visual' => [
                     'shape' => 'wedge_headquarters',
-                    'inner' => 222,
+                    'inner' => 236,
                     'outer' => 286,
                     'angleWidth' => $wedgeAngleWidth,
-                    'arcWidth' => 2 * 222 * sin(deg2rad($wedgeAngleWidth / 2)),
+                    'arcWidth' => 2 * 236 * sin(deg2rad($wedgeAngleWidth / 2)),
                     'angleOffset' => $spoke * 60.0,
                 ],
             ];
