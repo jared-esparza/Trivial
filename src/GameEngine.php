@@ -225,6 +225,7 @@ final class GameEngine
                 $categorySlugs[($spoke + 4) % 6],
                 $categorySlugs[($spoke + 3) % 6],
                 $categorySlugs[($spoke + 1) % 6],
+                $categorySlugs[($spoke + 5) % 6],
             ];
 
             foreach ($spokeSequence as $index => $spaceCategory) {
@@ -239,8 +240,9 @@ final class GameEngine
                     'index' => $spaceNumber,
                     'visual' => [
                         'shape' => 'spoke_segment',
-                        'inner' => 72 + ($spaceNumber - 1) * 36,
-                        'outer' => 104 + ($spaceNumber - 1) * 36,
+                        'inner' => 42 + ($spaceNumber - 1) * 36,
+                        'outer' => 78 + ($spaceNumber - 1) * 36,
+                        'angleWidth' => 9.0,
                     ],
                 ];
             }
@@ -253,21 +255,33 @@ final class GameEngine
                 'track' => 'outer',
                 'spoke' => $spoke,
                 'index' => $outerIndex++,
-                'visual' => ['shape' => 'wedge_headquarters'],
+                'visual' => [
+                    'shape' => 'wedge_headquarters',
+                    'inner' => 222,
+                    'outer' => 294,
+                    'angleWidth' => 9.2,
+                ],
             ];
 
-            for ($outer = 1; $outer <= 5; $outer++) {
-                if ($outer === 3) {
+            $rerollNumber = 1;
+            for ($outer = 1; $outer <= 6; $outer++) {
+                if ($outer === 2 || $outer === 5) {
                     $spaces[] = [
-                        'id' => "roll_again_{$spoke}",
+                        'id' => "roll_again_{$spoke}_{$rerollNumber}",
                         'type' => 'roll_again',
                         'label' => 'Vuelve a tirar',
                         'category' => null,
                         'track' => 'outer',
                         'spoke' => $spoke,
                         'index' => $outerIndex++,
-                        'visual' => ['shape' => 'outer_segment'],
+                        'visual' => [
+                            'shape' => 'outer_segment',
+                            'inner' => 236,
+                            'outer' => 286,
+                            'angleWidth' => 6.8,
+                        ],
                     ];
+                    $rerollNumber++;
                     continue;
                 }
 
@@ -280,7 +294,12 @@ final class GameEngine
                     'track' => 'outer',
                     'spoke' => $spoke,
                     'index' => $outerIndex++,
-                    'visual' => ['shape' => 'outer_segment'],
+                    'visual' => [
+                        'shape' => 'outer_segment',
+                        'inner' => 236,
+                        'outer' => 286,
+                        'angleWidth' => 6.8,
+                    ],
                 ];
             }
         }
@@ -296,10 +315,10 @@ final class GameEngine
         foreach ($categories as $spoke => $category) {
             $slug = $category['slug'];
             self::connect($graph, 'center', "r{$spoke}_1");
-            self::connect($graph, "r{$spoke}_1", "r{$spoke}_2");
-            self::connect($graph, "r{$spoke}_2", "r{$spoke}_3");
-            self::connect($graph, "r{$spoke}_3", "r{$spoke}_4");
-            self::connect($graph, "r{$spoke}_4", "wedge_{$slug}");
+            for ($spaceNumber = 1; $spaceNumber < 5; $spaceNumber++) {
+                self::connect($graph, "r{$spoke}_{$spaceNumber}", "r{$spoke}_" . ($spaceNumber + 1));
+            }
+            self::connect($graph, "r{$spoke}_5", "wedge_{$slug}");
         }
 
         $outerSpaces = array_values(array_filter(

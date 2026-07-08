@@ -83,16 +83,64 @@ $runner->test('each radial spoke contains multiple categories', function (): voi
     }
 });
 
+$runner->test('each radial spoke has five spaces before its wedge', function (): void {
+    $spaces = GameEngine::boardSpaces();
+    $graph = GameEngine::graph();
+
+    foreach (GameEngine::categories() as $spoke => $category) {
+        $radialSpaces = array_filter(
+            $spaces,
+            fn (array $space): bool => ($space['track'] ?? null) === 'spoke' && ($space['spoke'] ?? null) === $spoke
+        );
+
+        assertSameValue(5, count($radialSpaces), "spoke {$spoke} should have five radial spaces");
+        assertTrueValue(isset($spaces["r{$spoke}_5"]), "spoke {$spoke} missing fifth radial space");
+        assertContainsValue("wedge_{$category['slug']}", $graph["r{$spoke}_5"], "spoke {$spoke} should connect to wedge");
+    }
+});
+
 $runner->test('roll again spaces are integrated into the main board path', function (): void {
     $spaces = GameEngine::boardSpaces();
     $graph = GameEngine::graph();
     $rollAgain = array_filter($spaces, fn (array $space): bool => $space['type'] === 'roll_again');
 
-    assertSameValue(6, count($rollAgain));
+    assertSameValue(12, count($rollAgain));
     foreach ($rollAgain as $space) {
         assertSameValue('outer', $space['track']);
         assertTrueValue(isset($graph[$space['id']]), $space['id'] . ' missing from graph');
         assertTrueValue(count($graph[$space['id']]) >= 2, $space['id'] . ' should be connected as part of a path');
+    }
+});
+
+$runner->test('each outer sector has six spaces between wedges with two rerolls', function (): void {
+    $spaces = GameEngine::boardSpaces();
+
+    for ($spoke = 0; $spoke < 6; $spoke++) {
+        $sectorSpaces = array_filter(
+            $spaces,
+            fn (array $space): bool => ($space['track'] ?? null) === 'outer'
+                && ($space['spoke'] ?? null) === $spoke
+                && $space['type'] !== 'wedge'
+        );
+        $rerolls = array_filter($sectorSpaces, fn (array $space): bool => $space['type'] === 'roll_again');
+
+        assertSameValue(6, count($sectorSpaces), "sector {$spoke} should have six spaces between wedges");
+        assertSameValue(2, count($rerolls), "sector {$spoke} should have two rerolls");
+        assertTrueValue(isset($spaces["roll_again_{$spoke}_1"]), "sector {$spoke} missing first reroll");
+        assertTrueValue(isset($spaces["roll_again_{$spoke}_2"]), "sector {$spoke} missing second reroll");
+    }
+});
+
+$runner->test('wedges are reachable from center with exact six-step rolls', function (): void {
+    $state = GameEngine::newGame([
+        ['name' => 'Equipo Azul', 'color' => '#2563eb'],
+        ['name' => 'Equipo Rojo', 'color' => '#dc2626'],
+    ], 'online');
+
+    $state = GameEngine::roll($state, 0, 6);
+
+    foreach (GameEngine::categories() as $category) {
+        assertContainsValue("wedge_{$category['slug']}", $state['validDestinations']);
     }
 });
 
@@ -105,8 +153,40 @@ $runner->test('board spaces expose visual metadata for svg rendering', function 
     }
 
     assertSameValue('hub', $spaces['center']['visual']['shape']);
-    assertSameValue('outer_segment', $spaces['roll_again_0']['visual']['shape']);
+    assertSameValue('outer_segment', $spaces['roll_again_0_1']['visual']['shape']);
     assertSameValue('spoke_segment', $spaces['r0_1']['visual']['shape']);
+    assertSameValue('wedge_headquarters', $spaces['wedge_geography']['visual']['shape']);
+});
+
+$runner->test('board visual metadata keeps wedges clear of neighbours and aligned with spokes', function (): void {
+    $spaces = GameEngine::boardSpaces();
+    $outerSpaces = array_filter($spaces, fn (array $space): bool => ($space['track'] ?? null) === 'outer');
+    $slotAngle = 360 / count($outerSpaces);
+
+    foreach (GameEngine::categories() as $spoke => $category) {
+        $wedge = $spaces["wedge_{$category['slug']}"];
+        $finalSpoke = $spaces["r{$spoke}_5"];
+
+        assertTrueValue(isset($wedge['visual']['angleWidth']), $wedge['id'] . ' missing angle width');
+        assertTrueValue(isset($wedge['visual']['inner']), $wedge['id'] . ' missing inner radius');
+        assertTrueValue(isset($wedge['visual']['outer']), $wedge['id'] . ' missing outer radius');
+        assertTrueValue(isset($finalSpoke['visual']['angleWidth']), $finalSpoke['id'] . ' missing angle width');
+
+        $outerNeighbourWidth = $spaces["o{$spoke}_1"]['visual']['angleWidth'];
+        assertTrueValue(
+            (($wedge['visual']['angleWidth'] + $outerNeighbourWidth) / 2) < $slotAngle,
+            $wedge['id'] . ' should leave angular space beside neighbouring outer spaces'
+        );
+        assertTrueValue(
+            $finalSpoke['visual']['angleWidth'] <= $wedge['visual']['angleWidth'],
+            $finalSpoke['id'] . ' should not be wider than its wedge connection'
+        );
+        assertSameValue(
+            $finalSpoke['visual']['outer'],
+            $wedge['visual']['inner'],
+            $finalSpoke['id'] . ' should touch the inner edge of its wedge'
+        );
+    }
 });
 
 $runner->test('board exposes selectable destinations after a dice roll from center', function (): void {
@@ -130,7 +210,7 @@ $runner->test('correct answer grants wedge on matching wedge space and keeps tur
         ['name' => 'Equipo Rojo', 'color' => '#dc2626'],
     ], 'online');
 
-    $state = GameEngine::roll($state, 0, 5);
+    $state = GameEngine::roll($state, 0, 6);
     $state = GameEngine::move($state, 0, 'wedge_geography');
     $state['currentQuestion'] = [
         'id' => 10,
@@ -151,7 +231,7 @@ $runner->test('wrong answer passes turn without granting wedge', function (): vo
         ['name' => 'Equipo Rojo', 'color' => '#dc2626'],
     ], 'online');
 
-    $state = GameEngine::roll($state, 0, 5);
+    $state = GameEngine::roll($state, 0, 6);
     $state = GameEngine::move($state, 0, 'wedge_history');
     $state['currentQuestion'] = [
         'id' => 11,
@@ -172,9 +252,9 @@ $runner->test('roll again space skips question and keeps the same turn', functio
         ['name' => 'Equipo Rojo', 'color' => '#dc2626'],
     ], 'online');
 
-    $state['players'][0]['position'] = 'o0_2';
+    $state['players'][0]['position'] = 'o0_1';
     $state = GameEngine::roll($state, 0, 1);
-    $state = GameEngine::move($state, 0, 'roll_again_0');
+    $state = GameEngine::move($state, 0, 'roll_again_0_1');
 
     assertSameValue(0, $state['currentPlayer']);
     assertSameValue('roll', $state['phase']);

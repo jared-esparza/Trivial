@@ -384,7 +384,7 @@ function renderBoard() {
         <svg class="board-svg" viewBox="0 0 600 600" role="img" aria-label="Tablero de trivial">
             <rect x="0" y="0" width="600" height="600" rx="18" fill="#0b2852"></rect>
             <circle cx="300" cy="300" r="292" fill="#12396f" stroke="#d7c47a" stroke-width="4"></circle>
-            <circle cx="300" cy="300" r="228" fill="#0b2852" stroke="#d7c47a" stroke-width="2"></circle>
+            <circle cx="300" cy="300" r="222" fill="#0b2852" stroke="#d7c47a" stroke-width="2"></circle>
             ${renderHubWedges(currentRoom.categories)}
             ${spaceMarkup}
             ${tokenMarkup}
@@ -408,18 +408,23 @@ function renderSpaceShape(space, classes, color) {
     }
     if (space.track === 'outer') {
         const totalOuter = Object.values(currentRoom.spaces).filter((item) => item.track === 'outer').length;
-        const angle = 360 / totalOuter;
-        const start = -90 + space.index * angle + 0.5;
-        const end = -90 + (space.index + 1) * angle - 0.5;
-        const inner = space.type === 'wedge' ? 226 : 238;
-        const outer = space.type === 'wedge' ? 292 : 286;
+        const slotAngle = 360 / totalOuter;
+        const centerAngle = space.type === 'wedge'
+            ? -90 + space.spoke * 60
+            : -90 + space.index * slotAngle;
+        const width = space.visual?.angleWidth ?? (slotAngle - 1);
+        const start = centerAngle - width / 2;
+        const end = centerAngle + width / 2;
+        const inner = space.visual?.inner ?? 236;
+        const outer = space.visual?.outer ?? 286;
         return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${ringSegmentPath(300, 300, inner, outer, start, end)}" fill="${color}"></path>`;
     }
     if (space.track === 'spoke') {
         const angle = -90 + space.spoke * 60;
         const inner = space.visual?.inner ?? 78;
         const outer = space.visual?.outer ?? 114;
-        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${ringSegmentPath(300, 300, inner, outer, angle - 7.5, angle + 7.5)}" fill="${color}"></path>`;
+        const width = space.visual?.angleWidth ?? 9;
+        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${ringSegmentPath(300, 300, inner, outer, angle - width / 2, angle + width / 2)}" fill="${color}"></path>`;
     }
 
     const point = pointForSpace(space.id);
@@ -428,9 +433,8 @@ function renderSpaceShape(space, classes, color) {
 
 function renderHubWedges(categories) {
     return categories.map((category, index) => {
-        const start = -90 + index * 60 + 2;
-        const end = -90 + (index + 1) * 60 - 2;
-        return `<path d="${pieSlicePath(300, 300, 10, 39, start, end)}" fill="${escapeAttr(category.color)}" stroke="#f8fafc" stroke-width="2"></path>`;
+        const angle = -90 + index * 60;
+        return `<path d="${pieSlicePath(300, 300, 6, 42, angle - 15, angle + 15)}" fill="${escapeAttr(category.color)}" stroke="#f8fafc" stroke-width="2"></path>`;
     }).join('');
 }
 
@@ -443,7 +447,10 @@ function pointForSpace(id) {
     }
     if (space.track === 'outer') {
         const totalOuter = Object.values(currentRoom.spaces).filter((item) => item.track === 'outer').length;
-        return polarPointByDegrees(-90 + (space.index + 0.5) * (360 / totalOuter), space.type === 'wedge' ? 260 : 262);
+        const angle = space.type === 'wedge'
+            ? -90 + space.spoke * 60
+            : -90 + space.index * (360 / totalOuter);
+        return polarPointByDegrees(angle, space.type === 'wedge' ? 258 : 261);
     }
     return polarPoint(space.spoke ?? 0, 120);
 }
