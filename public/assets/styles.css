@@ -418,6 +418,115 @@ button:disabled {
     padding-top: 10px;
 }
 
+.question-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: grid;
+    place-items: center;
+    padding: clamp(14px, 4vw, 34px);
+    background: rgba(8, 20, 43, 0.46);
+}
+
+.floating-question-card {
+    width: min(520px, 100%);
+    max-height: min(86vh, 620px);
+    overflow: auto;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-top: 7px solid var(--question-color, var(--accent));
+    border-radius: 8px;
+    padding: clamp(16px, 3vw, 24px);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.35);
+    animation: question-pop 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.floating-question-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.category-pill,
+.question-summary-category {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    border-radius: 999px;
+    background: var(--question-color, var(--accent));
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.category-pill {
+    padding: 8px 10px;
+}
+
+.question-mode {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.floating-question-card h2 {
+    font-size: clamp(21px, 3vw, 30px);
+    line-height: 1.16;
+}
+
+.floating-question-card .revealed-answer {
+    border-color: var(--question-color, var(--accent));
+    font-size: 17px;
+}
+
+.reveal-answer-button {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.judge-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.floating-answer-grid {
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.floating-answer-grid .answer-button {
+    min-height: 48px;
+    text-align: left;
+    border-left: 5px solid var(--question-color, var(--accent));
+}
+
+.question-summary {
+    display: grid;
+    gap: 8px;
+}
+
+.question-summary-category {
+    padding: 7px 9px;
+}
+
+@keyframes question-pop {
+    0% {
+        transform: translateY(12px) scale(0.96);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
 .side-panel {
     padding: 16px;
     display: grid;

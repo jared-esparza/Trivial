@@ -211,6 +211,31 @@ $runner->test('board uses inline icons and category labels instead of text marke
     assertTrueValue(!str_contains($appJs, 'text-anchor="middle">R</text>'), 'reroll letter marker should be removed');
 });
 
+$runner->test('question phase renders a floating board dialog instead of sidebar question controls', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'renderQuestionOverlay'), 'question controls should render in a board overlay helper');
+    assertTrueValue(str_contains($appJs, 'bindQuestionOverlayControls'), 'floating question controls should bind their own answer actions');
+    assertTrueValue(str_contains($appJs, 'renderQuestionSummary'), 'sidebar controls should render a compact question summary');
+    assertTrueValue(str_contains($appJs, 'role="dialog"'), 'floating question should be exposed as a dialog');
+    assertTrueValue(str_contains($appJs, 'questionOverlayBackdrop'), 'board should include a modal overlay backdrop');
+    assertTrueValue(!str_contains($appJs, 'renderQuestionControls(box'), 'sidebar should not render the full question controls');
+    assertTrueValue(str_contains($styles, '.question-overlay'), 'floating question overlay should have dedicated styles');
+    assertTrueValue(str_contains($styles, '@keyframes question-pop'), 'floating question should animate in');
+});
+
+$runner->test('wedge icons are rounded and point toward the board center', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'renderWedgeIcon(point, space)'), 'wedge icon helper should receive the rendered space');
+    assertTrueValue(str_contains($appJs, 'wedgeIconRotation(space)'), 'wedge icon rotation should be calculated per space');
+    assertTrueValue(str_contains($appJs, 'rotate(${rotation})'), 'wedge icon transform should rotate each icon');
+    assertTrueValue(str_contains($appJs, 'C 5 -8 -3 -11 -11 -10'), 'wedge icon should use a curved path instead of a sharp triangle');
+    assertTrueValue(str_contains($styles, '.wedge-icon path'), 'rounded wedge icon should keep dedicated path styling');
+});
+
 $runner->test('status renders visual animated dice results', function (): void {
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');

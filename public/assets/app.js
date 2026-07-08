@@ -374,7 +374,7 @@ function renderControls() {
     }
 
     if (state.phase === 'question') {
-        renderQuestionControls(box, state, canAct);
+        box.innerHTML = renderQuestionSummary(state);
         return;
     }
 
@@ -383,55 +383,24 @@ function renderControls() {
     }
 }
 
-function renderQuestionControls(box, state, canAct) {
+function renderQuestionSummary(state) {
     const question = state.currentQuestion;
     if (!question) {
-        box.innerHTML = '<p class="muted">Cargando pregunta...</p>';
-        return;
+        return '<p class="muted">Cargando pregunta...</p>';
     }
-    const category = categoryLabels[question.category] ?? question.category;
-    const options = question.options ?? [];
-    const correctText = Number.isInteger(question.correct) ? options[question.correct] : null;
+    const category = categoryMeta(question.category);
+    const player = state.players[state.currentPlayer];
 
-    if (state.answerMode === 'judge') {
-        const questionKey = `${question.id}:${state.currentPlayer}`;
-        const isRevealed = revealedJudgeQuestionKey === questionKey;
-        box.innerHTML = `
-            <div class="question-card">
-                <p class="eyebrow">${escapeHtml(category)}</p>
-                <h2>${escapeHtml(question.question)}</h2>
-                ${isRevealed && correctText ? `<p class="revealed-answer"><strong>Respuesta:</strong> ${escapeHtml(correctText)}</p>` : ''}
-            </div>
-            ${isRevealed
-                ? `<button class="good" id="judgeCorrect" type="button" ${canAct ? '' : 'disabled'}>Acierto</button>
-                   <button class="bad" id="judgeWrong" type="button" ${canAct ? '' : 'disabled'}>Fallo</button>`
-                : `<button id="revealAnswer" type="button" ${canAct ? '' : 'disabled'}>Mostrar respuesta</button>`}
-        `;
-        document.querySelector('#revealAnswer')?.addEventListener('click', () => {
-            revealedJudgeQuestionKey = questionKey;
-            renderControls();
-        });
-        document.querySelector('#judgeCorrect')?.addEventListener('click', () => sendAction({ action: 'answer', playerId: state.currentPlayer, correct: true }));
-        document.querySelector('#judgeWrong')?.addEventListener('click', () => sendAction({ action: 'answer', playerId: state.currentPlayer, correct: false }));
-        return;
-    }
-
-    box.innerHTML = `
-        <div class="question-card">
-            <p class="eyebrow">${escapeHtml(category)}</p>
-            <h2>${escapeHtml(question.question)}</h2>
-        </div>
-        <div class="answer-grid">
-            ${options.map((option, index) => `
-                <button class="secondary answer-button" data-option="${index}" type="button" ${canAct ? '' : 'disabled'}>
-                    ${escapeHtml(option)}
-                </button>
-            `).join('')}
+    return `
+        <div class="question-summary">
+            <p class="eyebrow">Pregunta en curso</p>
+            <strong>${escapeHtml(player?.name ?? 'Equipo')}</strong>
+            <span class="question-summary-category" style="--question-color:${escapeAttr(category.color)}">
+                ${escapeHtml(category.name)}
+            </span>
+            <p class="muted">Responde en la tarjeta sobre el tablero.</p>
         </div>
     `;
-    document.querySelectorAll('.answer-button').forEach((button) => {
-        button.addEventListener('click', () => sendAction({ action: 'answer', playerId: state.currentPlayer, option: Number(button.dataset.option) }));
-    });
 }
 
 async function sendAction(payload) {
@@ -447,6 +416,7 @@ function renderBoard() {
     const state = currentRoom.state;
     const spaces = currentRoom.spaces;
     const valid = new Set(state.validDestinations ?? []);
+    const canAct = currentRoom.mode === 'local' || playerId === state.currentPlayer || state.phase === 'lobby';
     const playerPositions = new Map();
     for (const player of state.players) {
         if (!player.position) continue;
@@ -478,7 +448,7 @@ function renderBoard() {
                 <title>${escapeHtml(labelForSpace(space))}</title>
                 ${element}
                 ${space.type === 'roll_again' ? renderRerollIcon(point) : ''}
-                ${space.type === 'wedge' ? renderWedgeIcon(point) : ''}
+                ${space.type === 'wedge' ? renderWedgeIcon(point, space) : ''}
             </g>
         `;
     }).join('');
@@ -509,8 +479,11 @@ function renderBoard() {
                 ${tokenMarkup}
             </svg>
             <div id="spaceTooltip" class="space-tooltip hidden" role="tooltip"></div>
+            ${renderQuestionOverlay(state, canAct)}
         </div>
     `;
+
+    bindQuestionOverlayControls(state, canAct);
 
     mount.querySelectorAll('.space').forEach((spaceEl) => {
         spaceEl.addEventListener('mouseenter', (event) => showSpaceTooltip(spaceEl.dataset.spaceLabel, event));
@@ -531,6 +504,89 @@ function renderBoard() {
     });
 }
 
+function renderQuestionOverlay(state, canAct) {
+    if (state.phase !== 'question') return '';
+
+    const question = state.currentQuestion;
+    if (!question) {
+        return `
+            <div class="question-overlay" id="questionOverlayBackdrop" role="dialog" aria-modal="true" aria-label="Cargando pregunta">
+                <div class="floating-question-card">
+                    <p class="muted">Cargando pregunta...</p>
+                </div>
+            </div>
+        `;
+    }
+
+    const category = categoryMeta(question.category);
+    const options = question.options ?? [];
+    const correctText = Number.isInteger(question.correct) ? options[question.correct] : null;
+    const questionKey = `${question.id}:${state.currentPlayer}`;
+    const isJudge = state.answerMode === 'judge';
+    const isRevealed = isJudge && revealedJudgeQuestionKey === questionKey;
+    const controls = isJudge
+        ? renderJudgeQuestionActions(isRevealed, correctText, canAct)
+        : renderOptionQuestionActions(options, canAct);
+
+    return `
+        <div class="question-overlay" id="questionOverlayBackdrop" role="dialog" aria-modal="true" aria-labelledby="questionOverlayTitle">
+            <article class="floating-question-card" style="--question-color:${escapeAttr(category.color)}">
+                <div class="floating-question-topline">
+                    <span class="category-pill">${escapeHtml(category.name)}</span>
+                    <span class="question-mode">${isJudge ? 'Modo juez' : '4 opciones'}</span>
+                </div>
+                <h2 id="questionOverlayTitle">${escapeHtml(question.question)}</h2>
+                ${isRevealed && correctText ? `<p class="revealed-answer"><strong>Respuesta:</strong> ${escapeHtml(correctText)}</p>` : ''}
+                ${controls}
+            </article>
+        </div>
+    `;
+}
+
+function renderJudgeQuestionActions(isRevealed, correctText, canAct) {
+    if (isRevealed) {
+        return `
+            <div class="judge-actions">
+                <button class="good" id="judgeCorrect" type="button" ${canAct ? '' : 'disabled'}>Acierto</button>
+                <button class="bad" id="judgeWrong" type="button" ${canAct ? '' : 'disabled'}>Fallo</button>
+            </div>
+        `;
+    }
+
+    return `
+        <button class="reveal-answer-button" id="revealAnswer" type="button" ${canAct && correctText ? '' : 'disabled'}>
+            Mostrar respuesta
+        </button>
+    `;
+}
+
+function renderOptionQuestionActions(options, canAct) {
+    return `
+        <div class="answer-grid floating-answer-grid">
+            ${options.map((option, index) => `
+                <button class="secondary answer-button" data-option="${index}" type="button" ${canAct ? '' : 'disabled'}>
+                    ${escapeHtml(option)}
+                </button>
+            `).join('')}
+        </div>
+    `;
+}
+
+function bindQuestionOverlayControls(state, canAct) {
+    if (state.phase !== 'question' || !state.currentQuestion) return;
+
+    document.querySelector('#revealAnswer')?.addEventListener('click', () => {
+        if (!canAct) return;
+        revealedJudgeQuestionKey = `${state.currentQuestion.id}:${state.currentPlayer}`;
+        renderRoom();
+    });
+    document.querySelector('#judgeCorrect')?.addEventListener('click', () => sendAction({ action: 'answer', playerId: state.currentPlayer, correct: true }));
+    document.querySelector('#judgeWrong')?.addEventListener('click', () => sendAction({ action: 'answer', playerId: state.currentPlayer, correct: false }));
+    document.querySelectorAll('.answer-button').forEach((button) => {
+        button.addEventListener('click', () => sendAction({ action: 'answer', playerId: state.currentPlayer, option: Number(button.dataset.option) }));
+    });
+}
+
 function renderSpaceShape(space, classes, color) {
     const shape = pathForSpace(space);
     const label = escapeAttr(labelForSpace(space));
@@ -542,15 +598,22 @@ function renderSpaceShape(space, classes, color) {
     return `<circle class="${classes}" data-space="${escapeAttr(space.id)}" data-space-label="${label}" aria-label="${label}" tabindex="${focusable}" cx="${shape.cx}" cy="${shape.cy}" r="${shape.r}" fill="${color}"></circle>`;
 }
 
-function renderWedgeIcon(point) {
+function renderWedgeIcon(point, space) {
+    const rotation = wedgeIconRotation(space);
+
     return `
-        <g class="space-icon wedge-icon" transform="translate(${point.x} ${point.y})" aria-hidden="true">
-            <path d="M -12 -8 L 13 0 L -12 8 Z"></path>
+        <g class="space-icon wedge-icon" transform="translate(${point.x} ${point.y}) rotate(${rotation})" aria-hidden="true">
+            <path d="M 13 0 C 5 -8 -3 -11 -11 -10 C -16 -6 -16 6 -11 10 C -3 11 5 8 13 0 Z"></path>
             <circle cx="-5" cy="-3" r="1.8"></circle>
             <circle cx="-2" cy="4" r="1.5"></circle>
             <circle cx="5" cy="0" r="1.6"></circle>
         </g>
     `;
+}
+
+function wedgeIconRotation(space) {
+    const outwardAngle = -90 + (space.visual?.angleOffset ?? space.spoke * 60);
+    return outwardAngle + 180;
 }
 
 function renderRerollIcon(point) {
@@ -771,6 +834,14 @@ function colorForSpace(space, categories) {
     if (space.type === 'roll_again') return '#cbd5e1';
     const category = categories.find((item) => item.slug === space.category);
     return category?.color ?? '#e5e7eb';
+}
+
+function categoryMeta(slug) {
+    const category = currentRoom?.categories?.find((item) => item.slug === slug);
+    return {
+        name: category?.name ?? categoryLabels[slug] ?? slug,
+        color: category?.color ?? '#1457d9'
+    };
 }
 
 function tokenOffset(index, total) {
