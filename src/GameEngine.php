@@ -209,16 +209,14 @@ final class GameEngine
         $hubRadius = 42.0;
         $hubSideLength = $hubRadius / cos(deg2rad(30));
         $spokeWidth = $hubSideLength;
-        $wedgeAngleWidth = 15.0;
-        $outerAngleWidth = 6.4;
-        $outerAngleOffsets = [
-            1 => 12.0,
-            2 => 19.2,
-            3 => 26.4,
-            4 => 33.6,
-            5 => 40.8,
-            6 => 48.0,
-        ];
+        $outerRingInner = 236.0;
+        $outerRingOuter = 286.0;
+        $wedgeAngleWidth = 2 * rad2deg(asin(($spokeWidth / 2) / $outerRingInner));
+        $outerAngleWidth = (60.0 - $wedgeAngleWidth) / 6;
+        $outerAngleOffsets = [];
+        for ($outer = 1; $outer <= 6; $outer++) {
+            $outerAngleOffsets[$outer] = ($wedgeAngleWidth / 2) + (($outer - 0.5) * $outerAngleWidth);
+        }
         $spaces = [[
             'id' => 'center',
             'type' => 'center',
@@ -247,6 +245,17 @@ final class GameEngine
 
             foreach ($spokeSequence as $index => $spaceCategory) {
                 $spaceNumber = $index + 1;
+                $visual = [
+                    'shape' => $spaceNumber === 5 ? 'curved_spoke_end' : 'straight_spoke',
+                    'inner' => $hubRadius + ($spaceNumber - 1) * 36,
+                    'outer' => 78 + ($spaceNumber - 1) * 36,
+                    'width' => $spokeWidth,
+                    'angleOffset' => $spoke * 60.0,
+                ];
+                if ($spaceNumber === 5) {
+                    $visual['curveOuter'] = $outerRingInner;
+                }
+
                 $spaces[] = [
                     'id' => "r{$spoke}_{$spaceNumber}",
                     'type' => 'category',
@@ -255,13 +264,7 @@ final class GameEngine
                     'track' => 'spoke',
                     'spoke' => $spoke,
                     'index' => $spaceNumber,
-                    'visual' => [
-                        'shape' => 'straight_spoke',
-                        'inner' => $hubRadius + ($spaceNumber - 1) * 36,
-                        'outer' => 78 + ($spaceNumber - 1) * 36,
-                        'width' => $spokeWidth,
-                        'angleOffset' => $spoke * 60.0,
-                    ],
+                    'visual' => $visual,
                 ];
             }
 
@@ -275,10 +278,10 @@ final class GameEngine
                 'index' => $outerIndex++,
                 'visual' => [
                     'shape' => 'wedge_headquarters',
-                    'inner' => 236,
-                    'outer' => 286,
+                    'inner' => $outerRingInner,
+                    'outer' => $outerRingOuter,
                     'angleWidth' => $wedgeAngleWidth,
-                    'arcWidth' => 2 * 236 * sin(deg2rad($wedgeAngleWidth / 2)),
+                    'arcWidth' => 2 * $outerRingInner * sin(deg2rad($wedgeAngleWidth / 2)),
                     'angleOffset' => $spoke * 60.0,
                 ],
             ];
@@ -296,8 +299,8 @@ final class GameEngine
                         'index' => $outerIndex++,
                         'visual' => [
                             'shape' => 'outer_segment',
-                            'inner' => 236,
-                            'outer' => 286,
+                            'inner' => $outerRingInner,
+                            'outer' => $outerRingOuter,
                             'angleWidth' => $outerAngleWidth,
                             'angleOffset' => $spoke * 60.0 + $outerAngleOffsets[$outer],
                         ],
@@ -317,8 +320,8 @@ final class GameEngine
                     'index' => $outerIndex++,
                     'visual' => [
                         'shape' => 'outer_segment',
-                        'inner' => 236,
-                        'outer' => 286,
+                        'inner' => $outerRingInner,
+                        'outer' => $outerRingOuter,
                         'angleWidth' => $outerAngleWidth,
                         'angleOffset' => $spoke * 60.0 + $outerAngleOffsets[$outer],
                     ],

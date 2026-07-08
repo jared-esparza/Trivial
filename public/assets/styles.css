@@ -225,20 +225,29 @@ button:disabled {
     transition: filter 140ms ease, stroke-width 140ms ease, opacity 140ms ease;
 }
 
+.space-track-outer,
+.space-track-spoke {
+    stroke: none;
+}
+
 .space.valid {
+    cursor: pointer;
+}
+
+.space-highlight {
+    fill: none;
     stroke: #111827;
     stroke-width: 4.5;
-    cursor: pointer;
+    pointer-events: none;
+    vector-effect: non-scaling-stroke;
+}
+
+.valid-highlight {
     filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.85));
 }
 
-.space.player-position {
-    stroke: #111827;
-    stroke-width: 4.5;
-}
-
 .space-roll_again .space {
-    fill: #f4f0e6;
+    fill: #cbd5e1;
 }
 
 .space-label {

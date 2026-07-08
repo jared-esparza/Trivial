@@ -358,6 +358,8 @@ function renderBoard() {
         const color = colorForSpace(space, currentRoom.categories);
         const classes = [
             'space',
+            `space-track-${space.track}`,
+            `space-type-${space.type}`,
             valid.has(space.id) ? 'valid' : '',
             playerPositions.has(space.id) ? 'player-position' : ''
         ].filter(Boolean).join(' ');
@@ -372,6 +374,11 @@ function renderBoard() {
         `;
     }).join('');
 
+    const highlightMarkup = orderedSpaces
+        .filter((space) => valid.has(space.id) || playerPositions.has(space.id))
+        .map((space) => renderSpaceHighlight(space, valid.has(space.id), playerPositions.has(space.id)))
+        .join('');
+
     const tokenMarkup = [...playerPositions.entries()].flatMap(([spaceId, players]) => {
         const point = pointForSpace(spaceId);
         return players.map((player, index) => {
@@ -385,8 +392,10 @@ function renderBoard() {
             <rect x="0" y="0" width="600" height="600" rx="18" fill="#0b2852"></rect>
             <circle cx="300" cy="300" r="292" fill="#12396f" stroke="#d7c47a" stroke-width="4"></circle>
             <circle cx="300" cy="300" r="222" fill="#0b2852" stroke="#d7c47a" stroke-width="2"></circle>
+            <circle class="outer-track-base" cx="300" cy="300" r="261" fill="none" stroke="#f8fafc" stroke-width="50"></circle>
             ${spaceMarkup}
             ${renderCenterHex(spaces.center?.visual)}
+            ${highlightMarkup}
             ${tokenMarkup}
         </svg>
     `;
@@ -403,8 +412,32 @@ function renderBoard() {
 }
 
 function renderSpaceShape(space, classes, color) {
+    const shape = pathForSpace(space);
+    if (shape.type === 'path') {
+        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${shape.d}" fill="${color}"></path>`;
+    }
+
+    return `<circle class="${classes}" data-space="${escapeAttr(space.id)}" cx="${shape.cx}" cy="${shape.cy}" r="${shape.r}" fill="${color}"></circle>`;
+}
+
+function renderSpaceHighlight(space, isValid, hasPlayer) {
+    const shape = pathForSpace(space);
+    const classes = [
+        'space-highlight',
+        isValid ? 'valid-highlight' : '',
+        hasPlayer ? 'player-highlight' : ''
+    ].filter(Boolean).join(' ');
+
+    if (shape.type === 'path') {
+        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${shape.d}"></path>`;
+    }
+
+    return `<circle class="${classes}" data-space="${escapeAttr(space.id)}" cx="${shape.cx}" cy="${shape.cy}" r="${shape.r}"></circle>`;
+}
+
+function pathForSpace(space) {
     if (space.id === 'center') {
-        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${hexagonPath(300, 300, space.visual?.radius ?? 42)}" fill="transparent"></path>`;
+        return { type: 'path', d: hexagonPath(300, 300, space.visual?.radius ?? 42) };
     }
     if (space.track === 'outer') {
         const totalOuter = Object.values(currentRoom.spaces).filter((item) => item.track === 'outer').length;
@@ -415,18 +448,22 @@ function renderSpaceShape(space, classes, color) {
         const end = centerAngle + width / 2;
         const inner = space.visual?.inner ?? 236;
         const outer = space.visual?.outer ?? 286;
-        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${ringSegmentPath(300, 300, inner, outer, start, end)}" fill="${color}"></path>`;
+        return { type: 'path', d: ringSegmentPath(300, 300, inner, outer, start, end) };
     }
     if (space.track === 'spoke') {
         const angle = -90 + (space.visual?.angleOffset ?? space.spoke * 60);
         const inner = space.visual?.inner ?? 78;
         const outer = space.visual?.outer ?? 114;
         const width = space.visual?.width ?? 42;
-        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${straightSpokePath(300, 300, inner, outer, width, angle)}" fill="${color}"></path>`;
+        if (space.visual?.shape === 'curved_spoke_end') {
+            const curveOuter = space.visual?.curveOuter ?? outer;
+            return { type: 'path', d: curvedSpokeEndPath(300, 300, inner, outer, curveOuter, width, angle) };
+        }
+        return { type: 'path', d: straightSpokePath(300, 300, inner, outer, width, angle) };
     }
 
     const point = pointForSpace(space.id);
-    return `<circle class="${classes}" data-space="${escapeAttr(space.id)}" cx="${point.x}" cy="${point.y}" r="18" fill="${color}"></circle>`;
+    return { type: 'circle', cx: point.x, cy: point.y, r: 18 };
 }
 
 function renderCenterHex(visual = {}) {
@@ -495,6 +532,34 @@ function straightSpokePath(cx, cy, innerRadius, outerRadius, width, degrees) {
     return polygonPath(points);
 }
 
+function curvedSpokeEndPath(cx, cy, innerRadius, outerRadius, curveOuterRadius, width, degrees) {
+    const angle = degrees * Math.PI / 180;
+    const ux = Math.cos(angle);
+    const uy = Math.sin(angle);
+    const px = -uy;
+    const py = ux;
+    const half = width / 2;
+    const inner = { x: cx + ux * innerRadius, y: cy + uy * innerRadius };
+    const shoulder = { x: cx + ux * outerRadius, y: cy + uy * outerRadius };
+    const halfAngle = Math.asin(Math.min(half / curveOuterRadius, 0.98)) * 180 / Math.PI;
+    const curveStart = pointOnCircle(cx, cy, curveOuterRadius, degrees + halfAngle);
+    const curveEnd = pointOnCircle(cx, cy, curveOuterRadius, degrees - halfAngle);
+    const innerStart = { x: inner.x + px * half, y: inner.y + py * half };
+    const innerEnd = { x: inner.x - px * half, y: inner.y - py * half };
+    const shoulderStart = { x: shoulder.x + px * half, y: shoulder.y + py * half };
+    const shoulderEnd = { x: shoulder.x - px * half, y: shoulder.y - py * half };
+
+    return [
+        `M ${Number(innerStart.x.toFixed(2))} ${Number(innerStart.y.toFixed(2))}`,
+        `L ${Number(shoulderStart.x.toFixed(2))} ${Number(shoulderStart.y.toFixed(2))}`,
+        `L ${curveStart.x} ${curveStart.y}`,
+        `A ${curveOuterRadius} ${curveOuterRadius} 0 0 0 ${curveEnd.x} ${curveEnd.y}`,
+        `L ${Number(shoulderEnd.x.toFixed(2))} ${Number(shoulderEnd.y.toFixed(2))}`,
+        `L ${Number(innerEnd.x.toFixed(2))} ${Number(innerEnd.y.toFixed(2))}`,
+        'Z'
+    ].join(' ');
+}
+
 function hexagonPath(cx, cy, apothem) {
     const radius = apothem / Math.cos(Math.PI / 6);
     const points = Array.from({ length: 6 }, (_, index) => pointOnCircle(cx, cy, radius, -120 + index * 60));
@@ -522,7 +587,7 @@ function pointOnCircle(cx, cy, radius, degrees) {
 
 function colorForSpace(space, categories) {
     if (space.type === 'center') return '#ffffff';
-    if (space.type === 'roll_again') return '#f8fafc';
+    if (space.type === 'roll_again') return '#cbd5e1';
     const category = categories.find((item) => item.slug === space.category);
     return category?.color ?? '#e5e7eb';
 }

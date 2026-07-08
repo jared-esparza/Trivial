@@ -158,6 +158,20 @@ $runner->test('board spaces expose visual metadata for svg rendering', function 
     assertSameValue('wedge_headquarters', $spaces['wedge_geography']['visual']['shape']);
 });
 
+$runner->test('board render separates fills from selection outlines', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($styles, '.space-track-spoke'), 'spoke spaces should have track-specific styling');
+    assertTrueValue(str_contains($styles, '.space-track-spoke') && str_contains($styles, 'stroke: none'), 'spoke spaces should not draw white borders');
+    assertTrueValue(str_contains($styles, '.space-highlight'), 'selection outlines should use a dedicated top layer');
+    assertTrueValue(str_contains($appJs, 'const highlightMarkup'), 'board should render highlight markup separately');
+    assertTrueValue(
+        strpos($appJs, '${highlightMarkup}') > strpos($appJs, '${spaceMarkup}'),
+        'selection outlines should render after board spaces'
+    );
+});
+
 $runner->test('board visual metadata uses straight spokes and a hexagonal center', function (): void {
     $spaces = GameEngine::boardSpaces();
     $hub = $spaces['center']['visual'];
@@ -178,6 +192,7 @@ $runner->test('board visual metadata uses straight spokes and a hexagonal center
         assertTrueValue(isset($finalSpoke['visual']['width']), $finalSpoke['id'] . ' missing straight width');
 
         assertSameValue('straight_spoke', $firstSpoke['visual']['shape'], $firstSpoke['id'] . ' should render as a straight spoke');
+        assertSameValue('curved_spoke_end', $finalSpoke['visual']['shape'], $finalSpoke['id'] . ' should curve into its wedge');
         assertSameValue($hub['radius'], $firstSpoke['visual']['inner'], $firstSpoke['id'] . ' should touch the hexagonal center');
         assertTrueValue(
             abs($hub['sideLength'] - $firstSpoke['visual']['width']) < 0.001,
@@ -185,8 +200,8 @@ $runner->test('board visual metadata uses straight spokes and a hexagonal center
         );
         assertSameValue($firstSpoke['visual']['width'], $finalSpoke['visual']['width'], $finalSpoke['id'] . ' should keep radial width');
         assertTrueValue(
-            $finalSpoke['visual']['width'] <= $wedge['visual']['arcWidth'],
-            $finalSpoke['id'] . ' should not be wider than its wedge connection'
+            abs($finalSpoke['visual']['width'] - $wedge['visual']['arcWidth']) < 0.001,
+            $finalSpoke['id'] . ' should match its wedge inner arc width exactly'
         );
         assertTrueValue(
             $wedge['visual']['angleWidth'] > $spaces["o{$spoke}_1"]['visual']['angleWidth'],
@@ -210,14 +225,25 @@ $runner->test('board visual metadata uses straight spokes and a hexagonal center
             $wedge['visual']['inner'] > $finalSpoke['visual']['outer'],
             $wedge['id'] . ' should keep the normal board gap after the final spoke'
         );
+        assertSameValue(
+            $wedge['visual']['inner'],
+            $finalSpoke['visual']['curveOuter'],
+            $finalSpoke['id'] . ' should curve up to the inner edge of its wedge'
+        );
+        assertTrueValue(
+            abs(60.0 - ($wedge['visual']['angleWidth'] + 6 * $spaces["o{$spoke}_1"]['visual']['angleWidth'])) < 0.001,
+            "sector {$spoke} outer spaces should fill the remaining span between wedges"
+        );
 
         for ($outer = 1; $outer <= 6; $outer++) {
             $space = $spaces["o{$spoke}_{$outer}"] ?? $spaces["roll_again_{$spoke}_" . ($outer === 2 ? 1 : 2)];
             assertTrueValue(isset($space['visual']['angleOffset']), $space['id'] . ' missing angle offset');
-            $distanceFromWedge = abs($space['visual']['angleOffset'] - $wedge['visual']['angleOffset']);
+            $expectedOffset = $wedge['visual']['angleOffset']
+                + ($wedge['visual']['angleWidth'] / 2)
+                + (($outer - 0.5) * $space['visual']['angleWidth']);
             assertTrueValue(
-                $distanceFromWedge > (($wedge['visual']['angleWidth'] + $space['visual']['angleWidth']) / 2),
-                $space['id'] . ' should sit outside wedge angular bounds'
+                abs($expectedOffset - $space['visual']['angleOffset']) < 0.001,
+                $space['id'] . ' should be positioned in the available sector span'
             );
         }
     }
