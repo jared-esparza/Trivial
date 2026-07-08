@@ -242,6 +242,7 @@ function startPolling() {
 }
 
 function renderRoom() {
+    renderScoreboard();
     renderBoard();
     renderStatus();
     renderPreferences();
@@ -385,26 +386,107 @@ function diceResultDelayPreferenceMs() {
     return [500, 1000, 1500, 2000].includes(stored) ? stored : 1000;
 }
 
+function renderScoreboard() {
+    const box = document.querySelector('#scoreboardBox');
+    if (!box || !currentRoom) return;
+    const state = currentRoom.state;
+    const categories = currentRoom.categories;
+
+    box.innerHTML = `
+        <div class="scoreboard-track" role="list" aria-label="Marcador principal">
+            ${state.players.map((player, index) => {
+                const wedgeCount = categories.filter((category) => player.wedges?.[category.slug]).length;
+                const isActive = index === state.currentPlayer;
+                return `
+                    <article class="scoreboard-card ${isActive ? 'scoreboard-active' : ''}" role="listitem" style="--player-color:${escapeAttr(player.color)}">
+                        <div class="scoreboard-token" aria-hidden="true">${escapeHtml(player.name.charAt(0).toUpperCase())}</div>
+                        <div class="scoreboard-main">
+                            <div class="scoreboard-head">
+                                <strong>${escapeHtml(player.name)}</strong>
+                                ${isActive ? '<span class="turn-badge">Turno</span>' : ''}
+                            </div>
+                            <div class="scoreboard-progress">
+                                <span>${wedgeCount}/${categories.length} quesitos</span>
+                            </div>
+                        </div>
+                        ${renderScoreboardWedgeWheel(player, categories)}
+                    </article>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function renderScoreboardWedgeWheel(player, categories) {
+    const wedgeCount = categories.filter((category) => player.wedges?.[category.slug]).length;
+    const sliceAngle = 360 / categories.length;
+
+    return `
+        <svg class="scoreboard-wheel" viewBox="0 0 100 100" role="img" aria-label="${wedgeCount} de ${categories.length} quesitos">
+            <title>${wedgeCount} de ${categories.length} quesitos</title>
+            ${categories.map((category, index) => {
+                const owned = Boolean(player.wedges?.[category.slug]);
+                const startAngle = -90 + index * sliceAngle;
+                const endAngle = startAngle + sliceAngle;
+                return `
+                    <path class="scoreboard-wheel-slice ${owned ? 'scoreboard-wheel-slice-owned' : ''}"
+                          d="${scoreboardWheelSlicePath(50, 50, 42, startAngle, endAngle)}"
+                          style="--category-color:${escapeAttr(category.color)}">
+                        <title>${escapeHtml(category.name)}: ${owned ? 'conseguido' : 'pendiente'}</title>
+                    </path>
+                `;
+            }).join('')}
+            <circle class="scoreboard-wheel-border" cx="50" cy="50" r="42"></circle>
+        </svg>
+    `;
+}
+
+function scoreboardWheelSlicePath(cx, cy, radius, startAngle, endAngle) {
+    const start = scoreboardWheelPoint(cx, cy, radius, startAngle);
+    const end = scoreboardWheelPoint(cx, cy, radius, endAngle);
+    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+
+    return [
+        `M ${cx} ${cy}`,
+        `L ${start.x.toFixed(3)} ${start.y.toFixed(3)}`,
+        `A ${radius} ${radius} 0 ${largeArc} 1 ${end.x.toFixed(3)} ${end.y.toFixed(3)}`,
+        'Z'
+    ].join(' ');
+}
+
+function scoreboardWheelPoint(cx, cy, radius, degrees) {
+    const angle = degrees * Math.PI / 180;
+    return {
+        x: cx + Math.cos(angle) * radius,
+        y: cy + Math.sin(angle) * radius
+    };
+}
+
 function renderPlayers() {
     const box = document.querySelector('#playersBox');
     if (!box || !currentRoom) return;
     const state = currentRoom.state;
     const categories = currentRoom.categories;
-    box.innerHTML = state.players.map((player, index) => `
-        <article class="player-card ${index === state.currentPlayer ? 'active' : ''}">
-            <div class="player-head">
-                <strong>${escapeHtml(player.name)}</strong>
-                <span class="swatch" style="background:${escapeAttr(player.color)}"></span>
+    const active = state.players[state.currentPlayer] ?? state.players[0];
+    const activeCount = categories.filter((category) => active?.wedges?.[category.slug]).length;
+    const totalOwned = state.players.reduce((sum, player) => (
+        sum + categories.filter((category) => player.wedges?.[category.slug]).length
+    ), 0);
+
+    box.innerHTML = `
+        <div class="players-summary">
+            <p class="eyebrow">Equipos</p>
+            <div class="players-summary-active" style="--player-color:${escapeAttr(active?.color ?? '#2563eb')}">
+                <span>Equipo activo</span>
+                <strong>${escapeHtml(active?.name ?? 'Equipo')}</strong>
+                <small>${activeCount}/${categories.length} quesitos</small>
             </div>
-            <div class="wedge-row">
-                ${categories.map((category) => `
-                    <span class="wedge-dot ${player.wedges?.[category.slug] ? 'owned' : ''}"
-                          title="${escapeAttr(category.name)}"
-                          style="background:${escapeAttr(category.color)}"></span>
-                `).join('')}
+            <div class="players-summary-stats">
+                <span>${state.players.length} equipos</span>
+                <span>${totalOwned}/${state.players.length * categories.length} quesitos en juego</span>
             </div>
-        </article>
-    `).join('');
+        </div>
+    `;
 }
 
 function renderControls() {

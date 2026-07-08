@@ -81,6 +81,7 @@ Equipo Rojo</textarea>
                         </button>
                     </div>
                 </div>
+                <div id="scoreboardBox" class="scoreboard-box" aria-label="Marcador de equipos"></div>
                 <div id="boardMount" class="board-mount"></div>
             </div>
 

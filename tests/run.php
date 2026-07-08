@@ -197,6 +197,62 @@ $runner->test('game board exposes fullscreen controls and fullscreen layout styl
     assertTrueValue(str_contains($styles, '.fullscreen-fallback'), 'css fallback should style fullscreen mode');
 });
 
+$runner->test('scoreboard is integrated near the board without changing board rendering', function (): void {
+    $index = file_get_contents(__DIR__ . '/../public/index.php');
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($index, 'id="scoreboardBox"'), 'game board panel should expose a scoreboard box');
+    assertTrueValue(strpos($index, 'id="scoreboardBox"') < strpos($index, 'id="boardMount"'), 'scoreboard should sit near the board, outside board mount');
+    assertTrueValue(str_contains($appJs, 'renderScoreboard'), 'room render should include a scoreboard helper');
+    assertTrueValue(str_contains($appJs, 'scoreboard-card'), 'scoreboard should render player cards');
+    assertTrueValue(str_contains($appJs, 'scoreboard-active'), 'scoreboard should mark the active player');
+    assertTrueValue(str_contains($appJs, 'renderScoreboardWedgeWheel'), 'scoreboard should render circular wedge wheels');
+    assertTrueValue(str_contains($appJs, 'wedgeCount'), 'scoreboard should calculate owned wedge progress');
+    assertTrueValue(str_contains($styles, '.scoreboard-box'), 'scoreboard should have dedicated layout styles');
+    assertTrueValue(str_contains($styles, '.scoreboard-card'), 'scoreboard player cards should have dedicated styles');
+    assertTrueValue(str_contains($styles, '@keyframes scoreboard-turn-pulse'), 'active scoreboard card should have a subtle animation');
+});
+
+$runner->test('scoreboard wedge progress renders as a circular medallion', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'function renderScoreboardWedgeWheel'), 'scoreboard should expose a wheel helper');
+    assertTrueValue(str_contains($appJs, 'scoreboard-wheel'), 'scoreboard should render an inline wheel svg');
+    assertTrueValue(str_contains($appJs, 'scoreboard-wheel-slice'), 'wheel should render category slices');
+    assertTrueValue(str_contains($appJs, 'scoreboard-wheel-slice-owned'), 'wheel should distinguish owned slices');
+    assertTrueValue(str_contains($appJs, 'scoreboardWheelSlicePath'), 'wheel slices should be generated as svg paths');
+    assertTrueValue(!str_contains($appJs, '<span class="scoreboard-wedge'), 'scoreboard should not render the old linear wedge list');
+    assertTrueValue(str_contains($styles, '.scoreboard-wheel'), 'wheel svg should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.scoreboard-wheel-slice'), 'wheel slices should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.scoreboard-wheel-slice-owned'), 'owned wheel slices should have dedicated styles');
+});
+
+$runner->test('fullscreen scoreboard stays compact and board mount can shrink', function (): void {
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($styles, 'overflow: hidden;'), 'fullscreen layout should avoid vertical overflow in the board area');
+    assertTrueValue(str_contains($styles, '.game-view:fullscreen .scoreboard-box'), 'fullscreen should compact the scoreboard box');
+    assertTrueValue(str_contains($styles, '.game-view:fullscreen .scoreboard-card'), 'fullscreen should compact scoreboard cards');
+    assertTrueValue(str_contains($styles, '.game-view:fullscreen .board-mount'), 'fullscreen should explicitly size the board mount');
+    assertTrueValue(str_contains($styles, 'grid-template-rows: auto auto minmax(0, 1fr);'), 'fullscreen board panel should reserve remaining space for the board');
+    assertTrueValue(str_contains($styles, 'height: 100%;'), 'fullscreen board mount should fill the remaining row');
+    assertTrueValue(str_contains($styles, 'max-height: 100%;'), 'fullscreen board frame should respect available height');
+    assertTrueValue(str_contains($styles, 'grid-template-rows: minmax(0, 1fr) auto;'), 'mobile fullscreen should avoid auto rows pushing the board below the viewport');
+});
+
+$runner->test('sidebar players become compact summary instead of duplicated player cards', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'players-summary'), 'sidebar players should render a compact summary');
+    assertTrueValue(str_contains($appJs, 'Equipo activo'), 'sidebar summary should identify the active team');
+    assertTrueValue(!str_contains($appJs, '<article class="player-card ${index === state.currentPlayer ? \'active\' : \'\'}">'), 'sidebar should not duplicate full player cards');
+    assertTrueValue(str_contains($styles, '.players-summary'), 'compact players summary should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.players-summary-active'), 'active team summary should have dedicated styles');
+});
+
 $runner->test('board uses inline icons and category labels instead of text markers', function (): void {
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
