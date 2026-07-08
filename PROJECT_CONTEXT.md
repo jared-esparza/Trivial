@@ -1,6 +1,6 @@
 # trivial - Contexto del Proyecto
 
-Ultima actualizacion: 2026-07-07
+Ultima actualizacion: 2026-07-08
 
 ## Objetivo
 
@@ -11,9 +11,15 @@ El nombre `trivial` es provisional. El usuario lo cambiara cuando tenga el nombr
 ## Estado Git
 
 - Rama principal: `main`
-- Commit base actual: `37302cb feat: initial trivial game`
-- El ultimo estado conocido estaba limpio antes de crear este archivo.
-- Este archivo puede quedar como cambio pendiente si no se ha commiteado despues.
+- Ultimo commit conocido al actualizar este archivo: `477ebda Fix medidas de casillas de radios`
+- Estado antes de actualizar este archivo: limpio contra `origin/main`.
+- Este archivo quedara como cambio pendiente hasta que se haga commit.
+- Commits recientes relevantes:
+  - `477ebda Fix medidas de casillas de radios`
+  - `c994a1f Añadir preferencias -> bordes blancos en tablero`
+  - `5179c1d Mejora visual tablero y fix overlab bordes al seleccionar casillas`
+  - `82a9d6f Reducciín casillas q`
+  - `0bee91a Mejora visual radios tablero`
 
 ## Stack y Despliegue
 
@@ -56,7 +62,7 @@ public/
   index.php              Pantalla principal y partida.
   admin.php              Importacion/listado de preguntas.
   api.php                API JSON de salas, acciones y admin.
-  assets/app.js          Cliente JS: tablero SVG, turnos, preguntas, polling.
+  assets/app.js          Cliente JS: tablero SVG, preferencias, turnos, preguntas, polling.
   assets/styles.css      Estilos UI y tablero.
 
 src/
@@ -87,8 +93,17 @@ tablero.jpg              Imagen de referencia inicial del tablero.
 - En su turno tiran dado y eligen una casilla valida.
 - El tablero se modela como grafo en `GameEngine::graph()`.
 - Las casillas se definen en `GameEngine::boardDefinition()` y se exponen con metadata visual via `boardSpaces()`.
+- Tablero actual:
+  - Centro hexagonal.
+  - Seis radios rectos de 5 casillas cada uno.
+  - La primera casilla de cada radio toca el hexagono central.
+  - La ultima casilla de cada radio conserva borde curvo hacia el anillo.
+  - Las 5 casillas de cada radio tienen la misma medida entre vertices.
+  - Cada casilla `wedge_*` esta en el anillo exterior, alineada con su radio y con color de categoria.
+  - Cada sector exterior tiene 6 casillas entre quesitos con patron estructural `pregunta, reroll, pregunta, pregunta, reroll, pregunta`.
+  - Hay 12 casillas `roll_again`, integradas en el anillo exterior.
 - Los radios tienen categorias alternadas, no una sola categoria.
-- Las casillas `roll_again` estan integradas en el anillo exterior.
+- Las casillas `roll_again` estan integradas en el anillo exterior y se pintan en gris.
 - Casilla `roll_again`: no hay pregunta, el mismo equipo vuelve a tirar.
 - Casilla `wedge_*`: si acierta, gana el quesito de esa categoria.
 - Si falla, pasa el turno.
@@ -117,6 +132,21 @@ En modo `judge`:
 - El juez pulsa `Mostrar respuesta`.
 - Entonces aparecen respuesta correcta y botones `Acierto` / `Fallo`.
 - Esto evita que el jugador vea la respuesta antes de contestar.
+
+## Preferencias UI
+
+En la vista de partida existe una caja `Preferencias` bajo `Estado`.
+
+Preferencia actual:
+
+- `Bordes blancos del tablero`.
+- Se guarda en `localStorage` con clave `board:whiteBorders`.
+- Si esta activada, el SVG recibe la clase `show-space-borders`.
+- CSS relevante:
+  - Por defecto: `.space-track-outer, .space-track-spoke { stroke: none; }`
+  - Activado: `.board-svg.show-space-borders .space-track-outer, .board-svg.show-space-borders .space-track-spoke { stroke: #f8fafc; }`
+
+Los bordes negros de seleccion/jugador se renderizan en una capa superior separada (`space-highlight`) para evitar que casillas vecinas los tapen.
 
 ## API Principal
 
@@ -161,19 +191,19 @@ Todas las preguntas deben tener 4 opciones, incluso si se juega en modo juez.
 Comandos usados y esperados:
 
 ```powershell
-php tests\run.php
+C:\xampp\php\php.exe tests\run.php
 ```
 
 Resultado esperado actual:
 
 ```text
-13 passed, 0 failed
+20 passed, 0 failed
 ```
 
 Lint PHP:
 
 ```powershell
-Get-ChildItem -Recurse -Filter *.php | ForEach-Object { php -l $_.FullName }
+Get-ChildItem -Recurse -Filter *.php | ForEach-Object { & C:\xampp\php\php.exe -l $_.FullName }
 ```
 
 Sintaxis JS:
@@ -182,14 +212,29 @@ Sintaxis JS:
 node --check public\assets\app.js
 ```
 
+Verificacion visual reciente:
+
+- App levantada por el usuario en `http://127.0.0.1:4181/?room=XPLDN8`.
+- Se uso el navegador integrado para recargar la sala y medir elementos SVG.
+- La ultima casilla del radio mantiene curvatura, pero su tamano base coincide con el resto de casillas del radio.
+
 ## Puntos Delicados
 
 - No meter `config.php` al repo.
 - No meter `storage/dev.sqlite` al repo.
 - `php-server*.log` esta ignorado.
 - El tablero depende de que `GameEngine::boardDefinition()` y `public/assets/app.js` interpreten igual `track`, `spoke`, `index` y `visual.shape`.
+- La geometria de radios se calcula desde:
+  - `hubRadius`
+  - `hubSideLength`
+  - `spokeWidth`
+  - `outerRingInner`
+  - `spokeOuterVertexRadius`
+  - `spokeLength`
+- No volver a usar alturas fijas tipo `36` para las casillas de radio si se quiere mantener igualdad entre vertices.
+- La forma `curved_spoke_end` requiere que los vertices exteriores de la ultima casilla caigan en la curva interior del anillo, no que se anada una extension extra.
 - Si cambian IDs de casilla, actualizar tests y frontend juntos.
-- El navegador integrado de Codex tuvo problemas accediendo a `127.0.0.1`; las pruebas HTTP con PowerShell funcionaron.
+- El navegador integrado de Codex esta funcionando para la app local. Si hay problemas, reconectar el browser runtime y usar el tab in-app abierto por el usuario.
 
 ## Proximos Trabajos Probables
 
