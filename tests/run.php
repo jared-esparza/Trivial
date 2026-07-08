@@ -261,6 +261,44 @@ $runner->test('board visual metadata uses straight spokes and a hexagonal center
     }
 });
 
+$runner->test('final radial spaces keep the same vertex-to-vertex size as other spoke spaces', function (): void {
+    $spaces = GameEngine::boardSpaces();
+
+    foreach (GameEngine::categories() as $spoke => $category) {
+        $first = $spaces["r{$spoke}_1"]['visual'];
+        $expectedLength = $first['outer'] - $first['inner'];
+        $previousOuter = null;
+
+        for ($spaceNumber = 1; $spaceNumber <= 5; $spaceNumber++) {
+            $visual = $spaces["r{$spoke}_{$spaceNumber}"]['visual'];
+            $length = $visual['outer'] - $visual['inner'];
+
+            assertTrueValue(
+                abs($expectedLength - $length) < 0.001,
+                "r{$spoke}_{$spaceNumber} should match radial space length"
+            );
+
+            if ($previousOuter !== null) {
+                assertTrueValue(
+                    abs($previousOuter - $visual['inner']) < 0.001,
+                    "r{$spoke}_{$spaceNumber} should start where the previous radial space ends"
+                );
+            }
+
+            $previousOuter = $visual['outer'];
+        }
+
+        $final = $spaces["r{$spoke}_5"]['visual'];
+        $halfWidth = $final['width'] / 2;
+        $outerCornerRadius = sqrt(($final['outer'] ** 2) + ($halfWidth ** 2));
+
+        assertTrueValue(
+            abs($outerCornerRadius - $final['curveOuter']) < 0.001,
+            "r{$spoke}_5 outer vertices should sit on the curved edge instead of adding an extra extension"
+        );
+    }
+});
+
 $runner->test('board exposes selectable destinations after a dice roll from center', function (): void {
     $state = GameEngine::newGame([
         ['name' => 'Equipo Azul', 'color' => '#2563eb'],

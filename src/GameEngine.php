@@ -211,6 +211,8 @@ final class GameEngine
         $spokeWidth = $hubSideLength;
         $outerRingInner = 236.0;
         $outerRingOuter = 286.0;
+        $spokeOuterVertexRadius = sqrt(($outerRingInner ** 2) - (($spokeWidth / 2) ** 2));
+        $spokeLength = ($spokeOuterVertexRadius - $hubRadius) / 5;
         $wedgeAngleWidth = 2 * rad2deg(asin(($spokeWidth / 2) / $outerRingInner));
         $outerAngleWidth = (60.0 - $wedgeAngleWidth) / 6;
         $outerAngleOffsets = [];
@@ -247,8 +249,8 @@ final class GameEngine
                 $spaceNumber = $index + 1;
                 $visual = [
                     'shape' => $spaceNumber === 5 ? 'curved_spoke_end' : 'straight_spoke',
-                    'inner' => $hubRadius + ($spaceNumber - 1) * 36,
-                    'outer' => 78 + ($spaceNumber - 1) * 36,
+                    'inner' => $hubRadius + ($spaceNumber - 1) * $spokeLength,
+                    'outer' => $hubRadius + $spaceNumber * $spokeLength,
                     'width' => $spokeWidth,
                     'angleOffset' => $spoke * 60.0,
                 ];
