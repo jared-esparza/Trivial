@@ -206,6 +206,18 @@ final class GameEngine
             $categoryBySlug[$category['slug']] = $category;
         }
         $categorySlugs = array_column($categories, 'slug');
+        $hubRadius = 42.0;
+        $spokeWidth = 42.0;
+        $wedgeAngleWidth = 18.0;
+        $outerAngleWidth = 5.6;
+        $outerAngleOffsets = [
+            1 => 13.0,
+            2 => 20.0,
+            3 => 27.0,
+            4 => 33.0,
+            5 => 40.0,
+            6 => 47.0,
+        ];
         $spaces = [[
             'id' => 'center',
             'type' => 'center',
@@ -214,7 +226,10 @@ final class GameEngine
             'track' => 'hub',
             'spoke' => null,
             'index' => 0,
-            'visual' => ['shape' => 'hub'],
+            'visual' => [
+                'shape' => 'hex_hub',
+                'radius' => $hubRadius,
+            ],
         ]];
 
         $outerIndex = 0;
@@ -239,10 +254,11 @@ final class GameEngine
                     'spoke' => $spoke,
                     'index' => $spaceNumber,
                     'visual' => [
-                        'shape' => 'spoke_segment',
-                        'inner' => 42 + ($spaceNumber - 1) * 36,
+                        'shape' => 'straight_spoke',
+                        'inner' => $hubRadius + ($spaceNumber - 1) * 36,
                         'outer' => 78 + ($spaceNumber - 1) * 36,
-                        'angleWidth' => 9.0,
+                        'width' => $spokeWidth,
+                        'angleOffset' => $spoke * 60.0,
                     ],
                 ];
             }
@@ -259,7 +275,9 @@ final class GameEngine
                     'shape' => 'wedge_headquarters',
                     'inner' => 222,
                     'outer' => 294,
-                    'angleWidth' => 9.2,
+                    'angleWidth' => $wedgeAngleWidth,
+                    'arcWidth' => 2 * 222 * sin(deg2rad($wedgeAngleWidth / 2)),
+                    'angleOffset' => $spoke * 60.0,
                 ],
             ];
 
@@ -278,7 +296,8 @@ final class GameEngine
                             'shape' => 'outer_segment',
                             'inner' => 236,
                             'outer' => 286,
-                            'angleWidth' => 6.8,
+                            'angleWidth' => $outerAngleWidth,
+                            'angleOffset' => $spoke * 60.0 + $outerAngleOffsets[$outer],
                         ],
                     ];
                     $rerollNumber++;
@@ -298,7 +317,8 @@ final class GameEngine
                         'shape' => 'outer_segment',
                         'inner' => 236,
                         'outer' => 286,
-                        'angleWidth' => 6.8,
+                        'angleWidth' => $outerAngleWidth,
+                        'angleOffset' => $spoke * 60.0 + $outerAngleOffsets[$outer],
                     ],
                 ];
             }

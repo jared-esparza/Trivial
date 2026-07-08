@@ -152,40 +152,56 @@ $runner->test('board spaces expose visual metadata for svg rendering', function 
         assertTrueValue(isset($space['visual']['shape']), $space['id'] . ' missing shape metadata');
     }
 
-    assertSameValue('hub', $spaces['center']['visual']['shape']);
+    assertSameValue('hex_hub', $spaces['center']['visual']['shape']);
     assertSameValue('outer_segment', $spaces['roll_again_0_1']['visual']['shape']);
-    assertSameValue('spoke_segment', $spaces['r0_1']['visual']['shape']);
+    assertSameValue('straight_spoke', $spaces['r0_1']['visual']['shape']);
     assertSameValue('wedge_headquarters', $spaces['wedge_geography']['visual']['shape']);
 });
 
-$runner->test('board visual metadata keeps wedges clear of neighbours and aligned with spokes', function (): void {
+$runner->test('board visual metadata uses straight spokes and a hexagonal center', function (): void {
     $spaces = GameEngine::boardSpaces();
-    $outerSpaces = array_filter($spaces, fn (array $space): bool => ($space['track'] ?? null) === 'outer');
-    $slotAngle = 360 / count($outerSpaces);
+    $hub = $spaces['center']['visual'];
+
+    assertTrueValue(isset($hub['radius']), 'center missing hex radius');
 
     foreach (GameEngine::categories() as $spoke => $category) {
         $wedge = $spaces["wedge_{$category['slug']}"];
+        $firstSpoke = $spaces["r{$spoke}_1"];
         $finalSpoke = $spaces["r{$spoke}_5"];
 
         assertTrueValue(isset($wedge['visual']['angleWidth']), $wedge['id'] . ' missing angle width');
+        assertTrueValue(isset($wedge['visual']['angleOffset']), $wedge['id'] . ' missing angle offset');
         assertTrueValue(isset($wedge['visual']['inner']), $wedge['id'] . ' missing inner radius');
         assertTrueValue(isset($wedge['visual']['outer']), $wedge['id'] . ' missing outer radius');
-        assertTrueValue(isset($finalSpoke['visual']['angleWidth']), $finalSpoke['id'] . ' missing angle width');
+        assertTrueValue(isset($firstSpoke['visual']['width']), $firstSpoke['id'] . ' missing straight width');
+        assertTrueValue(isset($finalSpoke['visual']['width']), $finalSpoke['id'] . ' missing straight width');
 
-        $outerNeighbourWidth = $spaces["o{$spoke}_1"]['visual']['angleWidth'];
+        assertSameValue('straight_spoke', $firstSpoke['visual']['shape'], $firstSpoke['id'] . ' should render as a straight spoke');
+        assertSameValue($hub['radius'], $firstSpoke['visual']['inner'], $firstSpoke['id'] . ' should touch the hexagonal center');
+        assertSameValue($firstSpoke['visual']['width'], $finalSpoke['visual']['width'], $finalSpoke['id'] . ' should keep radial width');
         assertTrueValue(
-            (($wedge['visual']['angleWidth'] + $outerNeighbourWidth) / 2) < $slotAngle,
-            $wedge['id'] . ' should leave angular space beside neighbouring outer spaces'
+            $finalSpoke['visual']['width'] <= $wedge['visual']['arcWidth'],
+            $finalSpoke['id'] . ' should not be wider than its wedge connection'
         );
         assertTrueValue(
-            $finalSpoke['visual']['angleWidth'] <= $wedge['visual']['angleWidth'],
-            $finalSpoke['id'] . ' should not be wider than its wedge connection'
+            $wedge['visual']['angleWidth'] > $spaces["o{$spoke}_1"]['visual']['angleWidth'],
+            $wedge['id'] . ' should be wider than normal outer spaces'
         );
         assertSameValue(
             $finalSpoke['visual']['outer'],
             $wedge['visual']['inner'],
             $finalSpoke['id'] . ' should touch the inner edge of its wedge'
         );
+
+        for ($outer = 1; $outer <= 6; $outer++) {
+            $space = $spaces["o{$spoke}_{$outer}"] ?? $spaces["roll_again_{$spoke}_" . ($outer === 2 ? 1 : 2)];
+            assertTrueValue(isset($space['visual']['angleOffset']), $space['id'] . ' missing angle offset');
+            $distanceFromWedge = abs($space['visual']['angleOffset'] - $wedge['visual']['angleOffset']);
+            assertTrueValue(
+                $distanceFromWedge > (($wedge['visual']['angleWidth'] + $space['visual']['angleWidth']) / 2),
+                $space['id'] . ' should sit outside wedge angular bounds'
+            );
+        }
     }
 });
 

@@ -385,8 +385,8 @@ function renderBoard() {
             <rect x="0" y="0" width="600" height="600" rx="18" fill="#0b2852"></rect>
             <circle cx="300" cy="300" r="292" fill="#12396f" stroke="#d7c47a" stroke-width="4"></circle>
             <circle cx="300" cy="300" r="222" fill="#0b2852" stroke="#d7c47a" stroke-width="2"></circle>
-            ${renderHubWedges(currentRoom.categories)}
             ${spaceMarkup}
+            ${renderCenterHex(spaces.center?.visual)}
             ${tokenMarkup}
         </svg>
     `;
@@ -404,14 +404,12 @@ function renderBoard() {
 
 function renderSpaceShape(space, classes, color) {
     if (space.id === 'center') {
-        return `<circle class="${classes}" data-space="${escapeAttr(space.id)}" cx="300" cy="300" r="42" fill="transparent"></circle>`;
+        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${hexagonPath(300, 300, space.visual?.radius ?? 42)}" fill="transparent"></path>`;
     }
     if (space.track === 'outer') {
         const totalOuter = Object.values(currentRoom.spaces).filter((item) => item.track === 'outer').length;
         const slotAngle = 360 / totalOuter;
-        const centerAngle = space.type === 'wedge'
-            ? -90 + space.spoke * 60
-            : -90 + space.index * slotAngle;
+        const centerAngle = -90 + (space.visual?.angleOffset ?? (space.type === 'wedge' ? space.spoke * 60 : space.index * slotAngle));
         const width = space.visual?.angleWidth ?? (slotAngle - 1);
         const start = centerAngle - width / 2;
         const end = centerAngle + width / 2;
@@ -420,22 +418,19 @@ function renderSpaceShape(space, classes, color) {
         return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${ringSegmentPath(300, 300, inner, outer, start, end)}" fill="${color}"></path>`;
     }
     if (space.track === 'spoke') {
-        const angle = -90 + space.spoke * 60;
+        const angle = -90 + (space.visual?.angleOffset ?? space.spoke * 60);
         const inner = space.visual?.inner ?? 78;
         const outer = space.visual?.outer ?? 114;
-        const width = space.visual?.angleWidth ?? 9;
-        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${ringSegmentPath(300, 300, inner, outer, angle - width / 2, angle + width / 2)}" fill="${color}"></path>`;
+        const width = space.visual?.width ?? 42;
+        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${straightSpokePath(300, 300, inner, outer, width, angle)}" fill="${color}"></path>`;
     }
 
     const point = pointForSpace(space.id);
     return `<circle class="${classes}" data-space="${escapeAttr(space.id)}" cx="${point.x}" cy="${point.y}" r="18" fill="${color}"></circle>`;
 }
 
-function renderHubWedges(categories) {
-    return categories.map((category, index) => {
-        const angle = -90 + index * 60;
-        return `<path d="${pieSlicePath(300, 300, 6, 42, angle - 15, angle + 15)}" fill="${escapeAttr(category.color)}" stroke="#f8fafc" stroke-width="2"></path>`;
-    }).join('');
+function renderCenterHex(visual = {}) {
+    return `<path d="${hexagonPath(300, 300, visual?.radius ?? 42)}" fill="#0b2852" stroke="#f8fafc" stroke-width="2.5" pointer-events="none"></path>`;
 }
 
 function pointForSpace(id) {
@@ -443,13 +438,11 @@ function pointForSpace(id) {
     if (!space || id === 'center') return { x: 300, y: 300 };
     if (space.track === 'spoke') {
         const radius = ((space.visual?.inner ?? 78) + (space.visual?.outer ?? 114)) / 2;
-        return polarPoint(space.spoke, radius);
+        return polarPointByDegrees(-90 + (space.visual?.angleOffset ?? space.spoke * 60), radius);
     }
     if (space.track === 'outer') {
         const totalOuter = Object.values(currentRoom.spaces).filter((item) => item.track === 'outer').length;
-        const angle = space.type === 'wedge'
-            ? -90 + space.spoke * 60
-            : -90 + space.index * (360 / totalOuter);
+        const angle = -90 + (space.visual?.angleOffset ?? (space.type === 'wedge' ? space.spoke * 60 : space.index * (360 / totalOuter)));
         return polarPointByDegrees(angle, space.type === 'wedge' ? 258 : 261);
     }
     return polarPoint(space.spoke ?? 0, 120);
@@ -481,6 +474,38 @@ function ringSegmentPath(cx, cy, innerRadius, outerRadius, startDegrees, endDegr
         `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
         'Z'
     ].join(' ');
+}
+
+function straightSpokePath(cx, cy, innerRadius, outerRadius, width, degrees) {
+    const angle = degrees * Math.PI / 180;
+    const ux = Math.cos(angle);
+    const uy = Math.sin(angle);
+    const px = -uy;
+    const py = ux;
+    const half = width / 2;
+    const inner = { x: cx + ux * innerRadius, y: cy + uy * innerRadius };
+    const outer = { x: cx + ux * outerRadius, y: cy + uy * outerRadius };
+    const points = [
+        { x: inner.x + px * half, y: inner.y + py * half },
+        { x: outer.x + px * half, y: outer.y + py * half },
+        { x: outer.x - px * half, y: outer.y - py * half },
+        { x: inner.x - px * half, y: inner.y - py * half }
+    ];
+
+    return polygonPath(points);
+}
+
+function hexagonPath(cx, cy, apothem) {
+    const radius = apothem / Math.cos(Math.PI / 6);
+    const points = Array.from({ length: 6 }, (_, index) => pointOnCircle(cx, cy, radius, -120 + index * 60));
+
+    return polygonPath(points);
+}
+
+function polygonPath(points) {
+    return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${Number(point.x.toFixed(2))} ${Number(point.y.toFixed(2))}`)
+        .concat('Z')
+        .join(' ');
 }
 
 function pieSlicePath(cx, cy, innerRadius, outerRadius, startDegrees, endDegrees) {
