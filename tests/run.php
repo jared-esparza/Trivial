@@ -274,6 +274,33 @@ $runner->test('board preferences can pulse selectable destinations', function ()
     assertTrueValue(str_contains($styles, '@keyframes destination-pulse'), 'destination pulse animation should be defined');
 });
 
+$runner->test('board preferences can animate token movement', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'board:animateTokens'), 'token animation preference should persist locally');
+    assertTrueValue(str_contains($appJs, 'animateTokensToggle'), 'preferences should render a token animation toggle');
+    assertTrueValue(str_contains($appJs, 'animateTokensPreferenceEnabled'), 'token animation should be enabled by default through a helper');
+    assertTrueValue(str_contains($appJs, 'moveWithTokenAnimation'), 'valid destination clicks should use an animated move wrapper');
+    assertTrueValue(str_contains($appJs, 'renderAnimatedToken'), 'board should render a temporary animated token');
+    assertTrueValue(str_contains($appJs, 'pendingTokenAnimation'), 'board should keep local token animation state');
+    assertTrueValue(str_contains($styles, '.animated-token'), 'animated token should have dedicated styles');
+    assertTrueValue(str_contains($styles, '@keyframes token-move'), 'token movement animation should be defined');
+});
+
+$runner->test('roll phase uses a floating dice card on the board', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'renderDiceRollOverlay'), 'roll phase should render a board dice overlay');
+    assertTrueValue(str_contains($appJs, 'submitRollFromOverlay'), 'dice card should submit rolls through its own handler');
+    assertTrueValue(str_contains($appJs, 'diceRollOverlayButton'), 'dice card should expose the main roll button');
+    assertTrueValue(str_contains($appJs, 'renderRollSummary'), 'sidebar should render a compact roll summary');
+    assertTrueValue(!str_contains($appJs, 'box.innerHTML = `<button id="rollButton"'), 'sidebar should not render the main roll button');
+    assertTrueValue(str_contains($styles, '.dice-roll-card'), 'dice roll card should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.dice-roll-card .dice-face'), 'dice face should be larger in the roll card');
+});
+
 $runner->test('status renders visual animated dice results', function (): void {
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');

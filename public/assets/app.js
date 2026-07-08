@@ -2,6 +2,7 @@ const apiBase = 'api.php';
 const playerColors = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#0891b2'];
 const whiteBordersPreferenceKey = 'board:whiteBorders';
 const pulseDestinationsPreferenceKey = 'board:pulseDestinations';
+const animateTokensPreferenceKey = 'board:animateTokens';
 
 let currentRoom = null;
 let playerId = null;
@@ -9,6 +10,8 @@ let pollingTimer = null;
 let revealedJudgeQuestionKey = null;
 let lastAnimatedDiceKey = null;
 let pendingAnswerFeedback = null;
+let pendingTokenAnimation = null;
+let isRollSubmitting = false;
 
 const categoryLabels = {
     geography: 'Geografia',
@@ -314,6 +317,7 @@ function renderPreferences() {
     if (!box || !currentRoom) return;
     const whiteBordersEnabled = localStorage.getItem(whiteBordersPreferenceKey) === '1';
     const pulseDestinationsEnabled = localStorage.getItem(pulseDestinationsPreferenceKey) === '1';
+    const animateTokensEnabled = animateTokensPreferenceEnabled();
 
     box.innerHTML = `
         <p class="eyebrow">Preferencias</p>
@@ -325,6 +329,10 @@ function renderPreferences() {
             <span>Animar destinos disponibles</span>
             <input id="pulseDestinationsToggle" type="checkbox" ${pulseDestinationsEnabled ? 'checked' : ''}>
         </label>
+        <label class="toggle-row">
+            <span>Animar movimiento de fichas</span>
+            <input id="animateTokensToggle" type="checkbox" ${animateTokensEnabled ? 'checked' : ''}>
+        </label>
     `;
 
     document.querySelector('#whiteBordersToggle')?.addEventListener('change', (event) => {
@@ -335,6 +343,13 @@ function renderPreferences() {
         localStorage.setItem(pulseDestinationsPreferenceKey, event.target.checked ? '1' : '0');
         renderBoard();
     });
+    document.querySelector('#animateTokensToggle')?.addEventListener('change', (event) => {
+        localStorage.setItem(animateTokensPreferenceKey, event.target.checked ? '1' : '0');
+    });
+}
+
+function animateTokensPreferenceEnabled() {
+    return localStorage.getItem(animateTokensPreferenceKey) !== '0';
 }
 
 function renderPlayers() {
@@ -375,8 +390,7 @@ function renderControls() {
     }
 
     if (state.phase === 'roll') {
-        box.innerHTML = `<button id="rollButton" type="button" ${canAct ? '' : 'disabled'}>Tirar dado</button>`;
-        document.querySelector('#rollButton')?.addEventListener('click', () => sendAction({ action: 'roll', playerId: state.currentPlayer }));
+        box.innerHTML = renderRollSummary(state);
         return;
     }
 
@@ -393,6 +407,18 @@ function renderControls() {
     if (state.phase === 'finished') {
         box.innerHTML = `<p class="muted">Partida terminada.</p>`;
     }
+}
+
+function renderRollSummary(state) {
+    const player = state.players[state.currentPlayer];
+
+    return `
+        <div class="question-summary">
+            <p class="eyebrow">Turno de tirada</p>
+            <strong>${escapeHtml(player?.name ?? 'Equipo')}</strong>
+            <p class="muted">Tira el dado en la tarjeta sobre el tablero.</p>
+        </div>
+    `;
 }
 
 function renderQuestionSummary(state) {
@@ -420,6 +446,25 @@ async function sendAction(payload) {
     const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, payload);
     currentRoom = response.room;
     renderRoom();
+}
+
+async function submitRollFromOverlay() {
+    if (!currentRoom || isRollSubmitting) return;
+    isRollSubmitting = true;
+    renderRoom();
+
+    try {
+        const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, {
+            action: 'roll',
+            playerId: currentRoom.state.currentPlayer
+        });
+        currentRoom = response.room;
+    } catch (error) {
+        toast(error.message);
+    } finally {
+        isRollSubmitting = false;
+        renderRoom();
+    }
 }
 
 async function submitAnswerWithFeedback(payload) {
@@ -463,10 +508,10 @@ function renderBoard() {
     const valid = new Set(state.validDestinations ?? []);
     const canAct = currentRoom.mode === 'local' || playerId === state.currentPlayer || state.phase === 'lobby';
     const playerPositions = new Map();
-    for (const player of state.players) {
+    for (const [index, player] of state.players.entries()) {
         if (!player.position) continue;
         if (!playerPositions.has(player.position)) playerPositions.set(player.position, []);
-        playerPositions.get(player.position).push(player);
+        playerPositions.get(player.position).push({ ...player, playerIndex: index });
     }
 
     const orderedSpaces = Object.values(spaces).sort((a, b) => {
@@ -505,11 +550,16 @@ function renderBoard() {
 
     const tokenMarkup = [...playerPositions.entries()].flatMap(([spaceId, players]) => {
         const point = pointForSpace(spaceId);
-        return players.map((player, index) => {
-            const offset = tokenOffset(index, players.length);
+        const visiblePlayers = players.filter((player) => !pendingTokenAnimation
+            || player.playerIndex !== pendingTokenAnimation.playerId
+            || spaceId !== pendingTokenAnimation.from);
+
+        return visiblePlayers.map((player, index) => {
+            const offset = tokenOffset(index, visiblePlayers.length);
             return `<circle cx="${point.x + offset.x}" cy="${point.y + offset.y}" r="8" fill="${escapeAttr(player.color)}" stroke="#111827" stroke-width="2"></circle>`;
         });
     }).join('');
+    const animatedTokenMarkup = pendingTokenAnimation ? renderAnimatedToken(pendingTokenAnimation) : '';
 
     const boardClasses = [
         'board-svg',
@@ -528,14 +578,16 @@ function renderBoard() {
                 ${renderCenterHex(spaces.center?.visual)}
                 ${highlightMarkup}
                 ${tokenMarkup}
+                ${animatedTokenMarkup}
             </svg>
             <div id="spaceTooltip" class="space-tooltip hidden" role="tooltip"></div>
-            ${pendingAnswerFeedback ? renderAnswerFeedbackOverlay(pendingAnswerFeedback) : renderQuestionOverlay(state, canAct)}
+            ${pendingAnswerFeedback ? renderAnswerFeedbackOverlay(pendingAnswerFeedback) : renderDiceRollOverlay(state, canAct) || renderQuestionOverlay(state, canAct)}
         </div>
     `;
 
     bindQuestionOverlayControls(state, canAct);
     bindAnswerFeedbackControls();
+    bindDiceRollOverlayControls(state, canAct);
 
     mount.querySelectorAll('.space').forEach((spaceEl) => {
         spaceEl.addEventListener('mouseenter', (event) => showSpaceTooltip(spaceEl.dataset.spaceLabel, event));
@@ -551,9 +603,85 @@ function renderBoard() {
                 toast('No es tu turno.');
                 return;
             }
-            sendAction({ action: 'move', playerId: currentRoom.state.currentPlayer, destination: spaceEl.dataset.space });
+            moveWithTokenAnimation(spaceEl.dataset.space);
         });
     });
+}
+
+function renderAnimatedToken(animation) {
+    const dx = animation.toPoint.x - animation.fromPoint.x;
+    const dy = animation.toPoint.y - animation.fromPoint.y;
+
+    return `
+        <g class="animated-token"
+           style="--token-move-x:${dx}px;--token-move-y:${dy}px"
+           aria-hidden="true">
+            <circle cx="${animation.fromPoint.x}" cy="${animation.fromPoint.y}" r="9"
+                    fill="${escapeAttr(animation.playerColor)}"
+                    stroke="#111827"
+                    stroke-width="2.4"></circle>
+        </g>
+    `;
+}
+
+async function moveWithTokenAnimation(destination) {
+    if (!currentRoom || pendingTokenAnimation) return;
+    const state = currentRoom.state;
+    const player = state.players[state.currentPlayer];
+    const from = player?.position;
+    const payload = { action: 'move', playerId: state.currentPlayer, destination };
+
+    if (!animateTokensPreferenceEnabled() || !from || from === destination) {
+        sendAction(payload);
+        return;
+    }
+
+    pendingTokenAnimation = {
+        playerId: state.currentPlayer,
+        playerColor: player.color,
+        from,
+        to: destination,
+        fromPoint: pointForSpace(from),
+        toPoint: pointForSpace(destination)
+    };
+    renderBoard();
+
+    await new Promise((resolve) => setTimeout(resolve, 560));
+
+    try {
+        const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, payload);
+        currentRoom = response.room;
+    } catch (error) {
+        toast(error.message);
+    } finally {
+        pendingTokenAnimation = null;
+        renderRoom();
+    }
+}
+
+function renderDiceRollOverlay(state, canAct) {
+    if (state.phase !== 'roll' || pendingTokenAnimation) return '';
+    const player = state.players[state.currentPlayer];
+
+    return `
+        <div class="question-overlay dice-roll-overlay" role="dialog" aria-modal="true" aria-labelledby="diceRollTitle">
+            <article class="floating-question-card dice-roll-card">
+                <p class="eyebrow">Turno de ${escapeHtml(player?.name ?? 'equipo')}</p>
+                <h2 id="diceRollTitle">Tira el dado</h2>
+                <span class="dice-face ${isRollSubmitting ? 'rolling' : ''}" aria-hidden="true">
+                    ${renderDiceFace(Math.max(1, Math.min(6, Number(state.dice) || 6)))}
+                </span>
+                <button id="diceRollOverlayButton" class="dice-roll-button" type="button" ${canAct && !isRollSubmitting ? '' : 'disabled'}>
+                    ${isRollSubmitting ? 'Tirando...' : 'Tirar dado'}
+                </button>
+            </article>
+        </div>
+    `;
+}
+
+function bindDiceRollOverlayControls(state, canAct) {
+    if (state.phase !== 'roll' || !canAct) return;
+    document.querySelector('#diceRollOverlayButton')?.addEventListener('click', submitRollFromOverlay);
 }
 
 function renderAnswerFeedbackOverlay(feedback) {
