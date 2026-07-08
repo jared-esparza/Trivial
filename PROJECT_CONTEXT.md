@@ -11,16 +11,17 @@ El nombre `trivial` es provisional. El usuario lo cambiara cuando tenga el nombr
 ## Estado Git
 
 - Rama principal: `main`
-- Ultimo commit conocido al actualizar este archivo: `30c48c0 Mejora tablero fullscreen e indicadores visuales`
+- Ultimo commit conocido al actualizar este archivo: `763e258 Añadida animacion de movimiento de ficha y tarjeta flotante para lanzar dado`
 - Estado antes de actualizar este archivo: limpio contra `origin/main`.
-- El commit `30c48c0` ya fue pusheado a `origin/main`.
+- Los commits de UI recientes ya estan en `origin/main`.
 - Este archivo quedara como cambio pendiente hasta que se haga commit.
 - Commits recientes relevantes:
+  - `763e258 Añadida animacion de movimiento de ficha y tarjeta flotante para lanzar dado`
+  - `4e4a81c Mejora tarjetas preguntas con indicador de acierto o error, mejora de igonos quesitos, añadido efecto latido a la selección de casillas como preferencia de sala`
+  - `3b78bdf Mostrar preguntas en tarjetas flotantes, modificar aspecto de quesitos`
+  - `73c0d28 Update project_context.md`
   - `30c48c0 Mejora tablero fullscreen e indicadores visuales`
   - `b959b54 Update PROJECT_CONTEXT for board geometry changes`
-  - `477ebda Fix medidas de casillas de radios`
-  - `c994a1f Añadir preferencias -> bordes blancos en tablero`
-  - `5179c1d Mejora visual tablero y fix overlab bordes al seleccionar casillas`
 
 ## Stack y Despliegue
 
@@ -129,16 +130,17 @@ Al crear partida local se elige:
 
 En modo `judge`:
 
-- Se muestra la pregunta sin respuesta.
+- La tarjeta flotante muestra la pregunta sin respuesta.
 - El juez pulsa `Mostrar respuesta`.
 - Entonces aparecen respuesta correcta y botones `Acierto` / `Fallo`.
-- Esto evita que el jugador vea la respuesta antes de contestar.
+- Tras marcar acierto o fallo aparece una tarjeta de resultado con boton `Continuar`.
+- Esto evita que el jugador vea la respuesta antes de contestar y confirma claramente el resultado.
 
 ## Preferencias UI
 
 En la vista de partida existe una caja `Preferencias` bajo `Estado`.
 
-Preferencia actual:
+Preferencias actuales:
 
 - `Bordes blancos del tablero`.
 - Se guarda en `localStorage` con clave `board:whiteBorders`.
@@ -146,6 +148,14 @@ Preferencia actual:
 - CSS relevante:
   - Por defecto: `.space-track-outer, .space-track-spoke { stroke: none; }`
   - Activado: `.board-svg.show-space-borders .space-track-outer, .board-svg.show-space-borders .space-track-spoke { stroke: #f8fafc; }`
+- `Animar destinos disponibles`.
+- Se guarda en `localStorage` con clave `board:pulseDestinations`.
+- Esta desactivada por defecto.
+- Si esta activada, el SVG recibe la clase `pulse-valid-destinations` y las casillas validas usan la animacion `destination-pulse`.
+- `Animar movimiento de fichas`.
+- Se guarda en `localStorage` con clave `board:animateTokens`.
+- Esta activada por defecto.
+- Si esta activada, al escoger destino se dibuja una ficha temporal animada y la ficha real del jugador activo se oculta hasta completar el movimiento.
 
 Los bordes negros de seleccion/jugador se renderizan en una capa superior separada (`space-highlight`) para evitar que casillas vecinas los tapen.
 
@@ -160,7 +170,9 @@ Mejoras actuales del tablero en `public/assets/app.js` y `public/assets/styles.c
   - Integra tablero, estado, preferencias, equipos y controles/pregunta.
 - Casillas `wedge_*`:
   - Ya no muestran letra `Q`.
-  - Renderizan un icono inline SVG minimalista de quesito con `renderWedgeIcon()`.
+  - Renderizan un icono inline SVG minimalista de quesito con `renderWedgeIcon(point, space)`.
+  - La punta mira hacia el centro del tablero.
+  - El icono no tiene puntos internos; usa lados largos rectos y lado corto curvado.
 - Casillas `roll_again`:
   - Ya no muestran letra `R`.
   - Renderizan un icono inline SVG de dado con flecha usando `renderRerollIcon()`.
@@ -172,6 +184,24 @@ Mejoras actuales del tablero en `public/assets/app.js` y `public/assets/styles.c
   - `renderDiceResult()` sustituye el texto del resultado en Estado.
   - `renderDiceFace()` pinta puntos fisicos del dado.
   - `lastAnimatedDiceKey` evita reanimar el mismo resultado en cada render.
+- Fase de tirada:
+  - `renderDiceRollOverlay()` muestra una tarjeta flotante sobre el tablero en fase `roll`.
+  - El boton principal `Tirar dado` ya no vive en la columna lateral; la columna muestra solo `renderRollSummary()`.
+  - `submitRollFromOverlay()` bloquea dobles clicks mientras se envia la accion.
+- Preguntas:
+  - `renderQuestionOverlay()` muestra la pregunta en una tarjeta flotante sobre el tablero.
+  - En modo `judge`, primero solo aparece `Mostrar respuesta`; tras revelar, aparecen `Acierto` y `Fallo`.
+  - En modo `auto`/online, las 4 opciones aparecen en la tarjeta.
+  - El panel lateral solo muestra un resumen compacto de la pregunta en curso.
+- Resultado de respuesta:
+  - `renderAnswerFeedbackOverlay()` muestra `Correcto` o `Fallado` en una tarjeta flotante tras responder.
+  - La tarjeta indica si el equipo vuelve a tirar o si cambia el turno.
+  - El usuario la cierra con `Continuar`.
+  - El feedback es local al navegador que responde; otros clientes ven el estado sincronizado normal.
+- Movimiento de fichas:
+  - `moveWithTokenAnimation()` intercepta el click de destino cuando `board:animateTokens` esta activo.
+  - `renderAnimatedToken()` dibuja la ficha temporal en una capa superior.
+  - La pregunta aparece solo despues de completar la animacion y recibir el nuevo estado.
 
 ## API Principal
 
@@ -222,7 +252,7 @@ C:\xampp\php\php.exe tests\run.php
 Resultado esperado actual:
 
 ```text
-23 passed, 0 failed
+30 passed, 0 failed
 ```
 
 Lint PHP:
@@ -239,15 +269,21 @@ node --check public\assets\app.js
 
 Verificacion visual reciente:
 
-- App levantada por el usuario en `http://127.0.0.1:4181/?room=XPLDN8`.
+- App levantada por el usuario en `http://127.0.0.1:4181/?room=ABWCHL`.
 - Se uso el navegador integrado para recargar la sala y medir elementos SVG.
-- La sala `XPLDN8` quedo restaurada en el navegador integrado despues de las pruebas.
+- La sala `ABWCHL` quedo restaurada en el navegador integrado despues de las pruebas.
 - Verificado:
   - 6 iconos de quesito.
   - 12 iconos de reroll.
   - Tooltips de casilla.
   - Fallback fullscreen.
   - Dado visual animado en una sala temporal.
+  - Tarjeta flotante de pregunta en modo juez y modo opciones.
+  - Tarjeta de resultado tras responder con boton `Continuar`.
+  - Preferencia `Animar destinos disponibles`.
+  - Preferencia `Animar movimiento de fichas`.
+  - Tarjeta flotante para tirar dado.
+  - Animacion de ficha antes de mostrar la pregunta.
 
 ## Puntos Delicados
 
@@ -266,7 +302,11 @@ Verificacion visual reciente:
 - La forma `curved_spoke_end` requiere que los vertices exteriores de la ultima casilla caigan en la curva interior del anillo, no que se anada una extension extra.
 - El fullscreen nativo puede fallar en el navegador integrado; `fullscreen-fallback` es parte esperada del comportamiento.
 - Los iconos de quesito/reroll son SVG inline, no assets externos.
-- El resultado del dado se muestra visualmente en Estado; evitar reintroducir texto duplicado `Dado: N` en controles.
+- El resultado del dado se muestra visualmente en Estado y la tirada principal se hace desde la tarjeta flotante; evitar reintroducir texto duplicado `Dado: N` o botones principales en controles laterales.
+- `pendingAnswerFeedback` es local y bloquea temporalmente otros overlays hasta pulsar `Continuar`.
+- `pendingTokenAnimation` es local; si hay error de API tras la animacion, se limpia y se re-renderiza el estado real.
+- La animacion de movimiento no debe disparar preguntas antes de recibir el estado posterior al `move`.
+- `localStorage` en browser automation puede comportarse distinto segun el contexto; para verificar toggles en el navegador integrado fue mas fiable usar los controles visibles.
 - Si cambian IDs de casilla, actualizar tests y frontend juntos.
 - El navegador integrado de Codex esta funcionando para la app local. Si hay problemas, reconectar el browser runtime y usar el tab in-app abierto por el usuario.
 
