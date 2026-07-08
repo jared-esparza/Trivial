@@ -169,6 +169,24 @@ button.bad {
     background: var(--bad);
 }
 
+button.icon-button {
+    width: 42px;
+    height: 42px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+}
+
+button.icon-button svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+}
+
+button.icon-button.active {
+    background: var(--accent-dark);
+}
+
 button:disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -202,6 +220,12 @@ button:disabled {
     border-bottom: 1px solid var(--line);
 }
 
+.room-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .room-strip strong {
     font-size: 24px;
     letter-spacing: 0.08em;
@@ -211,11 +235,16 @@ button:disabled {
     padding: 14px;
 }
 
+.board-frame {
+    position: relative;
+    width: min(100%, 720px);
+    margin: 0 auto;
+}
+
 .board-svg {
     display: block;
-    width: min(100%, 720px);
+    width: 100%;
     aspect-ratio: 1;
-    margin: 0 auto;
 }
 
 .space {
@@ -223,6 +252,11 @@ button:disabled {
     stroke-width: 2.5;
     cursor: default;
     transition: filter 140ms ease, stroke-width 140ms ease, opacity 140ms ease;
+}
+
+.space:focus {
+    outline: none;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
 }
 
 .space-track-outer,
@@ -255,6 +289,56 @@ button:disabled {
     fill: #cbd5e1;
 }
 
+.space-icon {
+    pointer-events: none;
+    vector-effect: non-scaling-stroke;
+}
+
+.wedge-icon path {
+    fill: #fff7cc;
+    stroke: #111827;
+    stroke-width: 2;
+}
+
+.wedge-icon circle {
+    fill: #111827;
+    stroke: none;
+}
+
+.reroll-icon rect {
+    fill: #f8fafc;
+    stroke: #111827;
+    stroke-width: 1.7;
+}
+
+.reroll-icon circle {
+    fill: #111827;
+    stroke: none;
+}
+
+.reroll-arrow,
+.reroll-arrow-head {
+    fill: none;
+    stroke: #111827;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.space-tooltip {
+    position: absolute;
+    z-index: 4;
+    max-width: 220px;
+    padding: 7px 9px;
+    border-radius: 6px;
+    background: rgba(17, 24, 39, 0.94);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    pointer-events: none;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22);
+}
+
 .space-label {
     pointer-events: none;
     font-size: 15px;
@@ -267,6 +351,65 @@ button:disabled {
 
 .wedge-label {
     font-size: 13px;
+}
+
+.dice-result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.dice-result-label {
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.dice-face {
+    width: 54px;
+    height: 54px;
+    display: inline-grid;
+    place-items: center;
+    transform-origin: center;
+}
+
+.dice-face.rolling {
+    animation: dice-roll 680ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.dice-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.dice-svg rect {
+    fill: #fff;
+    stroke: #111827;
+    stroke-width: 5;
+}
+
+.dice-svg circle {
+    fill: #111827;
+}
+
+@keyframes dice-roll {
+    0% {
+        transform: rotate(-28deg) scale(0.8);
+        opacity: 0.45;
+    }
+    45% {
+        transform: rotate(22deg) scale(1.1);
+        opacity: 1;
+    }
+    72% {
+        transform: rotate(-8deg) scale(0.96);
+    }
+    100% {
+        transform: rotate(0) scale(1);
+    }
 }
 
 .revealed-answer {
@@ -412,6 +555,57 @@ button:disabled {
     z-index: 50;
 }
 
+.game-view:fullscreen,
+.game-view.fullscreen-fallback {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    margin: 0;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+    gap: 16px;
+    align-items: stretch;
+    background: var(--bg);
+    overflow: auto;
+}
+
+.game-view.fullscreen-fallback {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+}
+
+.game-view:fullscreen .game-board-panel,
+.game-view:fullscreen .side-panel,
+.game-view.fullscreen-fallback .game-board-panel,
+.game-view.fullscreen-fallback .side-panel {
+    min-height: 0;
+}
+
+.game-view:fullscreen .game-board-panel,
+.game-view.fullscreen-fallback .game-board-panel {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.game-view:fullscreen .board-mount,
+.game-view.fullscreen-fallback .board-mount {
+    display: grid;
+    place-items: center;
+    min-height: 0;
+}
+
+.game-view:fullscreen .board-frame,
+.game-view.fullscreen-fallback .board-frame {
+    width: min(100%, calc(100vh - 110px));
+}
+
+.game-view:fullscreen .side-panel,
+.game-view.fullscreen-fallback .side-panel {
+    overflow: auto;
+}
+
 @media (max-width: 920px) {
     .home-grid,
     .game-view,
@@ -421,5 +615,17 @@ button:disabled {
 
     .intro-panel {
         min-height: auto;
+    }
+
+    .game-view:fullscreen,
+    .game-view.fullscreen-fallback {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, auto) minmax(240px, 1fr);
+        padding: 10px;
+    }
+
+    .game-view:fullscreen .board-frame,
+    .game-view.fullscreen-fallback .board-frame {
+        width: min(100%, 72vh);
     }
 }

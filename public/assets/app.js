@@ -6,6 +6,7 @@ let currentRoom = null;
 let playerId = null;
 let pollingTimer = null;
 let revealedJudgeQuestionKey = null;
+let lastAnimatedDiceKey = null;
 
 const categoryLabels = {
     geography: 'Geografia',
@@ -19,6 +20,7 @@ const categoryLabels = {
 document.addEventListener('DOMContentLoaded', () => {
     bindGameForms();
     bindAdminForms();
+    bindFullscreenControls();
     const params = new URLSearchParams(window.location.search);
     const code = params.get('room');
     if (code) {
@@ -94,6 +96,52 @@ function bindGameForms() {
             }
         });
     }
+}
+
+function bindFullscreenControls() {
+    const button = document.querySelector('#fullscreenBoardButton');
+    const gameView = document.querySelector('#gameView');
+    if (!button || !gameView) return;
+
+    button.addEventListener('click', async () => {
+        if (document.fullscreenElement) {
+            await document.exitFullscreen();
+            gameView.classList.remove('fullscreen-fallback');
+            updateFullscreenButton();
+            return;
+        }
+
+        if (gameView.classList.contains('fullscreen-fallback')) {
+            gameView.classList.remove('fullscreen-fallback');
+            updateFullscreenButton();
+            return;
+        }
+
+        try {
+            if (gameView.requestFullscreen) {
+                await gameView.requestFullscreen();
+            } else {
+                gameView.classList.add('fullscreen-fallback');
+            }
+        } catch {
+            gameView.classList.add('fullscreen-fallback');
+        }
+        updateFullscreenButton();
+    });
+
+    document.addEventListener('fullscreenchange', updateFullscreenButton);
+}
+
+function updateFullscreenButton() {
+    const button = document.querySelector('#fullscreenBoardButton');
+    const gameView = document.querySelector('#gameView');
+    if (!button || !gameView) return;
+    const isFullscreen = document.fullscreenElement === gameView || gameView.classList.contains('fullscreen-fallback');
+
+    button.classList.toggle('active', isFullscreen);
+    button.setAttribute('aria-pressed', isFullscreen ? 'true' : 'false');
+    button.setAttribute('aria-label', isFullscreen ? 'Salir de pantalla completa' : 'Ver partida a pantalla completa');
+    button.setAttribute('title', isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa');
 }
 
 function bindAdminForms() {
@@ -206,17 +254,56 @@ function renderStatus() {
     box.innerHTML = `
         <p class="eyebrow">Estado</p>
         <h2>${escapeHtml(statusText)}</h2>
-        ${state.lastResult ? `<p class="muted">${escapeHtml(resultText(state.lastResult))}</p>` : ''}
+        ${state.lastResult ? renderResultStatus(state.lastResult) : ''}
     `;
 }
 
+function renderResultStatus(result) {
+    if (result.type === 'rolled') return renderDiceResult(result);
+    const text = resultText(result);
+    return text ? `<p class="muted">${escapeHtml(text)}</p>` : '';
+}
+
 function resultText(result) {
-    if (result.type === 'rolled') return `Dado: ${result.dice}`;
     if (result.type === 'correct') return 'Respuesta correcta. Repite turno.';
     if (result.type === 'wrong') return 'Respuesta fallada. Pasa el turno.';
     if (result.type === 'roll_again') return 'Casilla de volver a tirar.';
     if (result.type === 'final_question') return 'Pregunta final para ganar.';
     return '';
+}
+
+function renderDiceResult(result) {
+    const dice = Math.max(1, Math.min(6, Number(result.dice) || 1));
+    const diceKey = `${currentRoom?.code ?? 'local'}:${currentRoom?.version ?? 0}:${dice}`;
+    const shouldAnimate = lastAnimatedDiceKey !== diceKey;
+    lastAnimatedDiceKey = diceKey;
+
+    return `
+        <div class="dice-result" role="status" aria-label="Resultado del dado: ${dice}">
+            <span class="dice-result-label">Dado</span>
+            <span class="dice-face ${shouldAnimate ? 'rolling' : ''}" aria-hidden="true">
+                ${renderDiceFace(dice)}
+            </span>
+        </div>
+    `;
+}
+
+function renderDiceFace(value) {
+    const pips = {
+        1: [[50, 50]],
+        2: [[30, 30], [70, 70]],
+        3: [[30, 30], [50, 50], [70, 70]],
+        4: [[30, 30], [70, 30], [30, 70], [70, 70]],
+        5: [[30, 30], [70, 30], [50, 50], [30, 70], [70, 70]],
+        6: [[30, 25], [70, 25], [30, 50], [70, 50], [30, 75], [70, 75]]
+    }[value] ?? [[50, 50]];
+
+    return `
+        <svg class="dice-svg" viewBox="0 0 100 100" focusable="false">
+            <rect x="8" y="8" width="84" height="84" rx="16"></rect>
+            ${pips.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7"></circle>`).join('')}
+        </svg>
+    `;
 }
 
 function renderPreferences() {
@@ -282,7 +369,7 @@ function renderControls() {
     }
 
     if (state.phase === 'choose_move') {
-        box.innerHTML = `<p class="muted">Dado: ${state.dice}. Elige una casilla marcada en el tablero.</p>`;
+        box.innerHTML = '<p class="muted">Elige una casilla marcada en el tablero.</p>';
         return;
     }
 
@@ -387,10 +474,11 @@ function renderBoard() {
         const shape = space.visual?.shape ?? 'point';
         const element = renderSpaceShape(space, classes, color);
         return `
-            <g class="space-group space-${escapeAttr(shape)}">
+            <g class="space-group space-${escapeAttr(shape)}" aria-label="${escapeAttr(labelForSpace(space))}">
+                <title>${escapeHtml(labelForSpace(space))}</title>
                 ${element}
-                ${space.type === 'roll_again' ? `<text class="space-label" x="${point.x}" y="${point.y + 4}" text-anchor="middle">R</text>` : ''}
-                ${space.type === 'wedge' ? `<text class="space-label wedge-label" x="${point.x}" y="${point.y + 5}" text-anchor="middle">Q</text>` : ''}
+                ${space.type === 'roll_again' ? renderRerollIcon(point) : ''}
+                ${space.type === 'wedge' ? renderWedgeIcon(point) : ''}
             </g>
         `;
     }).join('');
@@ -409,17 +497,28 @@ function renderBoard() {
     }).join('');
 
     mount.innerHTML = `
-        <svg class="board-svg ${localStorage.getItem(whiteBordersPreferenceKey) === '1' ? 'show-space-borders' : ''}" viewBox="0 0 600 600" role="img" aria-label="Tablero de trivial">
-            <rect x="0" y="0" width="600" height="600" rx="18" fill="#0b2852"></rect>
-            <circle cx="300" cy="300" r="292" fill="#12396f" stroke="#d7c47a" stroke-width="4"></circle>
-            <circle cx="300" cy="300" r="222" fill="#0b2852" stroke="#d7c47a" stroke-width="2"></circle>
-            <circle class="outer-track-base" cx="300" cy="300" r="261" fill="none" stroke="#f8fafc" stroke-width="50"></circle>
-            ${spaceMarkup}
-            ${renderCenterHex(spaces.center?.visual)}
-            ${highlightMarkup}
-            ${tokenMarkup}
-        </svg>
+        <div class="board-frame">
+            <svg class="board-svg ${localStorage.getItem(whiteBordersPreferenceKey) === '1' ? 'show-space-borders' : ''}" viewBox="0 0 600 600" role="img" aria-label="Tablero de trivial">
+                <rect x="0" y="0" width="600" height="600" rx="18" fill="#0b2852"></rect>
+                <circle cx="300" cy="300" r="292" fill="#12396f" stroke="#d7c47a" stroke-width="4"></circle>
+                <circle cx="300" cy="300" r="222" fill="#0b2852" stroke="#d7c47a" stroke-width="2"></circle>
+                <circle class="outer-track-base" cx="300" cy="300" r="261" fill="none" stroke="#f8fafc" stroke-width="50"></circle>
+                ${spaceMarkup}
+                ${renderCenterHex(spaces.center?.visual)}
+                ${highlightMarkup}
+                ${tokenMarkup}
+            </svg>
+            <div id="spaceTooltip" class="space-tooltip hidden" role="tooltip"></div>
+        </div>
     `;
+
+    mount.querySelectorAll('.space').forEach((spaceEl) => {
+        spaceEl.addEventListener('mouseenter', (event) => showSpaceTooltip(spaceEl.dataset.spaceLabel, event));
+        spaceEl.addEventListener('mousemove', (event) => showSpaceTooltip(spaceEl.dataset.spaceLabel, event));
+        spaceEl.addEventListener('mouseleave', hideSpaceTooltip);
+        spaceEl.addEventListener('focus', (event) => showSpaceTooltip(spaceEl.dataset.spaceLabel, event));
+        spaceEl.addEventListener('blur', hideSpaceTooltip);
+    });
 
     mount.querySelectorAll('.space.valid').forEach((spaceEl) => {
         spaceEl.addEventListener('click', () => {
@@ -434,11 +533,37 @@ function renderBoard() {
 
 function renderSpaceShape(space, classes, color) {
     const shape = pathForSpace(space);
+    const label = escapeAttr(labelForSpace(space));
+    const focusable = space.track === 'hub' || space.type === 'category' || space.type === 'wedge' || space.type === 'roll_again' ? '0' : '-1';
     if (shape.type === 'path') {
-        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" d="${shape.d}" fill="${color}"></path>`;
+        return `<path class="${classes}" data-space="${escapeAttr(space.id)}" data-space-label="${label}" aria-label="${label}" tabindex="${focusable}" d="${shape.d}" fill="${color}"></path>`;
     }
 
-    return `<circle class="${classes}" data-space="${escapeAttr(space.id)}" cx="${shape.cx}" cy="${shape.cy}" r="${shape.r}" fill="${color}"></circle>`;
+    return `<circle class="${classes}" data-space="${escapeAttr(space.id)}" data-space-label="${label}" aria-label="${label}" tabindex="${focusable}" cx="${shape.cx}" cy="${shape.cy}" r="${shape.r}" fill="${color}"></circle>`;
+}
+
+function renderWedgeIcon(point) {
+    return `
+        <g class="space-icon wedge-icon" transform="translate(${point.x} ${point.y})" aria-hidden="true">
+            <path d="M -12 -8 L 13 0 L -12 8 Z"></path>
+            <circle cx="-5" cy="-3" r="1.8"></circle>
+            <circle cx="-2" cy="4" r="1.5"></circle>
+            <circle cx="5" cy="0" r="1.6"></circle>
+        </g>
+    `;
+}
+
+function renderRerollIcon(point) {
+    return `
+        <g class="space-icon reroll-icon" transform="translate(${point.x} ${point.y})" aria-hidden="true">
+            <rect x="-9" y="-7" width="14" height="14" rx="2.5"></rect>
+            <circle cx="-5" cy="-3" r="1.3"></circle>
+            <circle cx="-2" cy="0" r="1.3"></circle>
+            <circle cx="1" cy="3" r="1.3"></circle>
+            <path class="reroll-arrow" d="M -2 -12 A 12 12 0 0 1 12 -1"></path>
+            <path class="reroll-arrow-head" d="M 12 -1 L 7 -2 L 10 -6"></path>
+        </g>
+    `;
 }
 
 function renderSpaceHighlight(space, isValid, hasPlayer) {
@@ -454,6 +579,41 @@ function renderSpaceHighlight(space, isValid, hasPlayer) {
     }
 
     return `<circle class="${classes}" data-space="${escapeAttr(space.id)}" cx="${shape.cx}" cy="${shape.cy}" r="${shape.r}"></circle>`;
+}
+
+function labelForSpace(space) {
+    if (!space) return '';
+    if (space.type === 'center') return 'Centro';
+    if (space.type === 'roll_again') return 'Vuelve a tirar';
+
+    const category = categoryLabels[space.category] ?? space.label ?? space.category;
+    if (space.type === 'wedge') return `Quesito: ${category}`;
+
+    return category;
+}
+
+function showSpaceTooltip(label, event) {
+    const tooltip = document.querySelector('#spaceTooltip');
+    const frame = tooltip?.closest('.board-frame');
+    if (!tooltip || !frame || !label) return;
+
+    tooltip.textContent = label;
+    tooltip.classList.remove('hidden');
+
+    const frameRect = frame.getBoundingClientRect();
+    const targetRect = event.currentTarget?.getBoundingClientRect?.();
+    const clientX = event.clientX ?? ((targetRect?.left ?? frameRect.left) + (targetRect?.width ?? 0) / 2);
+    const clientY = event.clientY ?? ((targetRect?.top ?? frameRect.top) + (targetRect?.height ?? 0) / 2);
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const x = Math.min(Math.max(clientX - frameRect.left + 12, 8), Math.max(8, frameRect.width - tooltipRect.width - 8));
+    const y = Math.min(Math.max(clientY - frameRect.top + 12, 8), Math.max(8, frameRect.height - tooltipRect.height - 8));
+
+    tooltip.style.left = `${x}px`;
+    tooltip.style.top = `${y}px`;
+}
+
+function hideSpaceTooltip() {
+    document.querySelector('#spaceTooltip')?.classList.add('hidden');
 }
 
 function pathForSpace(space) {

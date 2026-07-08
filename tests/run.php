@@ -184,6 +184,45 @@ $runner->test('board preferences can toggle white space borders', function (): v
     assertTrueValue(str_contains($styles, '.board-svg.show-space-borders'), 'css should define enabled white board borders');
 });
 
+$runner->test('game board exposes fullscreen controls and fullscreen layout styles', function (): void {
+    $index = file_get_contents(__DIR__ . '/../public/index.php');
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($index, 'id="fullscreenBoardButton"'), 'board header should expose a fullscreen button');
+    assertTrueValue(str_contains($appJs, 'bindFullscreenControls'), 'game forms should bind fullscreen controls');
+    assertTrueValue(str_contains($appJs, 'requestFullscreen'), 'fullscreen button should use the Fullscreen API');
+    assertTrueValue(str_contains($appJs, 'fullscreen-fallback'), 'fullscreen should have a css fallback');
+    assertTrueValue(str_contains($styles, '.game-view:fullscreen'), 'fullscreen layout should style the game view');
+    assertTrueValue(str_contains($styles, '.fullscreen-fallback'), 'css fallback should style fullscreen mode');
+});
+
+$runner->test('board uses inline icons and category labels instead of text markers', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'renderWedgeIcon'), 'wedges should render with an inline svg icon helper');
+    assertTrueValue(str_contains($appJs, 'renderRerollIcon'), 'rerolls should render with an inline svg icon helper');
+    assertTrueValue(str_contains($appJs, 'labelForSpace'), 'spaces should expose category labels');
+    assertTrueValue(str_contains($appJs, '<title>${escapeHtml(labelForSpace(space))}</title>'), 'svg groups should include accessible titles');
+    assertTrueValue(str_contains($appJs, 'data-space-label'), 'space elements should carry hover labels');
+    assertTrueValue(str_contains($styles, '.space-icon'), 'svg icons should have dedicated styles');
+    assertTrueValue(!str_contains($appJs, 'text-anchor="middle">Q</text>'), 'wedge letter marker should be removed');
+    assertTrueValue(!str_contains($appJs, 'text-anchor="middle">R</text>'), 'reroll letter marker should be removed');
+});
+
+$runner->test('status renders visual animated dice results', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'renderDiceResult'), 'status should render dice with a visual helper');
+    assertTrueValue(str_contains($appJs, 'renderDiceFace'), 'dice should render physical pips');
+    assertTrueValue(str_contains($appJs, 'lastAnimatedDiceKey'), 'dice animation should only trigger for new rolls');
+    assertTrueValue(str_contains($appJs, 'Resultado del dado'), 'dice should keep accessible result text');
+    assertTrueValue(str_contains($styles, '.dice-result'), 'dice result should have dedicated styles');
+    assertTrueValue(str_contains($styles, '@keyframes dice-roll'), 'dice roll animation should be defined');
+});
+
 $runner->test('board visual metadata uses straight spokes and a hexagonal center', function (): void {
     $spaces = GameEngine::boardSpaces();
     $hub = $spaces['center']['visual'];

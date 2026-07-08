@@ -72,7 +72,14 @@ Equipo Rojo</textarea>
                         <span class="label">Sala</span>
                         <strong id="roomCode">------</strong>
                     </div>
-                    <button id="copyRoomButton" type="button">Copiar codigo</button>
+                    <div class="room-actions">
+                        <button id="copyRoomButton" type="button">Copiar codigo</button>
+                        <button id="fullscreenBoardButton" class="icon-button" type="button" aria-label="Ver partida a pantalla completa" title="Pantalla completa">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M8 3H3v5h2V5h3V3Zm8 0v2h3v3h2V3h-5ZM5 16H3v5h5v-2H5v-3Zm14 3h-3v2h5v-5h-2v3Z"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div id="boardMount" class="board-mount"></div>
             </div>
