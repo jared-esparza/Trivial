@@ -1,5 +1,6 @@
 const apiBase = 'api.php';
 const playerColors = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#0891b2'];
+const whiteBordersPreferenceKey = 'board:whiteBorders';
 
 let currentRoom = null;
 let playerId = null;
@@ -184,6 +185,7 @@ function startPolling() {
 function renderRoom() {
     renderBoard();
     renderStatus();
+    renderPreferences();
     renderPlayers();
     renderControls();
 }
@@ -215,6 +217,25 @@ function resultText(result) {
     if (result.type === 'roll_again') return 'Casilla de volver a tirar.';
     if (result.type === 'final_question') return 'Pregunta final para ganar.';
     return '';
+}
+
+function renderPreferences() {
+    const box = document.querySelector('#preferencesBox');
+    if (!box || !currentRoom) return;
+    const whiteBordersEnabled = localStorage.getItem(whiteBordersPreferenceKey) === '1';
+
+    box.innerHTML = `
+        <p class="eyebrow">Preferencias</p>
+        <label class="toggle-row">
+            <span>Bordes blancos del tablero</span>
+            <input id="whiteBordersToggle" type="checkbox" ${whiteBordersEnabled ? 'checked' : ''}>
+        </label>
+    `;
+
+    document.querySelector('#whiteBordersToggle')?.addEventListener('change', (event) => {
+        localStorage.setItem(whiteBordersPreferenceKey, event.target.checked ? '1' : '0');
+        renderBoard();
+    });
 }
 
 function renderPlayers() {
@@ -388,7 +409,7 @@ function renderBoard() {
     }).join('');
 
     mount.innerHTML = `
-        <svg class="board-svg" viewBox="0 0 600 600" role="img" aria-label="Tablero de trivial">
+        <svg class="board-svg ${localStorage.getItem(whiteBordersPreferenceKey) === '1' ? 'show-space-borders' : ''}" viewBox="0 0 600 600" role="img" aria-label="Tablero de trivial">
             <rect x="0" y="0" width="600" height="600" rx="18" fill="#0b2852"></rect>
             <circle cx="300" cy="300" r="292" fill="#12396f" stroke="#d7c47a" stroke-width="4"></circle>
             <circle cx="300" cy="300" r="222" fill="#0b2852" stroke="#d7c47a" stroke-width="2"></circle>

@@ -172,6 +172,18 @@ $runner->test('board render separates fills from selection outlines', function (
     );
 });
 
+$runner->test('board preferences can toggle white space borders', function (): void {
+    $index = file_get_contents(__DIR__ . '/../public/index.php');
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($index, 'id="preferencesBox"'), 'game view should expose a preferences box');
+    assertTrueValue(str_contains($appJs, 'renderPreferences'), 'room render should include preferences');
+    assertTrueValue(str_contains($appJs, 'board:whiteBorders'), 'white border preference should persist locally');
+    assertTrueValue(str_contains($appJs, 'show-space-borders'), 'board svg should receive a class when borders are enabled');
+    assertTrueValue(str_contains($styles, '.board-svg.show-space-borders'), 'css should define enabled white board borders');
+});
+
 $runner->test('board visual metadata uses straight spokes and a hexagonal center', function (): void {
     $spaces = GameEngine::boardSpaces();
     $hub = $spaces['center']['visual'];

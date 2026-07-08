@@ -79,6 +79,7 @@ Equipo Rojo</textarea>
 
             <aside class="side-panel">
                 <div id="statusBox" class="status-box"></div>
+                <div id="preferencesBox" class="preferences-box"></div>
                 <div id="playersBox" class="players-box"></div>
                 <div id="controlsBox" class="controls-box"></div>
             </aside>

@@ -230,6 +230,11 @@ button:disabled {
     stroke: none;
 }
 
+.board-svg.show-space-borders .space-track-outer,
+.board-svg.show-space-borders .space-track-spoke {
+    stroke: #f8fafc;
+}
+
 .space.valid {
     cursor: pointer;
 }
@@ -277,10 +282,25 @@ button:disabled {
 }
 
 .status-box,
+.preferences-box,
 .players-box,
 .controls-box {
     display: grid;
     gap: 10px;
+}
+
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    color: var(--ink);
+}
+
+.toggle-row input {
+    width: auto;
+    accent-color: var(--accent);
 }
 
 .player-card {
