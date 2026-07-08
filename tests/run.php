@@ -225,6 +225,21 @@ $runner->test('question phase renders a floating board dialog instead of sidebar
     assertTrueValue(str_contains($styles, '@keyframes question-pop'), 'floating question should animate in');
 });
 
+$runner->test('answer results stay visible in the board card until continued', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'pendingAnswerFeedback'), 'answer feedback should keep local state');
+    assertTrueValue(str_contains($appJs, 'submitAnswerWithFeedback'), 'answer buttons should submit through a feedback wrapper');
+    assertTrueValue(str_contains($appJs, 'renderAnswerFeedbackOverlay'), 'board should render an answer feedback overlay');
+    assertTrueValue(str_contains($appJs, 'buildAnswerFeedback'), 'answer feedback should be built from the server result');
+    assertTrueValue(str_contains($appJs, 'answerFeedbackContinue'), 'answer feedback should expose a continue button');
+    assertTrueValue(str_contains($appJs, 'correctOption'), 'option mode should show the correct answer when available');
+    assertTrueValue(str_contains($styles, '.answer-feedback-card'), 'answer feedback should have dedicated card styles');
+    assertTrueValue(str_contains($styles, '.answer-feedback-correct'), 'correct feedback should have a distinct style');
+    assertTrueValue(str_contains($styles, '.answer-feedback-wrong'), 'wrong feedback should have a distinct style');
+});
+
 $runner->test('wedge icons are rounded and point toward the board center', function (): void {
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
@@ -232,8 +247,31 @@ $runner->test('wedge icons are rounded and point toward the board center', funct
     assertTrueValue(str_contains($appJs, 'renderWedgeIcon(point, space)'), 'wedge icon helper should receive the rendered space');
     assertTrueValue(str_contains($appJs, 'wedgeIconRotation(space)'), 'wedge icon rotation should be calculated per space');
     assertTrueValue(str_contains($appJs, 'rotate(${rotation})'), 'wedge icon transform should rotate each icon');
-    assertTrueValue(str_contains($appJs, 'C 5 -8 -3 -11 -11 -10'), 'wedge icon should use a curved path instead of a sharp triangle');
+    assertTrueValue(str_contains($appJs, 'C -16 -6 -16 6 -11 10'), 'wedge icon should keep a curved short side');
     assertTrueValue(str_contains($styles, '.wedge-icon path'), 'rounded wedge icon should keep dedicated path styling');
+});
+
+$runner->test('wedge icon removes internal dots while keeping straight sides and curved base', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $start = strpos($appJs, 'function renderWedgeIcon');
+    $end = strpos($appJs, 'function wedgeIconRotation', $start);
+    $wedgeIcon = substr($appJs, $start, $end - $start);
+
+    assertTrueValue(str_contains($wedgeIcon, 'rotate(${rotation})'), 'wedge icon should keep per-space rotation');
+    assertTrueValue(!str_contains($wedgeIcon, '<circle'), 'wedge icon should not render internal dots');
+    assertTrueValue(str_contains($wedgeIcon, 'L 13 0'), 'wedge icon should use straight long sides');
+    assertTrueValue(str_contains($wedgeIcon, 'C -16 -6 -16 6 -11 10'), 'wedge icon should keep a curved short side');
+});
+
+$runner->test('board preferences can pulse selectable destinations', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'board:pulseDestinations'), 'destination pulse preference should persist locally');
+    assertTrueValue(str_contains($appJs, 'pulseDestinationsToggle'), 'preferences should render a destination pulse toggle');
+    assertTrueValue(str_contains($appJs, 'pulse-valid-destinations'), 'board svg should receive a class when pulse is enabled');
+    assertTrueValue(str_contains($styles, '.board-svg.pulse-valid-destinations .valid-highlight'), 'css should scope pulse animation to valid highlights');
+    assertTrueValue(str_contains($styles, '@keyframes destination-pulse'), 'destination pulse animation should be defined');
 });
 
 $runner->test('status renders visual animated dice results', function (): void {

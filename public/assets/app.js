@@ -1,12 +1,14 @@
 const apiBase = 'api.php';
 const playerColors = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#0891b2'];
 const whiteBordersPreferenceKey = 'board:whiteBorders';
+const pulseDestinationsPreferenceKey = 'board:pulseDestinations';
 
 let currentRoom = null;
 let playerId = null;
 let pollingTimer = null;
 let revealedJudgeQuestionKey = null;
 let lastAnimatedDiceKey = null;
+let pendingAnswerFeedback = null;
 
 const categoryLabels = {
     geography: 'Geografia',
@@ -206,6 +208,7 @@ async function loadRoom(code) {
 
 function setRoom(room) {
     currentRoom = room;
+    pendingAnswerFeedback = null;
     document.querySelector('#homeView')?.classList.add('hidden');
     document.querySelector('#gameView')?.classList.remove('hidden');
     document.querySelector('#roomCode').textContent = room.code;
@@ -310,6 +313,7 @@ function renderPreferences() {
     const box = document.querySelector('#preferencesBox');
     if (!box || !currentRoom) return;
     const whiteBordersEnabled = localStorage.getItem(whiteBordersPreferenceKey) === '1';
+    const pulseDestinationsEnabled = localStorage.getItem(pulseDestinationsPreferenceKey) === '1';
 
     box.innerHTML = `
         <p class="eyebrow">Preferencias</p>
@@ -317,10 +321,18 @@ function renderPreferences() {
             <span>Bordes blancos del tablero</span>
             <input id="whiteBordersToggle" type="checkbox" ${whiteBordersEnabled ? 'checked' : ''}>
         </label>
+        <label class="toggle-row">
+            <span>Animar destinos disponibles</span>
+            <input id="pulseDestinationsToggle" type="checkbox" ${pulseDestinationsEnabled ? 'checked' : ''}>
+        </label>
     `;
 
     document.querySelector('#whiteBordersToggle')?.addEventListener('change', (event) => {
         localStorage.setItem(whiteBordersPreferenceKey, event.target.checked ? '1' : '0');
+        renderBoard();
+    });
+    document.querySelector('#pulseDestinationsToggle')?.addEventListener('change', (event) => {
+        localStorage.setItem(pulseDestinationsPreferenceKey, event.target.checked ? '1' : '0');
         renderBoard();
     });
 }
@@ -410,6 +422,39 @@ async function sendAction(payload) {
     renderRoom();
 }
 
+async function submitAnswerWithFeedback(payload) {
+    if (!currentRoom) return;
+    const previousState = currentRoom.state;
+    const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, payload);
+    currentRoom = response.room;
+    pendingAnswerFeedback = buildAnswerFeedback(previousState, currentRoom.state, payload);
+    renderRoom();
+}
+
+function buildAnswerFeedback(previousState, nextState, payload) {
+    const question = previousState.currentQuestion;
+    const result = nextState.lastResult ?? {};
+    const correct = result.type === 'correct';
+    const selectedOption = Number.isInteger(payload.option) ? payload.option : null;
+    const correctOption = Number.isInteger(result.correctOption) ? result.correctOption : null;
+    const nextPlayer = nextState.players[nextState.currentPlayer];
+    const winner = nextState.players[nextState.winner];
+    const category = categoryMeta(question?.category);
+
+    return {
+        correct,
+        categoryName: category.name,
+        categoryColor: category.color,
+        questionText: question?.question ?? '',
+        selectedOptionText: selectedOption !== null ? question?.options?.[selectedOption] : null,
+        correctOptionText: correctOption !== null ? question?.options?.[correctOption] : null,
+        title: correct ? 'Correcto' : 'Fallado',
+        nextText: correct
+            ? (nextState.phase === 'finished' ? `Partida terminada. Ha ganado ${winner?.name ?? 'un equipo'}.` : 'Vuelve a tirar.')
+            : `Turno de ${nextPlayer?.name ?? 'siguiente equipo'}.`
+    };
+}
+
 function renderBoard() {
     const mount = document.querySelector('#boardMount');
     if (!mount || !currentRoom) return;
@@ -466,9 +511,15 @@ function renderBoard() {
         });
     }).join('');
 
+    const boardClasses = [
+        'board-svg',
+        localStorage.getItem(whiteBordersPreferenceKey) === '1' ? 'show-space-borders' : '',
+        localStorage.getItem(pulseDestinationsPreferenceKey) === '1' ? 'pulse-valid-destinations' : ''
+    ].filter(Boolean).join(' ');
+
     mount.innerHTML = `
         <div class="board-frame">
-            <svg class="board-svg ${localStorage.getItem(whiteBordersPreferenceKey) === '1' ? 'show-space-borders' : ''}" viewBox="0 0 600 600" role="img" aria-label="Tablero de trivial">
+            <svg class="${boardClasses}" viewBox="0 0 600 600" role="img" aria-label="Tablero de trivial">
                 <rect x="0" y="0" width="600" height="600" rx="18" fill="#0b2852"></rect>
                 <circle cx="300" cy="300" r="292" fill="#12396f" stroke="#d7c47a" stroke-width="4"></circle>
                 <circle cx="300" cy="300" r="222" fill="#0b2852" stroke="#d7c47a" stroke-width="2"></circle>
@@ -479,11 +530,12 @@ function renderBoard() {
                 ${tokenMarkup}
             </svg>
             <div id="spaceTooltip" class="space-tooltip hidden" role="tooltip"></div>
-            ${renderQuestionOverlay(state, canAct)}
+            ${pendingAnswerFeedback ? renderAnswerFeedbackOverlay(pendingAnswerFeedback) : renderQuestionOverlay(state, canAct)}
         </div>
     `;
 
     bindQuestionOverlayControls(state, canAct);
+    bindAnswerFeedbackControls();
 
     mount.querySelectorAll('.space').forEach((spaceEl) => {
         spaceEl.addEventListener('mouseenter', (event) => showSpaceTooltip(spaceEl.dataset.spaceLabel, event));
@@ -501,6 +553,35 @@ function renderBoard() {
             }
             sendAction({ action: 'move', playerId: currentRoom.state.currentPlayer, destination: spaceEl.dataset.space });
         });
+    });
+}
+
+function renderAnswerFeedbackOverlay(feedback) {
+    const stateClass = feedback.correct ? 'answer-feedback-correct' : 'answer-feedback-wrong';
+
+    return `
+        <div class="question-overlay answer-feedback-overlay" role="dialog" aria-modal="true" aria-labelledby="answerFeedbackTitle">
+            <article class="floating-question-card answer-feedback-card ${stateClass}" style="--question-color:${escapeAttr(feedback.categoryColor)}">
+                <div class="floating-question-topline">
+                    <span class="category-pill">${escapeHtml(feedback.categoryName)}</span>
+                    <span class="question-mode">Resultado</span>
+                </div>
+                <p class="answer-feedback-kicker">${feedback.correct ? 'Acierto' : 'Fallo'}</p>
+                <h2 id="answerFeedbackTitle">${escapeHtml(feedback.title)}</h2>
+                ${feedback.questionText ? `<p class="muted">${escapeHtml(feedback.questionText)}</p>` : ''}
+                ${feedback.selectedOptionText ? `<p class="answer-feedback-choice"><strong>Respuesta elegida:</strong> ${escapeHtml(feedback.selectedOptionText)}</p>` : ''}
+                ${feedback.correctOptionText && feedback.correctOptionText !== feedback.selectedOptionText ? `<p class="answer-feedback-choice"><strong>Respuesta correcta:</strong> ${escapeHtml(feedback.correctOptionText)}</p>` : ''}
+                <p class="answer-feedback-next">${escapeHtml(feedback.nextText)}</p>
+                <button id="answerFeedbackContinue" type="button">Continuar</button>
+            </article>
+        </div>
+    `;
+}
+
+function bindAnswerFeedbackControls() {
+    document.querySelector('#answerFeedbackContinue')?.addEventListener('click', () => {
+        pendingAnswerFeedback = null;
+        renderRoom();
     });
 }
 
@@ -580,10 +661,10 @@ function bindQuestionOverlayControls(state, canAct) {
         revealedJudgeQuestionKey = `${state.currentQuestion.id}:${state.currentPlayer}`;
         renderRoom();
     });
-    document.querySelector('#judgeCorrect')?.addEventListener('click', () => sendAction({ action: 'answer', playerId: state.currentPlayer, correct: true }));
-    document.querySelector('#judgeWrong')?.addEventListener('click', () => sendAction({ action: 'answer', playerId: state.currentPlayer, correct: false }));
+    document.querySelector('#judgeCorrect')?.addEventListener('click', () => submitAnswerWithFeedback({ action: 'answer', playerId: state.currentPlayer, correct: true }));
+    document.querySelector('#judgeWrong')?.addEventListener('click', () => submitAnswerWithFeedback({ action: 'answer', playerId: state.currentPlayer, correct: false }));
     document.querySelectorAll('.answer-button').forEach((button) => {
-        button.addEventListener('click', () => sendAction({ action: 'answer', playerId: state.currentPlayer, option: Number(button.dataset.option) }));
+        button.addEventListener('click', () => submitAnswerWithFeedback({ action: 'answer', playerId: state.currentPlayer, option: Number(button.dataset.option) }));
     });
 }
 
@@ -603,10 +684,7 @@ function renderWedgeIcon(point, space) {
 
     return `
         <g class="space-icon wedge-icon" transform="translate(${point.x} ${point.y}) rotate(${rotation})" aria-hidden="true">
-            <path d="M 13 0 C 5 -8 -3 -11 -11 -10 C -16 -6 -16 6 -11 10 C -3 11 5 8 13 0 Z"></path>
-            <circle cx="-5" cy="-3" r="1.8"></circle>
-            <circle cx="-2" cy="4" r="1.5"></circle>
-            <circle cx="5" cy="0" r="1.6"></circle>
+            <path d="M -11 -10 C -16 -6 -16 6 -11 10 L 13 0 L -11 -10 Z"></path>
         </g>
     `;
 }
