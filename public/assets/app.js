@@ -3,6 +3,8 @@ const playerColors = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#0
 const whiteBordersPreferenceKey = 'board:whiteBorders';
 const pulseDestinationsPreferenceKey = 'board:pulseDestinations';
 const animateTokensPreferenceKey = 'board:animateTokens';
+const diceResultDelayPreferenceKey = 'board:diceResultDelayMs';
+const minimumDiceRollAnimationMs = 520;
 
 let currentRoom = null;
 let playerId = null;
@@ -11,7 +13,10 @@ let revealedJudgeQuestionKey = null;
 let lastAnimatedDiceKey = null;
 let pendingAnswerFeedback = null;
 let pendingTokenAnimation = null;
+let pendingDiceRollFeedback = null;
 let isRollSubmitting = false;
+let preferencesExpanded = false;
+let diceRollFeedbackTimer = null;
 
 const categoryLabels = {
     geography: 'Geografia',
@@ -318,23 +323,43 @@ function renderPreferences() {
     const whiteBordersEnabled = localStorage.getItem(whiteBordersPreferenceKey) === '1';
     const pulseDestinationsEnabled = localStorage.getItem(pulseDestinationsPreferenceKey) === '1';
     const animateTokensEnabled = animateTokensPreferenceEnabled();
+    const diceResultDelay = diceResultDelayPreferenceMs();
 
+    box.classList.toggle('preferences-panel-collapsed', !preferencesExpanded);
     box.innerHTML = `
-        <p class="eyebrow">Preferencias</p>
-        <label class="toggle-row">
-            <span>Bordes blancos del tablero</span>
-            <input id="whiteBordersToggle" type="checkbox" ${whiteBordersEnabled ? 'checked' : ''}>
-        </label>
-        <label class="toggle-row">
-            <span>Animar destinos disponibles</span>
-            <input id="pulseDestinationsToggle" type="checkbox" ${pulseDestinationsEnabled ? 'checked' : ''}>
-        </label>
-        <label class="toggle-row">
-            <span>Animar movimiento de fichas</span>
-            <input id="animateTokensToggle" type="checkbox" ${animateTokensEnabled ? 'checked' : ''}>
-        </label>
+        <button id="preferencesToggle" class="preferences-toggle" type="button" aria-expanded="${preferencesExpanded ? 'true' : 'false'}" aria-controls="preferencesContent">
+            <span class="eyebrow">Preferencias</span>
+            <span class="preferences-arrow" aria-hidden="true">▾</span>
+        </button>
+        <div id="preferencesContent" class="preferences-content">
+            <label class="toggle-row">
+                <span>Bordes blancos del tablero</span>
+                <input id="whiteBordersToggle" type="checkbox" ${whiteBordersEnabled ? 'checked' : ''}>
+            </label>
+            <label class="toggle-row">
+                <span>Animar destinos disponibles</span>
+                <input id="pulseDestinationsToggle" type="checkbox" ${pulseDestinationsEnabled ? 'checked' : ''}>
+            </label>
+            <label class="toggle-row">
+                <span>Animar movimiento de fichas</span>
+                <input id="animateTokensToggle" type="checkbox" ${animateTokensEnabled ? 'checked' : ''}>
+            </label>
+            <label class="select-row">
+                <span>Duración resultado dado</span>
+                <select id="diceResultDelaySelect">
+                    <option value="500" ${diceResultDelay === 500 ? 'selected' : ''}>0.5s</option>
+                    <option value="1000" ${diceResultDelay === 1000 ? 'selected' : ''}>1s</option>
+                    <option value="1500" ${diceResultDelay === 1500 ? 'selected' : ''}>1.5s</option>
+                    <option value="2000" ${diceResultDelay === 2000 ? 'selected' : ''}>2s</option>
+                </select>
+            </label>
+        </div>
     `;
 
+    document.querySelector('#preferencesToggle')?.addEventListener('click', () => {
+        preferencesExpanded = !preferencesExpanded;
+        renderPreferences();
+    });
     document.querySelector('#whiteBordersToggle')?.addEventListener('change', (event) => {
         localStorage.setItem(whiteBordersPreferenceKey, event.target.checked ? '1' : '0');
         renderBoard();
@@ -346,10 +371,18 @@ function renderPreferences() {
     document.querySelector('#animateTokensToggle')?.addEventListener('change', (event) => {
         localStorage.setItem(animateTokensPreferenceKey, event.target.checked ? '1' : '0');
     });
+    document.querySelector('#diceResultDelaySelect')?.addEventListener('change', (event) => {
+        localStorage.setItem(diceResultDelayPreferenceKey, event.target.value);
+    });
 }
 
 function animateTokensPreferenceEnabled() {
     return localStorage.getItem(animateTokensPreferenceKey) !== '0';
+}
+
+function diceResultDelayPreferenceMs() {
+    const stored = Number(localStorage.getItem(diceResultDelayPreferenceKey));
+    return [500, 1000, 1500, 2000].includes(stored) ? stored : 1000;
 }
 
 function renderPlayers() {
@@ -450,7 +483,14 @@ async function sendAction(payload) {
 
 async function submitRollFromOverlay() {
     if (!currentRoom || isRollSubmitting) return;
+    const player = currentRoom.state.players[currentRoom.state.currentPlayer];
+    const rollStartedAt = Date.now();
     isRollSubmitting = true;
+    pendingDiceRollFeedback = {
+        isRolling: true,
+        playerName: player?.name ?? 'equipo',
+        dice: null
+    };
     renderRoom();
 
     try {
@@ -458,8 +498,24 @@ async function submitRollFromOverlay() {
             action: 'roll',
             playerId: currentRoom.state.currentPlayer
         });
+        const elapsed = Date.now() - rollStartedAt;
+        if (elapsed < minimumDiceRollAnimationMs) {
+            await new Promise((resolve) => setTimeout(resolve, minimumDiceRollAnimationMs - elapsed));
+        }
         currentRoom = response.room;
+        pendingDiceRollFeedback = {
+            isRolling: false,
+            playerName: player?.name ?? 'equipo',
+            dice: Math.max(1, Math.min(6, Number(response.room.state.dice) || 1))
+        };
+        clearTimeout(diceRollFeedbackTimer);
+        diceRollFeedbackTimer = setTimeout(() => {
+            pendingDiceRollFeedback = null;
+            diceRollFeedbackTimer = null;
+            renderRoom();
+        }, diceResultDelayPreferenceMs());
     } catch (error) {
+        pendingDiceRollFeedback = null;
         toast(error.message);
     } finally {
         isRollSubmitting = false;
@@ -660,20 +716,28 @@ async function moveWithTokenAnimation(destination) {
 }
 
 function renderDiceRollOverlay(state, canAct) {
-    if (state.phase !== 'roll' || pendingTokenAnimation) return '';
+    if ((!pendingDiceRollFeedback && state.phase !== 'roll') || pendingTokenAnimation) return '';
     const player = state.players[state.currentPlayer];
+    const feedback = pendingDiceRollFeedback;
+    const isRolling = feedback?.isRolling || isRollSubmitting;
+    const dice = feedback?.dice ?? Math.max(1, Math.min(6, Number(state.dice) || 6));
+    const title = feedback && !feedback.isRolling ? `Has sacado un ${dice}` : 'Tira el dado';
+    const cardClass = feedback && !feedback.isRolling ? 'dice-roll-final' : '';
 
     return `
         <div class="question-overlay dice-roll-overlay" role="dialog" aria-modal="true" aria-labelledby="diceRollTitle">
-            <article class="floating-question-card dice-roll-card">
-                <p class="eyebrow">Turno de ${escapeHtml(player?.name ?? 'equipo')}</p>
-                <h2 id="diceRollTitle">Tira el dado</h2>
-                <span class="dice-face ${isRollSubmitting ? 'rolling' : ''}" aria-hidden="true">
-                    ${renderDiceFace(Math.max(1, Math.min(6, Number(state.dice) || 6)))}
+            <article class="floating-question-card dice-roll-card ${cardClass}">
+                <p class="eyebrow">Turno de ${escapeHtml(feedback?.playerName ?? player?.name ?? 'equipo')}</p>
+                <h2 id="diceRollTitle">${title}</h2>
+                <span class="dice-face ${isRolling ? 'rolling dice-tumbling' : ''}" aria-hidden="true">
+                    ${renderDiceFace(dice)}
                 </span>
-                <button id="diceRollOverlayButton" class="dice-roll-button" type="button" ${canAct && !isRollSubmitting ? '' : 'disabled'}>
-                    ${isRollSubmitting ? 'Tirando...' : 'Tirar dado'}
-                </button>
+                ${feedback && !feedback.isRolling ? `<p class="dice-roll-result" role="status">Has sacado un ${dice}</p>` : ''}
+                ${feedback && !feedback.isRolling ? '<p class="muted">Elige destino en un momento...</p>' : `
+                    <button id="diceRollOverlayButton" class="dice-roll-button" type="button" ${canAct && !isRollSubmitting ? '' : 'disabled'}>
+                        ${isRollSubmitting ? 'Tirando...' : 'Tirar dado'}
+                    </button>
+                `}
             </article>
         </div>
     `;

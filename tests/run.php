@@ -301,6 +301,36 @@ $runner->test('roll phase uses a floating dice card on the board', function (): 
     assertTrueValue(str_contains($styles, '.dice-roll-card .dice-face'), 'dice face should be larger in the roll card');
 });
 
+$runner->test('preferences panel is collapsible and includes dice result duration', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'preferencesToggle'), 'preferences should expose a clickable header button');
+    assertTrueValue(str_contains($appJs, 'let preferencesExpanded = false'), 'preferences should render closed by default');
+    assertTrueValue(str_contains($appJs, 'preferences-panel-collapsed'), 'preferences should use a collapsed state class');
+    assertTrueValue(str_contains($appJs, 'board:diceResultDelayMs'), 'dice result delay should persist locally');
+    assertTrueValue(str_contains($appJs, 'diceResultDelaySelect'), 'preferences should render a dice delay select');
+    assertTrueValue(str_contains($appJs, 'diceResultDelayPreferenceMs'), 'dice delay should be read through a helper');
+    assertTrueValue(str_contains($styles, '.preferences-toggle'), 'collapsible preferences header should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.preferences-content'), 'collapsible preferences content should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.preferences-panel-collapsed .preferences-content'), 'collapsed preferences content should be hidden by css');
+});
+
+$runner->test('dice roll card shows animated result before movement selection', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'pendingDiceRollFeedback'), 'dice roll should keep local feedback state');
+    assertTrueValue(str_contains($appJs, 'minimumDiceRollAnimationMs'), 'dice roll should keep a minimum visible rolling animation');
+    assertTrueValue(str_contains($appJs, 'setTimeout(() => {'), 'dice result feedback should wait before applying the new room state');
+    assertTrueValue(str_contains($appJs, 'Has sacado un'), 'dice card should show the final dice value');
+    assertTrueValue(str_contains($appJs, 'dice-roll-result'), 'dice result should have dedicated markup');
+    assertTrueValue(str_contains($appJs, 'dice-roll-final'), 'dice card should distinguish final result from rolling state');
+    assertTrueValue(str_contains($styles, '.dice-roll-result'), 'dice roll result should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.dice-roll-card.dice-roll-final'), 'final dice state should have dedicated styles');
+    assertTrueValue(str_contains($styles, '@keyframes dice-tumble'), 'dice overlay should use a stronger tumble animation');
+});
+
 $runner->test('status renders visual animated dice results', function (): void {
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
