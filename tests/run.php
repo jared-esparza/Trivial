@@ -131,6 +131,89 @@ $runner->test('each outer sector has six spaces between wedges with two rerolls'
     }
 });
 
+$runner->test('board follows classic trivial category distribution', function (): void {
+    $spaces = GameEngine::boardSpaces();
+    $expectedWedges = ['history', 'sports', 'geography', 'art', 'science', 'entertainment'];
+    $expectedOuter = [
+        ['art', null, 'geography', 'entertainment', null, 'science'],
+        ['science', null, 'art', 'history', null, 'entertainment'],
+        ['entertainment', null, 'science', 'sports', null, 'history'],
+        ['history', null, 'entertainment', 'geography', null, 'sports'],
+        ['sports', null, 'history', 'art', null, 'geography'],
+        ['geography', null, 'sports', 'science', null, 'art'],
+    ];
+    $expectedSpokes = [
+        ['sports', 'entertainment', 'science', 'geography', 'art'],
+        ['geography', 'history', 'entertainment', 'art', 'science'],
+        ['art', 'sports', 'history', 'science', 'entertainment'],
+        ['science', 'geography', 'sports', 'entertainment', 'history'],
+        ['entertainment', 'art', 'geography', 'history', 'sports'],
+        ['history', 'science', 'art', 'sports', 'geography'],
+    ];
+
+    foreach ($expectedWedges as $spoke => $slug) {
+        assertTrueValue(isset($spaces["wedge_{$slug}"]), "missing wedge {$slug}");
+        assertSameValue($spoke, $spaces["wedge_{$slug}"]['spoke'], "wedge {$slug} should be on spoke {$spoke}");
+
+        foreach ($expectedSpokes[$spoke] as $index => $expectedCategory) {
+            assertSameValue($expectedCategory, $spaces["r{$spoke}_" . ($index + 1)]['category'], "r{$spoke}_" . ($index + 1) . ' category');
+        }
+
+        foreach ($expectedOuter[$spoke] as $outer => $expectedCategory) {
+            $outerNumber = $outer + 1;
+            if ($expectedCategory === null) {
+                assertSameValue('roll_again', $spaces['roll_again_' . $spoke . '_' . ($outerNumber === 2 ? 1 : 2)]['type'], "sector {$spoke} outer {$outerNumber} should roll again");
+                continue;
+            }
+            assertSameValue($expectedCategory, $spaces["o{$spoke}_{$outerNumber}"]['category'], "o{$spoke}_{$outerNumber} category");
+        }
+    }
+});
+
+$runner->test('classic board distribution keeps opposite colors beside each wedge and balanced counts', function (): void {
+    $spaces = GameEngine::boardSpaces();
+    $opposites = [
+        'history' => 'art',
+        'art' => 'history',
+        'sports' => 'science',
+        'science' => 'sports',
+        'geography' => 'entertainment',
+        'entertainment' => 'geography',
+    ];
+    $wedgeBySpoke = [
+        0 => 'history',
+        1 => 'sports',
+        2 => 'geography',
+        3 => 'art',
+        4 => 'science',
+        5 => 'entertainment',
+    ];
+    $categoryCounts = [];
+    $rollAgainOnSpokes = 0;
+
+    foreach ($spaces as $space) {
+        if ($space['type'] === 'roll_again' && $space['track'] === 'spoke') {
+            $rollAgainOnSpokes++;
+        }
+        if ($space['category'] !== null) {
+            $categoryCounts[$space['category']] = ($categoryCounts[$space['category']] ?? 0) + 1;
+        }
+    }
+
+    assertSameValue(0, $rollAgainOnSpokes, 'spokes should not contain roll again spaces');
+    foreach ($wedgeBySpoke as $spoke => $wedgeCategory) {
+        $opposite = $opposites[$wedgeCategory];
+        $previousSpoke = ($spoke + 5) % 6;
+        assertSameValue($opposite, $spaces["r{$spoke}_5"]['category'], "radial neighbor for {$wedgeCategory} wedge");
+        assertSameValue($opposite, $spaces["o{$spoke}_1"]['category'], "next outer neighbor for {$wedgeCategory} wedge");
+        assertSameValue($opposite, $spaces["o{$previousSpoke}_6"]['category'], "previous outer neighbor for {$wedgeCategory} wedge");
+    }
+
+    foreach ($opposites as $slug => $_) {
+        assertSameValue(10, $categoryCounts[$slug] ?? 0, "{$slug} should appear 10 times including its wedge");
+    }
+});
+
 $runner->test('wedges are reachable from center with exact six-step rolls', function (): void {
     $state = GameEngine::newGame([
         ['name' => 'Equipo Azul', 'color' => '#2563eb'],
