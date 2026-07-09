@@ -90,10 +90,10 @@ Equipo Rojo</textarea>
                 <div id="scoreboardBox" class="scoreboard-box" aria-label="Marcador de equipos"></div>
                 <div id="boardMount" class="board-mount"></div>
             </div>
+            <div id="preferencesOverlay" class="preferences-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="preferencesOverlayTitle"></div>
         </section>
     </main>
 
-    <div id="preferencesOverlay" class="preferences-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="preferencesOverlayTitle"></div>
     <div id="toast" class="toast hidden"></div>
     <script src="assets/app.js"></script>
 </body>

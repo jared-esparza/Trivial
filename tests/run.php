@@ -262,8 +262,12 @@ $runner->test('preferences are rendered in a floating overlay opened from a gear
     $index = file_get_contents(__DIR__ . '/../public/index.php');
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+    $gameStart = strpos($index, 'id="gameView"');
+    $gameEnd = strpos($index, '</section>', $gameStart);
+    $overlayPosition = strpos($index, 'id="preferencesOverlay"');
 
     assertTrueValue(str_contains($index, 'id="preferencesOverlay"'), 'page should expose a preferences overlay container');
+    assertTrueValue($gameStart !== false && $gameEnd !== false && $overlayPosition !== false && $overlayPosition > $gameStart && $overlayPosition < $gameEnd, 'preferences overlay should be inside gameView so it is visible in fullscreen');
     assertTrueValue(str_contains($index, 'aria-label="Abrir preferencias"'), 'preferences button should be accessible');
     assertTrueValue(str_contains($appJs, 'bindPreferencesOverlayControls'), 'preferences overlay should bind open and close controls');
     assertTrueValue(str_contains($appJs, 'renderPreferencesOverlay'), 'preferences should render into a floating overlay');
