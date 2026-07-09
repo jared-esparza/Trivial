@@ -73,7 +73,13 @@ Equipo Rojo</textarea>
                         <strong id="roomCode">------</strong>
                     </div>
                     <div class="room-actions">
+                        <div id="topDiceStatus" class="top-dice-status" aria-live="polite"></div>
                         <button id="copyRoomButton" type="button">Copiar codigo</button>
+                        <button id="preferencesButton" class="icon-button" type="button" aria-label="Abrir preferencias" title="Preferencias">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 2.5A8 8 0 0 0 7 6L4.6 5 2.6 8.5l2 1.5a9 9 0 0 0 0 3l-2 1.5 2 3.5L7 17a8 8 0 0 0 2.6 1.5L10 21h4l.4-2.5A8 8 0 0 0 17 17l2.4 1 2-3.5-2-1.5ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z"></path>
+                            </svg>
+                        </button>
                         <button id="fullscreenBoardButton" class="icon-button" type="button" aria-label="Ver partida a pantalla completa" title="Pantalla completa">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M8 3H3v5h2V5h3V3Zm8 0v2h3v3h2V3h-5ZM5 16H3v5h5v-2H5v-3Zm14 3h-3v2h5v-5h-2v3Z"></path>
@@ -84,16 +90,10 @@ Equipo Rojo</textarea>
                 <div id="scoreboardBox" class="scoreboard-box" aria-label="Marcador de equipos"></div>
                 <div id="boardMount" class="board-mount"></div>
             </div>
-
-            <aside class="side-panel">
-                <div id="statusBox" class="status-box"></div>
-                <div id="preferencesBox" class="preferences-box"></div>
-                <div id="playersBox" class="players-box"></div>
-                <div id="controlsBox" class="controls-box"></div>
-            </aside>
         </section>
     </main>
 
+    <div id="preferencesOverlay" class="preferences-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="preferencesOverlayTitle"></div>
     <div id="toast" class="toast hidden"></div>
     <script src="assets/app.js"></script>
 </body>

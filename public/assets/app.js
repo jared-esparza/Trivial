@@ -15,7 +15,7 @@ let pendingAnswerFeedback = null;
 let pendingTokenAnimation = null;
 let pendingDiceRollFeedback = null;
 let isRollSubmitting = false;
-let preferencesExpanded = false;
+let preferencesOverlayOpen = false;
 let diceRollFeedbackTimer = null;
 
 const categoryLabels = {
@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindGameForms();
     bindAdminForms();
     bindFullscreenControls();
+    bindPreferencesOverlayControls();
     const params = new URLSearchParams(window.location.search);
     const code = params.get('room');
     if (code) {
@@ -142,6 +143,19 @@ function bindFullscreenControls() {
     document.addEventListener('fullscreenchange', updateFullscreenButton);
 }
 
+function bindPreferencesOverlayControls() {
+    document.querySelector('#preferencesButton')?.addEventListener('click', () => {
+        preferencesOverlayOpen = true;
+        renderPreferencesOverlay();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !preferencesOverlayOpen) return;
+        preferencesOverlayOpen = false;
+        renderPreferencesOverlay();
+    });
+}
+
 function updateFullscreenButton() {
     const button = document.querySelector('#fullscreenBoardButton');
     const gameView = document.querySelector('#gameView');
@@ -244,29 +258,29 @@ function startPolling() {
 function renderRoom() {
     renderScoreboard();
     renderBoard();
-    renderStatus();
-    renderPreferences();
-    renderPlayers();
-    renderControls();
+    renderTopDiceStatus();
+    renderPreferencesOverlay();
 }
 
-function renderStatus() {
-    const box = document.querySelector('#statusBox');
+function renderTopDiceStatus() {
+    const box = document.querySelector('#topDiceStatus');
     if (!box || !currentRoom) return;
     const state = currentRoom.state;
     const active = state.players[state.currentPlayer] ?? state.players[0];
-    const statusText = {
+    const label = {
         lobby: 'Esperando equipos',
-        roll: `Turno de ${active?.name ?? 'equipo'}: tirar dado`,
-        choose_move: `Turno de ${active?.name ?? 'equipo'}: elegir destino`,
-        question: `Pregunta para ${active?.name ?? 'equipo'}`,
-        finished: `${state.players[state.winner]?.name ?? 'Un equipo'} ha ganado`
+        roll: `Turno de ${active?.name ?? 'equipo'}`,
+        choose_move: `Mover ${active?.name ?? 'equipo'}`,
+        question: `Pregunta de ${active?.name ?? 'equipo'}`,
+        finished: `${state.players[state.winner]?.name ?? 'Un equipo'} gana`
     }[state.phase] ?? state.phase;
+    const lastRoll = state.lastResult?.type === 'rolled' ? Number(state.lastResult.dice) : null;
 
     box.innerHTML = `
-        <p class="eyebrow">Estado</p>
-        <h2>${escapeHtml(statusText)}</h2>
-        ${state.lastResult ? renderResultStatus(state.lastResult) : ''}
+        <span class="top-dice-label">${escapeHtml(label)}</span>
+        <span class="top-dice-face" aria-label="${lastRoll ? `Ultimo dado: ${lastRoll}` : 'Sin tirada reciente'}">
+            ${renderDiceFace(Math.max(1, Math.min(6, lastRoll || state.dice || 1)))}
+        </span>
     `;
 }
 
@@ -318,48 +332,62 @@ function renderDiceFace(value) {
     `;
 }
 
-function renderPreferences() {
-    const box = document.querySelector('#preferencesBox');
+function renderPreferencesOverlay() {
+    const box = document.querySelector('#preferencesOverlay');
     if (!box || !currentRoom) return;
     const whiteBordersEnabled = localStorage.getItem(whiteBordersPreferenceKey) === '1';
     const pulseDestinationsEnabled = localStorage.getItem(pulseDestinationsPreferenceKey) === '1';
     const animateTokensEnabled = animateTokensPreferenceEnabled();
     const diceResultDelay = diceResultDelayPreferenceMs();
 
-    box.classList.toggle('preferences-panel-collapsed', !preferencesExpanded);
+    box.classList.toggle('hidden', !preferencesOverlayOpen);
     box.innerHTML = `
-        <button id="preferencesToggle" class="preferences-toggle" type="button" aria-expanded="${preferencesExpanded ? 'true' : 'false'}" aria-controls="preferencesContent">
-            <span class="eyebrow">Preferencias</span>
-            <span class="preferences-arrow" aria-hidden="true">▾</span>
-        </button>
-        <div id="preferencesContent" class="preferences-content">
-            <label class="toggle-row">
-                <span>Bordes blancos del tablero</span>
-                <input id="whiteBordersToggle" type="checkbox" ${whiteBordersEnabled ? 'checked' : ''}>
-            </label>
-            <label class="toggle-row">
-                <span>Animar destinos disponibles</span>
-                <input id="pulseDestinationsToggle" type="checkbox" ${pulseDestinationsEnabled ? 'checked' : ''}>
-            </label>
-            <label class="toggle-row">
-                <span>Animar movimiento de fichas</span>
-                <input id="animateTokensToggle" type="checkbox" ${animateTokensEnabled ? 'checked' : ''}>
-            </label>
-            <label class="select-row">
-                <span>Duración resultado dado</span>
-                <select id="diceResultDelaySelect">
-                    <option value="500" ${diceResultDelay === 500 ? 'selected' : ''}>0.5s</option>
-                    <option value="1000" ${diceResultDelay === 1000 ? 'selected' : ''}>1s</option>
-                    <option value="1500" ${diceResultDelay === 1500 ? 'selected' : ''}>1.5s</option>
-                    <option value="2000" ${diceResultDelay === 2000 ? 'selected' : ''}>2s</option>
-                </select>
-            </label>
-        </div>
+        <article class="preferences-card">
+            <div class="preferences-card-head">
+                <div>
+                    <p class="eyebrow">Preferencias</p>
+                    <h2 id="preferencesOverlayTitle">Ajustes del tablero</h2>
+                </div>
+                <button id="preferencesCloseButton" class="icon-button secondary" type="button" aria-label="Cerrar preferencias">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6.4 5 12.6 12.6-1.4 1.4L5 6.4 6.4 5Zm12.6 1.4L6.4 19 5 17.6 17.6 5 19 6.4Z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="preferences-content">
+                <label class="toggle-row">
+                    <span>Bordes blancos del tablero</span>
+                    <input id="whiteBordersToggle" type="checkbox" ${whiteBordersEnabled ? 'checked' : ''}>
+                </label>
+                <label class="toggle-row">
+                    <span>Animar destinos disponibles</span>
+                    <input id="pulseDestinationsToggle" type="checkbox" ${pulseDestinationsEnabled ? 'checked' : ''}>
+                </label>
+                <label class="toggle-row">
+                    <span>Animar movimiento de fichas</span>
+                    <input id="animateTokensToggle" type="checkbox" ${animateTokensEnabled ? 'checked' : ''}>
+                </label>
+                <label class="select-row">
+                    <span>Duracion resultado dado</span>
+                    <select id="diceResultDelaySelect">
+                        <option value="500" ${diceResultDelay === 500 ? 'selected' : ''}>0.5s</option>
+                        <option value="1000" ${diceResultDelay === 1000 ? 'selected' : ''}>1s</option>
+                        <option value="1500" ${diceResultDelay === 1500 ? 'selected' : ''}>1.5s</option>
+                        <option value="2000" ${diceResultDelay === 2000 ? 'selected' : ''}>2s</option>
+                    </select>
+                </label>
+            </div>
+        </article>
     `;
 
-    document.querySelector('#preferencesToggle')?.addEventListener('click', () => {
-        preferencesExpanded = !preferencesExpanded;
-        renderPreferences();
+    box.onclick = (event) => {
+        if (event.target !== box) return;
+        preferencesOverlayOpen = false;
+        renderPreferencesOverlay();
+    };
+    document.querySelector('#preferencesCloseButton')?.addEventListener('click', () => {
+        preferencesOverlayOpen = false;
+        renderPreferencesOverlay();
     });
     document.querySelector('#whiteBordersToggle')?.addEventListener('change', (event) => {
         localStorage.setItem(whiteBordersPreferenceKey, event.target.checked ? '1' : '0');
@@ -375,6 +403,10 @@ function renderPreferences() {
     document.querySelector('#diceResultDelaySelect')?.addEventListener('change', (event) => {
         localStorage.setItem(diceResultDelayPreferenceKey, event.target.value);
     });
+}
+
+function renderPreferences() {
+    renderPreferencesOverlay();
 }
 
 function animateTokensPreferenceEnabled() {
@@ -460,100 +492,6 @@ function scoreboardWheelPoint(cx, cy, radius, degrees) {
         x: cx + Math.cos(angle) * radius,
         y: cy + Math.sin(angle) * radius
     };
-}
-
-function renderPlayers() {
-    const box = document.querySelector('#playersBox');
-    if (!box || !currentRoom) return;
-    const state = currentRoom.state;
-    const categories = currentRoom.categories;
-    const active = state.players[state.currentPlayer] ?? state.players[0];
-    const activeCount = categories.filter((category) => active?.wedges?.[category.slug]).length;
-    const totalOwned = state.players.reduce((sum, player) => (
-        sum + categories.filter((category) => player.wedges?.[category.slug]).length
-    ), 0);
-
-    box.innerHTML = `
-        <div class="players-summary">
-            <p class="eyebrow">Equipos</p>
-            <div class="players-summary-active" style="--player-color:${escapeAttr(active?.color ?? '#2563eb')}">
-                <span>Equipo activo</span>
-                <strong>${escapeHtml(active?.name ?? 'Equipo')}</strong>
-                <small>${activeCount}/${categories.length} quesitos</small>
-            </div>
-            <div class="players-summary-stats">
-                <span>${state.players.length} equipos</span>
-                <span>${totalOwned}/${state.players.length * categories.length} quesitos en juego</span>
-            </div>
-        </div>
-    `;
-}
-
-function renderControls() {
-    const box = document.querySelector('#controlsBox');
-    if (!box || !currentRoom) return;
-    const state = currentRoom.state;
-    const canAct = currentRoom.mode === 'local' || playerId === state.currentPlayer || state.phase === 'lobby';
-
-    if (state.phase === 'lobby') {
-        box.innerHTML = `
-            <p class="muted">Comparte el codigo de sala. Minimo 2 equipos, maximo 6.</p>
-            <button id="startButton" type="button" ${state.players.length < 2 ? 'disabled' : ''}>Empezar partida</button>
-        `;
-        document.querySelector('#startButton')?.addEventListener('click', () => sendAction({ action: 'start' }));
-        return;
-    }
-
-    if (state.phase === 'roll') {
-        box.innerHTML = renderRollSummary(state);
-        return;
-    }
-
-    if (state.phase === 'choose_move') {
-        box.innerHTML = '<p class="muted">Elige una casilla marcada en el tablero.</p>';
-        return;
-    }
-
-    if (state.phase === 'question') {
-        box.innerHTML = renderQuestionSummary(state);
-        return;
-    }
-
-    if (state.phase === 'finished') {
-        box.innerHTML = `<p class="muted">Partida terminada.</p>`;
-    }
-}
-
-function renderRollSummary(state) {
-    const player = state.players[state.currentPlayer];
-
-    return `
-        <div class="question-summary">
-            <p class="eyebrow">Turno de tirada</p>
-            <strong>${escapeHtml(player?.name ?? 'Equipo')}</strong>
-            <p class="muted">Tira el dado en la tarjeta sobre el tablero.</p>
-        </div>
-    `;
-}
-
-function renderQuestionSummary(state) {
-    const question = state.currentQuestion;
-    if (!question) {
-        return '<p class="muted">Cargando pregunta...</p>';
-    }
-    const category = categoryMeta(question.category);
-    const player = state.players[state.currentPlayer];
-
-    return `
-        <div class="question-summary">
-            <p class="eyebrow">Pregunta en curso</p>
-            <strong>${escapeHtml(player?.name ?? 'Equipo')}</strong>
-            <span class="question-summary-category" style="--question-color:${escapeAttr(category.color)}">
-                ${escapeHtml(category.name)}
-            </span>
-            <p class="muted">Responde en la tarjeta sobre el tablero.</p>
-        </div>
-    `;
 }
 
 async function sendAction(payload) {
@@ -719,10 +657,16 @@ function renderBoard() {
                 ${animatedTokenMarkup}
             </svg>
             <div id="spaceTooltip" class="space-tooltip hidden" role="tooltip"></div>
-            ${pendingAnswerFeedback ? renderAnswerFeedbackOverlay(pendingAnswerFeedback) : renderDiceRollOverlay(state, canAct) || renderQuestionOverlay(state, canAct)}
+            ${pendingAnswerFeedback
+                ? renderAnswerFeedbackOverlay(pendingAnswerFeedback)
+                : renderLobbyOverlay(state, canAct)
+                    || renderFinishedOverlay(state)
+                    || renderDiceRollOverlay(state, canAct)
+                    || renderQuestionOverlay(state, canAct)}
         </div>
     `;
 
+    bindLobbyOverlayControls(state, canAct);
     bindQuestionOverlayControls(state, canAct);
     bindAnswerFeedbackControls();
     bindDiceRollOverlayControls(state, canAct);
@@ -795,6 +739,49 @@ async function moveWithTokenAnimation(destination) {
         pendingTokenAnimation = null;
         renderRoom();
     }
+}
+
+function renderLobbyOverlay(state, canAct) {
+    if (state.phase !== 'lobby') return '';
+    const ready = state.players.length >= 2;
+
+    return `
+        <div class="question-overlay lobby-overlay" role="dialog" aria-modal="true" aria-labelledby="lobbyOverlayTitle">
+            <article class="floating-question-card lobby-overlay-card">
+                <p class="eyebrow">Sala preparada</p>
+                <h2 id="lobbyOverlayTitle">Equipos conectados</h2>
+                <div class="lobby-team-list" role="list">
+                    ${state.players.map((player) => `
+                        <span class="lobby-team-pill" role="listitem" style="--player-color:${escapeAttr(player.color)}">
+                            ${escapeHtml(player.name)}
+                        </span>
+                    `).join('')}
+                </div>
+                <p class="muted">${ready ? 'Cuando querais, empezad la partida.' : 'Minimo 2 equipos para empezar.'}</p>
+                <button id="startButton" type="button" ${ready && canAct ? '' : 'disabled'}>Empezar partida</button>
+            </article>
+        </div>
+    `;
+}
+
+function bindLobbyOverlayControls(state, canAct) {
+    if (state.phase !== 'lobby' || !canAct || state.players.length < 2) return;
+    document.querySelector('#startButton')?.addEventListener('click', () => sendAction({ action: 'start' }));
+}
+
+function renderFinishedOverlay(state) {
+    if (state.phase !== 'finished') return '';
+    const winner = state.players[state.winner];
+
+    return `
+        <div class="question-overlay finished-overlay" role="dialog" aria-modal="true" aria-labelledby="finishedOverlayTitle">
+            <article class="floating-question-card finished-overlay-card">
+                <p class="eyebrow">Partida terminada</p>
+                <h2 id="finishedOverlayTitle">${escapeHtml(winner?.name ?? 'Un equipo')} ha ganado</h2>
+                <p class="muted">Todos los quesitos y pregunta final completados.</p>
+            </article>
+        </div>
+    `;
 }
 
 function renderDiceRollOverlay(state, canAct) {

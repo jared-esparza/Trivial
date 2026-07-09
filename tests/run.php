@@ -177,7 +177,7 @@ $runner->test('board preferences can toggle white space borders', function (): v
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
 
-    assertTrueValue(str_contains($index, 'id="preferencesBox"'), 'game view should expose a preferences box');
+    assertTrueValue(str_contains($index, 'id="preferencesOverlay"'), 'game view should expose a preferences overlay');
     assertTrueValue(str_contains($appJs, 'renderPreferences'), 'room render should include preferences');
     assertTrueValue(str_contains($appJs, 'board:whiteBorders'), 'white border preference should persist locally');
     assertTrueValue(str_contains($appJs, 'show-space-borders'), 'board svg should receive a class when borders are enabled');
@@ -239,18 +239,67 @@ $runner->test('fullscreen scoreboard stays compact and board mount can shrink', 
     assertTrueValue(str_contains($styles, 'grid-template-rows: auto auto minmax(0, 1fr);'), 'fullscreen board panel should reserve remaining space for the board');
     assertTrueValue(str_contains($styles, 'height: 100%;'), 'fullscreen board mount should fill the remaining row');
     assertTrueValue(str_contains($styles, 'max-height: 100%;'), 'fullscreen board frame should respect available height');
-    assertTrueValue(str_contains($styles, 'grid-template-rows: minmax(0, 1fr) auto;'), 'mobile fullscreen should avoid auto rows pushing the board below the viewport');
+    assertTrueValue(str_contains($styles, 'grid-template-columns: minmax(0, 1fr);'), 'fullscreen should stay in a single-column board layout');
+});
+
+$runner->test('game view removes the sidebar and exposes top bar game controls', function (): void {
+    $index = file_get_contents(__DIR__ . '/../public/index.php');
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(!str_contains($index, '<aside class="side-panel">'), 'game view should not render the old right sidebar');
+    assertTrueValue(!str_contains($index, 'id="statusBox"'), 'status box should be removed from the game view');
+    assertTrueValue(!str_contains($index, 'id="playersBox"'), 'players box should be removed from the game view');
+    assertTrueValue(!str_contains($index, 'id="controlsBox"'), 'controls box should be removed from the game view');
+    assertTrueValue(str_contains($index, 'id="topDiceStatus"'), 'top bar should expose a compact dice status');
+    assertTrueValue(str_contains($index, 'id="preferencesButton"'), 'top bar should expose a preferences button');
+    assertTrueValue(str_contains($appJs, 'renderTopDiceStatus'), 'room render should update the compact top dice status');
+    assertTrueValue(str_contains($styles, 'grid-template-columns: minmax(0, 1fr);'), 'game view should be a centered single-column layout');
+}
+);
+
+$runner->test('preferences are rendered in a floating overlay opened from a gear button', function (): void {
+    $index = file_get_contents(__DIR__ . '/../public/index.php');
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($index, 'id="preferencesOverlay"'), 'page should expose a preferences overlay container');
+    assertTrueValue(str_contains($index, 'aria-label="Abrir preferencias"'), 'preferences button should be accessible');
+    assertTrueValue(str_contains($appJs, 'bindPreferencesOverlayControls'), 'preferences overlay should bind open and close controls');
+    assertTrueValue(str_contains($appJs, 'renderPreferencesOverlay'), 'preferences should render into a floating overlay');
+    assertTrueValue(str_contains($appJs, 'preferencesOverlayOpen'), 'preferences overlay should use explicit open state');
+    assertTrueValue(str_contains($appJs, 'board:whiteBorders'), 'white border preference should keep the existing key');
+    assertTrueValue(str_contains($appJs, 'board:pulseDestinations'), 'pulse destination preference should keep the existing key');
+    assertTrueValue(str_contains($appJs, 'board:animateTokens'), 'token animation preference should keep the existing key');
+    assertTrueValue(str_contains($appJs, 'board:diceResultDelayMs'), 'dice delay preference should keep the existing key');
+    assertTrueValue(str_contains($styles, '.preferences-overlay'), 'preferences overlay should have modal styles');
+    assertTrueValue(str_contains($styles, '.preferences-card'), 'preferences card should have dedicated styles');
+});
+
+$runner->test('lobby and finished phases render board overlays without sidebar controls', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($appJs, 'renderLobbyOverlay'), 'lobby should render a board overlay');
+    assertTrueValue(str_contains($appJs, 'renderFinishedOverlay'), 'finished phase should render a board overlay');
+    assertTrueValue(str_contains($appJs, 'startButton'), 'lobby overlay should keep the start game action');
+    assertTrueValue(str_contains($appJs, 'renderDiceRollOverlay(state, canAct)'), 'dice roll overlay should remain the main roll action');
+    assertTrueValue(!str_contains($appJs, 'function renderControls'), 'sidebar controls renderer should be removed');
+    assertTrueValue(!str_contains($appJs, 'function renderPlayers'), 'sidebar players renderer should be removed');
+    assertTrueValue(!str_contains($appJs, 'function renderStatus'), 'sidebar status renderer should be removed');
+    assertTrueValue(str_contains($styles, '.lobby-overlay-card'), 'lobby overlay should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.finished-overlay-card'), 'finished overlay should have dedicated styles');
 });
 
 $runner->test('sidebar players become compact summary instead of duplicated player cards', function (): void {
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
 
-    assertTrueValue(str_contains($appJs, 'players-summary'), 'sidebar players should render a compact summary');
-    assertTrueValue(str_contains($appJs, 'Equipo activo'), 'sidebar summary should identify the active team');
+    assertTrueValue(!str_contains($appJs, 'players-summary'), 'sidebar players summary should be removed with the sidebar');
+    assertTrueValue(!str_contains($appJs, 'Equipo activo'), 'sidebar active team summary should be removed with the sidebar');
     assertTrueValue(!str_contains($appJs, '<article class="player-card ${index === state.currentPlayer ? \'active\' : \'\'}">'), 'sidebar should not duplicate full player cards');
-    assertTrueValue(str_contains($styles, '.players-summary'), 'compact players summary should have dedicated styles');
-    assertTrueValue(str_contains($styles, '.players-summary-active'), 'active team summary should have dedicated styles');
+    assertTrueValue(!str_contains($styles, '.players-summary'), 'compact players summary styles should be removed');
+    assertTrueValue(!str_contains($styles, '.players-summary-active'), 'active team summary styles should be removed');
 });
 
 $runner->test('board uses inline icons and category labels instead of text markers', function (): void {
@@ -273,7 +322,7 @@ $runner->test('question phase renders a floating board dialog instead of sidebar
 
     assertTrueValue(str_contains($appJs, 'renderQuestionOverlay'), 'question controls should render in a board overlay helper');
     assertTrueValue(str_contains($appJs, 'bindQuestionOverlayControls'), 'floating question controls should bind their own answer actions');
-    assertTrueValue(str_contains($appJs, 'renderQuestionSummary'), 'sidebar controls should render a compact question summary');
+    assertTrueValue(!str_contains($appJs, 'renderQuestionSummary'), 'question summaries should not depend on sidebar controls');
     assertTrueValue(str_contains($appJs, 'role="dialog"'), 'floating question should be exposed as a dialog');
     assertTrueValue(str_contains($appJs, 'questionOverlayBackdrop'), 'board should include a modal overlay backdrop');
     assertTrueValue(!str_contains($appJs, 'renderQuestionControls(box'), 'sidebar should not render the full question controls');
@@ -351,25 +400,24 @@ $runner->test('roll phase uses a floating dice card on the board', function (): 
     assertTrueValue(str_contains($appJs, 'renderDiceRollOverlay'), 'roll phase should render a board dice overlay');
     assertTrueValue(str_contains($appJs, 'submitRollFromOverlay'), 'dice card should submit rolls through its own handler');
     assertTrueValue(str_contains($appJs, 'diceRollOverlayButton'), 'dice card should expose the main roll button');
-    assertTrueValue(str_contains($appJs, 'renderRollSummary'), 'sidebar should render a compact roll summary');
+    assertTrueValue(!str_contains($appJs, 'renderRollSummary'), 'roll phase should not depend on sidebar summaries');
     assertTrueValue(!str_contains($appJs, 'box.innerHTML = `<button id="rollButton"'), 'sidebar should not render the main roll button');
     assertTrueValue(str_contains($styles, '.dice-roll-card'), 'dice roll card should have dedicated styles');
     assertTrueValue(str_contains($styles, '.dice-roll-card .dice-face'), 'dice face should be larger in the roll card');
 });
 
-$runner->test('preferences panel is collapsible and includes dice result duration', function (): void {
+$runner->test('preferences overlay includes dice result duration', function (): void {
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
 
-    assertTrueValue(str_contains($appJs, 'preferencesToggle'), 'preferences should expose a clickable header button');
-    assertTrueValue(str_contains($appJs, 'let preferencesExpanded = false'), 'preferences should render closed by default');
-    assertTrueValue(str_contains($appJs, 'preferences-panel-collapsed'), 'preferences should use a collapsed state class');
+    assertTrueValue(str_contains($appJs, 'preferencesOverlayOpen'), 'preferences should use modal open state');
+    assertTrueValue(str_contains($appJs, 'preferencesCloseButton'), 'preferences should expose a close button');
     assertTrueValue(str_contains($appJs, 'board:diceResultDelayMs'), 'dice result delay should persist locally');
     assertTrueValue(str_contains($appJs, 'diceResultDelaySelect'), 'preferences should render a dice delay select');
     assertTrueValue(str_contains($appJs, 'diceResultDelayPreferenceMs'), 'dice delay should be read through a helper');
-    assertTrueValue(str_contains($styles, '.preferences-toggle'), 'collapsible preferences header should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.preferences-overlay'), 'preferences modal backdrop should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.preferences-card'), 'preferences modal card should have dedicated styles');
     assertTrueValue(str_contains($styles, '.preferences-content'), 'collapsible preferences content should have dedicated styles');
-    assertTrueValue(str_contains($styles, '.preferences-panel-collapsed .preferences-content'), 'collapsed preferences content should be hidden by css');
 });
 
 $runner->test('dice roll card shows animated result before movement selection', function (): void {
