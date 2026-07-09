@@ -4,6 +4,7 @@ const whiteBordersPreferenceKey = 'board:whiteBorders';
 const pulseDestinationsPreferenceKey = 'board:pulseDestinations';
 const animateTokensPreferenceKey = 'board:animateTokens';
 const diceResultDelayPreferenceKey = 'board:diceResultDelayMs';
+const colorPackPreferenceKey = 'board:colorPack';
 const minimumDiceRollAnimationMs = 520;
 
 let currentRoom = null;
@@ -25,6 +26,25 @@ const categoryLabels = {
     entertainment: 'Entretenimiento',
     science: 'Ciencia y naturaleza',
     sports: 'Deportes y ocio'
+};
+
+const categoryColorPacks = {
+    classic: {
+        geography: '#2f80ed',
+        art: '#8b5a2b',
+        history: '#f2c94c',
+        entertainment: '#d94a9b',
+        science: '#27ae60',
+        sports: '#f2994a'
+    },
+    alternative: {
+        geography: '#2f80ed',
+        art: '#7b3ff2',
+        history: '#f2c94c',
+        entertainment: '#eb5757',
+        science: '#27ae60',
+        sports: '#f2994a'
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -392,6 +412,7 @@ function renderPreferencesOverlay() {
     const pulseDestinationsEnabled = localStorage.getItem(pulseDestinationsPreferenceKey) === '1';
     const animateTokensEnabled = animateTokensPreferenceEnabled();
     const diceResultDelay = diceResultDelayPreferenceMs();
+    const colorPack = colorPackPreference();
 
     box.classList.toggle('hidden', !preferencesOverlayOpen);
     box.innerHTML = `
@@ -419,6 +440,13 @@ function renderPreferencesOverlay() {
                 <label class="toggle-row">
                     <span>Animar movimiento de fichas</span>
                     <input id="animateTokensToggle" type="checkbox" ${animateTokensEnabled ? 'checked' : ''}>
+                </label>
+                <label class="select-row">
+                    <span>Pack de colores</span>
+                    <select id="colorPackSelect">
+                        <option value="classic" ${colorPack === 'classic' ? 'selected' : ''}>Clasico</option>
+                        <option value="alternative" ${colorPack === 'alternative' ? 'selected' : ''}>Alternativo</option>
+                    </select>
                 </label>
                 <label class="select-row">
                     <span>Duracion resultado dado</span>
@@ -456,6 +484,12 @@ function renderPreferencesOverlay() {
     document.querySelector('#diceResultDelaySelect')?.addEventListener('change', (event) => {
         localStorage.setItem(diceResultDelayPreferenceKey, event.target.value);
     });
+    document.querySelector('#colorPackSelect')?.addEventListener('change', (event) => {
+        localStorage.setItem(colorPackPreferenceKey, event.target.value);
+        renderScoreboard();
+        renderBoard();
+        renderPreferencesOverlay();
+    });
 }
 
 function renderPreferences() {
@@ -471,11 +505,24 @@ function diceResultDelayPreferenceMs() {
     return [500, 1000, 1500, 2000].includes(stored) ? stored : 1000;
 }
 
+function colorPackPreference() {
+    const stored = localStorage.getItem(colorPackPreferenceKey);
+    return Object.prototype.hasOwnProperty.call(categoryColorPacks, stored) ? stored : 'classic';
+}
+
+function categoriesWithColorPack(categories) {
+    const colors = categoryColorPacks[colorPackPreference()] ?? categoryColorPacks.classic;
+    return categories.map((category) => ({
+        ...category,
+        color: colors[category.slug] ?? category.color
+    }));
+}
+
 function renderScoreboard() {
     const box = document.querySelector('#scoreboardBox');
     if (!box || !currentRoom) return;
     const state = currentRoom.state;
-    const categories = currentRoom.categories;
+    const categories = categoriesWithColorPack(currentRoom.categories);
 
     box.innerHTML = `
         <div class="scoreboard-track" role="list" aria-label="Marcador principal">
@@ -1224,12 +1271,13 @@ function pointOnCircle(cx, cy, radius, degrees) {
 function colorForSpace(space, categories) {
     if (space.type === 'center') return '#ffffff';
     if (space.type === 'roll_again') return '#cbd5e1';
-    const category = categories.find((item) => item.slug === space.category);
+    const category = categoriesWithColorPack(categories).find((item) => item.slug === space.category);
     return category?.color ?? '#e5e7eb';
 }
 
 function categoryMeta(slug) {
-    const category = currentRoom?.categories?.find((item) => item.slug === slug);
+    const categories = currentRoom ? categoriesWithColorPack(currentRoom.categories) : [];
+    const category = categories.find((item) => item.slug === slug);
     return {
         name: category?.name ?? categoryLabels[slug] ?? slug,
         color: category?.color ?? '#1457d9'

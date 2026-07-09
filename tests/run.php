@@ -537,6 +537,19 @@ $runner->test('preferences overlay includes dice result duration', function (): 
     assertTrueValue(str_contains($styles, '.preferences-content'), 'collapsible preferences content should have dedicated styles');
 });
 
+$runner->test('preferences can switch category color packs without changing board distribution', function (): void {
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+
+    assertTrueValue(str_contains($appJs, 'board:colorPack'), 'color pack preference should persist locally');
+    assertTrueValue(str_contains($appJs, 'categoryColorPacks'), 'frontend should define named category color packs');
+    assertTrueValue(str_contains($appJs, 'classic'), 'classic color pack should be available');
+    assertTrueValue(str_contains($appJs, 'alternative'), 'alternative color pack should be available');
+    assertTrueValue(str_contains($appJs, 'colorPackSelect'), 'preferences should render a color pack selector');
+    assertTrueValue(str_contains($appJs, 'categoriesWithColorPack'), 'renderers should derive category colors from the selected pack');
+    assertTrueValue(str_contains($appJs, 'renderScoreboard();'), 'changing color pack should refresh the scoreboard');
+    assertTrueValue(str_contains($appJs, 'renderBoard();'), 'changing color pack should refresh the board');
+});
+
 $runner->test('dice roll card shows animated result before movement selection', function (): void {
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
