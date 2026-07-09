@@ -11,16 +11,16 @@ El nombre `trivial` es provisional. El usuario lo cambiara cuando tenga el nombr
 ## Estado Git
 
 - Rama principal: `main`.
-- Ultimo commit conocido al actualizar este archivo: `1c8f7c1 Marcadores mejorados e integrados`.
+- Ultimo commit conocido al actualizar este archivo: `34645ce Fix tarjeta preferencias visivilidad en pantalla completa`.
 - Estado antes de actualizar este archivo: limpio contra `origin/main`.
 - Este archivo quedara como cambio pendiente hasta que se haga commit.
 - Commits recientes relevantes:
+  - `34645ce Fix tarjeta preferencias visivilidad en pantalla completa`
+  - `d0fabf9 Eliminar columna derecha, mover dado y preferencias a barra superior`
+  - `f3d878a Update project_context.md`
   - `1c8f7c1 Marcadores mejorados e integrados`
   - `d4e754b Anadir animacion dado y preferencias desplegables`
   - `5a84d46 Update project context for recent UI changes`
-  - `763e258 Anadir animacion de movimiento de ficha y tarjeta flotante para lanzar dado`
-  - `4e4a81c Mejora tarjetas preguntas con indicador de acierto o error, mejora de iconos quesitos, anadido efecto latido a la seleccion de casillas como preferencia de sala`
-  - `3b78bdf Mostrar preguntas en tarjetas flotantes, modificar aspecto de quesitos`
 
 ## Stack y Despliegue
 
@@ -131,7 +131,9 @@ En modo `judge`:
 
 ## Preferencias UI
 
-La caja `Preferencias` esta en la columna lateral, bajo `Estado`, y esta plegada por defecto.
+Las preferencias ya no viven en la columna lateral. Se abren desde el boton de engranaje `#preferencesButton` en la barra superior de la partida.
+
+La tarjeta se renderiza en `#preferencesOverlay`, que debe estar dentro de `#gameView`. Esto es importante: si queda fuera de `#gameView`, no se vera cuando la partida entre en fullscreen porque el navegador solo muestra el arbol del elemento fullscreen.
 
 Preferencias actuales:
 
@@ -163,25 +165,30 @@ Los bordes negros de seleccion/jugador se renderizan en una capa superior separa
   - 6 porciones `scoreboard-wheel-slice`.
   - Porciones ganadas con `scoreboard-wheel-slice-owned` a color completo.
   - Porciones pendientes con el mismo color atenuado.
-- `playersBox` en la columna lateral ya no duplica tarjetas completas:
-  - muestra equipo activo,
-  - numero de equipos,
-  - progreso global de quesitos.
+- La columna lateral fue eliminada.
+- Ya no existen `side-panel`, `statusBox`, `preferencesBox`, `playersBox` ni `controlsBox` en la vista de partida.
+- El estado de equipos y turno se comunica mediante el marcador principal y las tarjetas flotantes.
+- La accion de lobby `Empezar partida` vive en una tarjeta flotante sobre el tablero.
 
 ## Interfaz Visual del Tablero
 
 Mejoras actuales en `public/assets/app.js` y `public/assets/styles.css`:
 
 - Boton `fullscreenBoardButton` en la cabecera del tablero.
+- Boton `preferencesButton` con icono de engranaje en la cabecera del tablero.
+- `topDiceStatus` muestra un dado compacto y el estado/turno actual en la barra superior.
 - Pantalla completa jugable sobre `#gameView`:
   - Usa Fullscreen API cuando el navegador lo permite.
   - Usa clase `fullscreen-fallback` si el navegador bloquea fullscreen nativo.
-  - Integra tablero, marcador, estado, preferencias, equipos y controles/pregunta.
+  - Integra tablero, marcador, dado superior, preferencias, equipos y tarjetas flotantes.
   - En fullscreen el marcador se compacta.
   - `game-board-panel` usa `grid-template-rows: auto auto minmax(0, 1fr)`.
   - `board-mount` usa `min-height: 0`, `overflow: hidden` y `container-type: size`.
   - En fullscreen, `board-frame` usa `width: min(100%, 100cqh)` para respetar la altura real disponible.
-  - En movil fullscreen se usa `grid-template-rows: minmax(0, 1fr) auto`.
+- Layout de partida:
+  - `gameView` es de una sola columna.
+  - El tablero queda centrado y puede crecer mas que cuando existia la columna lateral.
+  - La anchura normal de `board-frame` es `min(100%, 820px)`.
 - Casillas `wedge_*`:
   - Ya no muestran letra `Q`.
   - Renderizan un icono inline SVG minimalista con `renderWedgeIcon(point, space)`.
@@ -200,15 +207,18 @@ Mejoras actuales en `public/assets/app.js` y `public/assets/styles.css`:
   - `lastAnimatedDiceKey` evita reanimar el mismo resultado en cada render.
 - Fase de tirada:
   - `renderDiceRollOverlay()` muestra una tarjeta flotante sobre el tablero.
-  - El boton principal `Tirar dado` vive en la tarjeta flotante, no en la columna lateral.
+  - El boton principal `Tirar dado` vive en la tarjeta flotante, no en la barra superior.
+  - El dado superior es solo indicador compacto, no dispara la tirada.
   - `submitRollFromOverlay()` bloquea dobles clicks.
   - `pendingDiceRollFeedback` muestra animacion y resultado final antes de elegir destino.
   - La duracion visible del resultado se toma de `board:diceResultDelayMs`.
+- Lobby y final:
+  - `renderLobbyOverlay()` muestra equipos conectados y boton `Empezar partida`.
+  - `renderFinishedOverlay()` muestra el ganador.
 - Preguntas:
   - `renderQuestionOverlay()` muestra la pregunta en una tarjeta flotante sobre el tablero.
   - En modo `judge`, primero solo aparece `Mostrar respuesta`; tras revelar, aparecen `Acierto` y `Fallo`.
   - En modo `auto`/online, las 4 opciones aparecen en la tarjeta.
-  - El panel lateral solo muestra un resumen compacto de la pregunta en curso.
 - Resultado de respuesta:
   - `renderAnswerFeedbackOverlay()` muestra `Correcto` o `Fallado` tras responder.
   - La tarjeta indica si el equipo vuelve a tirar o si cambia el turno.
@@ -270,7 +280,7 @@ Get-ChildItem -Recurse -Filter *.php | ForEach-Object { & C:\xampp\php\php.exe -
 Resultado esperado actual de tests:
 
 ```text
-36 passed, 0 failed
+39 passed, 0 failed
 ```
 
 Verificacion visual reciente:
@@ -279,6 +289,10 @@ Verificacion visual reciente:
 - Se uso el navegador integrado para recargar la sala y medir elementos.
 - Verificado:
   - Marcador principal sobre el tablero.
+  - Columna derecha eliminada.
+  - Dado compacto y boton de preferencias en la barra superior.
+  - Preferencias en tarjeta flotante abierta con engranaje.
+  - `#preferencesOverlay` dentro de `#gameView` para verse tambien en fullscreen.
   - Ruedas de quesitos del marcador: 2 equipos detectados, 6 porciones por rueda.
   - No quedan indicadores lineales `.scoreboard-wedge` como marcador principal.
   - Tablero normal sigue midiendo 720px en la vista verificada.
@@ -290,7 +304,7 @@ Verificacion visual reciente:
   - Dado visual y tarjeta flotante para tirar.
   - Tarjeta flotante de pregunta en modo juez y modo opciones.
   - Tarjeta de resultado tras responder con boton `Continuar`.
-  - Preferencias plegables y toggles actuales.
+  - Preferencias flotantes y toggles actuales.
   - Animacion de ficha antes de mostrar la pregunta.
 
 ## Puntos Delicados
@@ -306,9 +320,10 @@ Verificacion visual reciente:
 - El fullscreen nativo puede fallar en el navegador integrado; `fullscreen-fallback` es parte esperada del comportamiento.
 - En fullscreen, no dimensionar `board-frame` solo contra `100vh`; debe respetar la altura real de `board-mount`.
 - `scoreboardBox` debe quedarse fuera de `boardMount` para no interferir con overlays del tablero.
+- `preferencesOverlay` debe quedarse dentro de `gameView` para ser visible cuando `gameView` esta en fullscreen.
 - Las ruedas del marcador son SVG inline generadas por `renderScoreboardWedgeWheel()`, no assets externos.
 - Los iconos de quesito/reroll son SVG inline, no assets externos.
-- El resultado del dado se muestra visualmente en Estado y la tirada principal se hace desde la tarjeta flotante; evitar reintroducir texto duplicado `Dado: N` o botones principales en controles laterales.
+- El resultado/estado compacto del dado se muestra en `topDiceStatus` y la tirada principal se hace desde la tarjeta flotante; evitar reintroducir columna lateral o botones principales fuera del overlay.
 - `pendingAnswerFeedback` es local y bloquea temporalmente otros overlays hasta pulsar `Continuar`.
 - `pendingDiceRollFeedback` es local y retrasa visualmente el paso a elegir destino segun `board:diceResultDelayMs`.
 - `pendingTokenAnimation` es local; si hay error de API tras la animacion, se limpia y se re-renderiza el estado real.
