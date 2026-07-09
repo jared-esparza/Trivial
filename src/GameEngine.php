@@ -7,12 +7,12 @@ final class GameEngine
     public static function categories(): array
     {
         return [
-            ['slug' => 'geography', 'name' => 'Geografia', 'color' => '#2f80ed'],
-            ['slug' => 'art', 'name' => 'Arte y literatura', 'color' => '#7b3ff2'],
             ['slug' => 'history', 'name' => 'Historia', 'color' => '#f2c94c'],
-            ['slug' => 'entertainment', 'name' => 'Entretenimiento', 'color' => '#eb5757'],
-            ['slug' => 'science', 'name' => 'Ciencia y naturaleza', 'color' => '#27ae60'],
             ['slug' => 'sports', 'name' => 'Deportes y ocio', 'color' => '#f2994a'],
+            ['slug' => 'geography', 'name' => 'Geografia', 'color' => '#2f80ed'],
+            ['slug' => 'art', 'name' => 'Arte y literatura', 'color' => '#8b5a2b'],
+            ['slug' => 'science', 'name' => 'Ciencia y naturaleza', 'color' => '#27ae60'],
+            ['slug' => 'entertainment', 'name' => 'Entretenimiento', 'color' => '#d94a9b'],
         ];
     }
 
@@ -205,7 +205,7 @@ final class GameEngine
         foreach ($categories as $category) {
             $categoryBySlug[$category['slug']] = $category;
         }
-        $categorySlugs = array_column($categories, 'slug');
+        $distribution = self::boardDistribution();
         $hubRadius = 42.0;
         $hubSideLength = $hubRadius / cos(deg2rad(30));
         $spokeWidth = $hubSideLength;
@@ -235,15 +235,9 @@ final class GameEngine
         ]];
 
         $outerIndex = 0;
-        foreach ($categories as $spoke => $category) {
-            $slug = $category['slug'];
-            $spokeSequence = [
-                $categorySlugs[($spoke + 2) % 6],
-                $categorySlugs[($spoke + 4) % 6],
-                $categorySlugs[($spoke + 3) % 6],
-                $categorySlugs[($spoke + 1) % 6],
-                $categorySlugs[($spoke + 5) % 6],
-            ];
+        foreach ($distribution['wedges'] as $spoke => $slug) {
+            $category = $categoryBySlug[$slug];
+            $spokeSequence = $distribution['spokes'][$spoke];
 
             foreach ($spokeSequence as $index => $spaceCategory) {
                 $spaceNumber = $index + 1;
@@ -290,7 +284,8 @@ final class GameEngine
 
             $rerollNumber = 1;
             for ($outer = 1; $outer <= 6; $outer++) {
-                if ($outer === 2 || $outer === 5) {
+                $outerCategory = $distribution['outer'][$spoke][$outer - 1];
+                if ($outerCategory === null) {
                     $spaces[] = [
                         'id' => "roll_again_{$spoke}_{$rerollNumber}",
                         'type' => 'roll_again',
@@ -311,7 +306,6 @@ final class GameEngine
                     continue;
                 }
 
-                $outerCategory = $categorySlugs[($spoke + $outer) % 6];
                 $spaces[] = [
                     'id' => "o{$spoke}_{$outer}",
                     'type' => 'category',
@@ -332,6 +326,29 @@ final class GameEngine
         }
 
         return $spaces;
+    }
+
+    private static function boardDistribution(): array
+    {
+        return [
+            'wedges' => ['history', 'sports', 'geography', 'art', 'science', 'entertainment'],
+            'outer' => [
+                ['art', null, 'geography', 'entertainment', null, 'science'],
+                ['science', null, 'art', 'history', null, 'entertainment'],
+                ['entertainment', null, 'science', 'sports', null, 'history'],
+                ['history', null, 'entertainment', 'geography', null, 'sports'],
+                ['sports', null, 'history', 'art', null, 'geography'],
+                ['geography', null, 'sports', 'science', null, 'art'],
+            ],
+            'spokes' => [
+                ['sports', 'entertainment', 'science', 'geography', 'art'],
+                ['geography', 'history', 'entertainment', 'art', 'science'],
+                ['art', 'sports', 'history', 'science', 'entertainment'],
+                ['science', 'geography', 'sports', 'entertainment', 'history'],
+                ['entertainment', 'art', 'geography', 'history', 'sports'],
+                ['history', 'science', 'art', 'sports', 'geography'],
+            ],
+        ];
     }
 
     public static function graph(): array

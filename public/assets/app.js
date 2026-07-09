@@ -4,6 +4,7 @@ const whiteBordersPreferenceKey = 'board:whiteBorders';
 const pulseDestinationsPreferenceKey = 'board:pulseDestinations';
 const animateTokensPreferenceKey = 'board:animateTokens';
 const diceResultDelayPreferenceKey = 'board:diceResultDelayMs';
+const colorPackPreferenceKey = 'board:colorPack';
 const minimumDiceRollAnimationMs = 520;
 
 let currentRoom = null;
@@ -27,7 +28,27 @@ const categoryLabels = {
     sports: 'Deportes y ocio'
 };
 
+const categoryColorPacks = {
+    classic: {
+        geography: '#2f80ed',
+        art: '#8b5a2b',
+        history: '#f2c94c',
+        entertainment: '#d94a9b',
+        science: '#27ae60',
+        sports: '#f2994a'
+    },
+    alternative: {
+        geography: '#2f80ed',
+        art: '#7b3ff2',
+        history: '#f2c94c',
+        entertainment: '#eb5757',
+        science: '#27ae60',
+        sports: '#f2994a'
+    }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+    bindHomeNavigation();
     bindGameForms();
     bindAdminForms();
     bindFullscreenControls();
@@ -40,6 +61,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+function bindHomeNavigation() {
+    const homeView = document.querySelector('#homeView');
+    const localSetupView = document.querySelector('#localSetupView');
+    const openLocalSetupButton = document.querySelector('#openLocalSetupButton');
+    const backHomeButton = document.querySelector('#backHomeButton');
+    const localPlayersInput = document.querySelector('#localForm textarea[name="players"]');
+
+    openLocalSetupButton?.addEventListener('click', () => {
+        homeView?.classList.add('hidden');
+        localSetupView?.classList.remove('hidden');
+        updateLocalSetupTeamCount();
+        localPlayersInput?.focus();
+    });
+
+    backHomeButton?.addEventListener('click', () => {
+        localSetupView?.classList.add('hidden');
+        homeView?.classList.remove('hidden');
+    });
+
+    localPlayersInput?.addEventListener('input', updateLocalSetupTeamCount);
+    updateLocalSetupTeamCount();
+}
+
+function localSetupTeamNames() {
+    const localPlayersInput = document.querySelector('#localForm textarea[name="players"]');
+    return String(localPlayersInput?.value ?? '')
+        .split(/\r?\n/)
+        .map((name) => name.trim())
+        .filter(Boolean);
+}
+
+function updateLocalSetupTeamCount() {
+    const names = localSetupTeamNames();
+    const count = names.length;
+    const counter = document.querySelector('#localSetupTeamCount');
+    const localForm = document.querySelector('#localForm');
+    const submitButton = localForm?.querySelector('button[type="submit"]');
+    const isValid = count >= 2 && count <= 6;
+
+    if (counter) {
+        counter.textContent = `${count}/6 equipos`;
+        counter.classList.toggle('invalid', !isValid);
+    }
+    localForm?.classList.toggle('local-form-invalid', !isValid);
+    submitButton?.toggleAttribute('disabled', !isValid);
+
+    return { count, isValid };
+}
+
 function bindGameForms() {
     const localForm = document.querySelector('#localForm');
     const onlineCreateForm = document.querySelector('#onlineCreateForm');
@@ -50,10 +120,12 @@ function bindGameForms() {
         localForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const data = new FormData(localForm);
-            const players = String(data.get('players'))
-                .split(/\r?\n/)
-                .map((name) => name.trim())
-                .filter(Boolean)
+            const localSetupStatus = updateLocalSetupTeamCount();
+            if (!localSetupStatus.isValid) {
+                toast('La partida local necesita entre 2 y 6 equipos.');
+                return;
+            }
+            const players = localSetupTeamNames()
                 .map((name, index) => ({ name, color: playerColors[index] }));
             const response = await apiFetch('/rooms', {
                 mode: 'local',
@@ -232,6 +304,7 @@ function setRoom(room) {
     currentRoom = room;
     pendingAnswerFeedback = null;
     document.querySelector('#homeView')?.classList.add('hidden');
+    document.querySelector('#localSetupView')?.classList.add('hidden');
     document.querySelector('#gameView')?.classList.remove('hidden');
     document.querySelector('#roomCode').textContent = room.code;
     history.replaceState(null, '', `?room=${room.code}`);
@@ -339,6 +412,7 @@ function renderPreferencesOverlay() {
     const pulseDestinationsEnabled = localStorage.getItem(pulseDestinationsPreferenceKey) === '1';
     const animateTokensEnabled = animateTokensPreferenceEnabled();
     const diceResultDelay = diceResultDelayPreferenceMs();
+    const colorPack = colorPackPreference();
 
     box.classList.toggle('hidden', !preferencesOverlayOpen);
     box.innerHTML = `
@@ -366,6 +440,13 @@ function renderPreferencesOverlay() {
                 <label class="toggle-row">
                     <span>Animar movimiento de fichas</span>
                     <input id="animateTokensToggle" type="checkbox" ${animateTokensEnabled ? 'checked' : ''}>
+                </label>
+                <label class="select-row">
+                    <span>Pack de colores</span>
+                    <select id="colorPackSelect">
+                        <option value="classic" ${colorPack === 'classic' ? 'selected' : ''}>Clasico</option>
+                        <option value="alternative" ${colorPack === 'alternative' ? 'selected' : ''}>Alternativo</option>
+                    </select>
                 </label>
                 <label class="select-row">
                     <span>Duracion resultado dado</span>
@@ -403,6 +484,12 @@ function renderPreferencesOverlay() {
     document.querySelector('#diceResultDelaySelect')?.addEventListener('change', (event) => {
         localStorage.setItem(diceResultDelayPreferenceKey, event.target.value);
     });
+    document.querySelector('#colorPackSelect')?.addEventListener('change', (event) => {
+        localStorage.setItem(colorPackPreferenceKey, event.target.value);
+        renderScoreboard();
+        renderBoard();
+        renderPreferencesOverlay();
+    });
 }
 
 function renderPreferences() {
@@ -418,11 +505,24 @@ function diceResultDelayPreferenceMs() {
     return [500, 1000, 1500, 2000].includes(stored) ? stored : 1000;
 }
 
+function colorPackPreference() {
+    const stored = localStorage.getItem(colorPackPreferenceKey);
+    return Object.prototype.hasOwnProperty.call(categoryColorPacks, stored) ? stored : 'classic';
+}
+
+function categoriesWithColorPack(categories) {
+    const colors = categoryColorPacks[colorPackPreference()] ?? categoryColorPacks.classic;
+    return categories.map((category) => ({
+        ...category,
+        color: colors[category.slug] ?? category.color
+    }));
+}
+
 function renderScoreboard() {
     const box = document.querySelector('#scoreboardBox');
     if (!box || !currentRoom) return;
     const state = currentRoom.state;
-    const categories = currentRoom.categories;
+    const categories = categoriesWithColorPack(currentRoom.categories);
 
     box.innerHTML = `
         <div class="scoreboard-track" role="list" aria-label="Marcador principal">
@@ -1171,12 +1271,13 @@ function pointOnCircle(cx, cy, radius, degrees) {
 function colorForSpace(space, categories) {
     if (space.type === 'center') return '#ffffff';
     if (space.type === 'roll_again') return '#cbd5e1';
-    const category = categories.find((item) => item.slug === space.category);
+    const category = categoriesWithColorPack(categories).find((item) => item.slug === space.category);
     return category?.color ?? '#e5e7eb';
 }
 
 function categoryMeta(slug) {
-    const category = currentRoom?.categories?.find((item) => item.slug === slug);
+    const categories = currentRoom ? categoriesWithColorPack(currentRoom.categories) : [];
+    const category = categories.find((item) => item.slug === slug);
     return {
         name: category?.name ?? categoryLabels[slug] ?? slug,
         color: category?.color ?? '#1457d9'
