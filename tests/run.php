@@ -258,6 +258,36 @@ $runner->test('game view removes the sidebar and exposes top bar game controls',
 }
 );
 
+$runner->test('home exposes separate local setup view and navigation controls', function (): void {
+    $index = file_get_contents(__DIR__ . '/../public/index.php');
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(str_contains($index, 'id="homeView"'), 'home view should remain available');
+    assertTrueValue(str_contains($index, 'id="localSetupView"'), 'local setup should be a separate view');
+    assertTrueValue(str_contains($index, 'id="openLocalSetupButton"'), 'home should expose a local setup navigation button');
+    assertTrueValue(str_contains($index, 'id="backHomeButton"'), 'local setup should expose a back button');
+    assertTrueValue(str_contains($index, 'id="localSetupTeamCount"'), 'local setup should expose a live team counter');
+    assertTrueValue(strpos($index, 'id="localSetupView"') < strpos($index, 'id="gameView"'), 'local setup should sit before the game view');
+    assertTrueValue(str_contains($appJs, 'bindHomeNavigation'), 'frontend should bind home/local navigation');
+    assertTrueValue(str_contains($appJs, 'updateLocalSetupTeamCount'), 'frontend should update the local team counter');
+    assertTrueValue(str_contains($styles, '.local-setup-view'), 'local setup should have dedicated view styles');
+    assertTrueValue(str_contains($styles, '.home-hero'), 'redesigned home hero should have dedicated styles');
+});
+
+$runner->test('landing forms keep online creation and join data on the home screen', function (): void {
+    $index = file_get_contents(__DIR__ . '/../public/index.php');
+    $homeStart = strpos($index, 'id="homeView"');
+    $localStart = strpos($index, 'id="localSetupView"');
+    $homeMarkup = substr($index, $homeStart, $localStart - $homeStart);
+
+    assertTrueValue(str_contains($homeMarkup, 'id="onlineCreateForm"'), 'online create form should stay on the home view');
+    assertTrueValue(str_contains($homeMarkup, 'name="teamName"'), 'online create form should ask for the team name');
+    assertTrueValue(str_contains($homeMarkup, 'id="joinForm"'), 'join form should stay on the home view');
+    assertTrueValue(str_contains($homeMarkup, 'name="code"'), 'join form should ask for a room code');
+    assertTrueValue(str_contains($homeMarkup, 'name="teamName"'), 'join form should ask for a team name');
+});
+
 $runner->test('preferences are rendered in a floating overlay opened from a gear button', function (): void {
     $index = file_get_contents(__DIR__ . '/../public/index.php');
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');

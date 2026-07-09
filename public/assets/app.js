@@ -28,6 +28,7 @@ const categoryLabels = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    bindHomeNavigation();
     bindGameForms();
     bindAdminForms();
     bindFullscreenControls();
@@ -40,6 +41,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+function bindHomeNavigation() {
+    const homeView = document.querySelector('#homeView');
+    const localSetupView = document.querySelector('#localSetupView');
+    const openLocalSetupButton = document.querySelector('#openLocalSetupButton');
+    const backHomeButton = document.querySelector('#backHomeButton');
+    const localPlayersInput = document.querySelector('#localForm textarea[name="players"]');
+
+    openLocalSetupButton?.addEventListener('click', () => {
+        homeView?.classList.add('hidden');
+        localSetupView?.classList.remove('hidden');
+        updateLocalSetupTeamCount();
+        localPlayersInput?.focus();
+    });
+
+    backHomeButton?.addEventListener('click', () => {
+        localSetupView?.classList.add('hidden');
+        homeView?.classList.remove('hidden');
+    });
+
+    localPlayersInput?.addEventListener('input', updateLocalSetupTeamCount);
+    updateLocalSetupTeamCount();
+}
+
+function localSetupTeamNames() {
+    const localPlayersInput = document.querySelector('#localForm textarea[name="players"]');
+    return String(localPlayersInput?.value ?? '')
+        .split(/\r?\n/)
+        .map((name) => name.trim())
+        .filter(Boolean);
+}
+
+function updateLocalSetupTeamCount() {
+    const names = localSetupTeamNames();
+    const count = names.length;
+    const counter = document.querySelector('#localSetupTeamCount');
+    const localForm = document.querySelector('#localForm');
+    const submitButton = localForm?.querySelector('button[type="submit"]');
+    const isValid = count >= 2 && count <= 6;
+
+    if (counter) {
+        counter.textContent = `${count}/6 equipos`;
+        counter.classList.toggle('invalid', !isValid);
+    }
+    localForm?.classList.toggle('local-form-invalid', !isValid);
+    submitButton?.toggleAttribute('disabled', !isValid);
+
+    return { count, isValid };
+}
+
 function bindGameForms() {
     const localForm = document.querySelector('#localForm');
     const onlineCreateForm = document.querySelector('#onlineCreateForm');
@@ -50,10 +100,12 @@ function bindGameForms() {
         localForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const data = new FormData(localForm);
-            const players = String(data.get('players'))
-                .split(/\r?\n/)
-                .map((name) => name.trim())
-                .filter(Boolean)
+            const localSetupStatus = updateLocalSetupTeamCount();
+            if (!localSetupStatus.isValid) {
+                toast('La partida local necesita entre 2 y 6 equipos.');
+                return;
+            }
+            const players = localSetupTeamNames()
                 .map((name, index) => ({ name, color: playerColors[index] }));
             const response = await apiFetch('/rooms', {
                 mode: 'local',
@@ -232,6 +284,7 @@ function setRoom(room) {
     currentRoom = room;
     pendingAnswerFeedback = null;
     document.querySelector('#homeView')?.classList.add('hidden');
+    document.querySelector('#localSetupView')?.classList.add('hidden');
     document.querySelector('#gameView')?.classList.remove('hidden');
     document.querySelector('#roomCode').textContent = room.code;
     history.replaceState(null, '', `?room=${room.code}`);
