@@ -11,16 +11,15 @@ El nombre `trivial` es provisional. El usuario lo cambiara cuando tenga el nombr
 ## Estado Git
 
 - Rama principal: `main`.
-- Ultimo commit conocido al actualizar este archivo: `34645ce Fix tarjeta preferencias visivilidad en pantalla completa`.
+- Ultimo commit conocido al actualizar este archivo: `645bf95 Merge pull request #1 from jared-esparza/codex/home-local-redesign`.
 - Estado antes de actualizar este archivo: limpio contra `origin/main`.
 - Este archivo quedara como cambio pendiente hasta que se haga commit.
 - Commits recientes relevantes:
-  - `34645ce Fix tarjeta preferencias visivilidad en pantalla completa`
-  - `d0fabf9 Eliminar columna derecha, mover dado y preferencias a barra superior`
-  - `f3d878a Update project_context.md`
-  - `1c8f7c1 Marcadores mejorados e integrados`
-  - `d4e754b Anadir animacion dado y preferencias desplegables`
-  - `5a84d46 Update project context for recent UI changes`
+  - `645bf95 Merge pull request #1 from jared-esparza/codex/home-local-redesign`
+  - `f609876 Anadir packs de colores y preferencias para cambiarlos`
+  - `a5ff3f1 Fix distribucion de casillas y uso de colores oficiales`
+  - `aab8e48 Mejora UI/UX de pagina principal y creacion de salas`
+  - `490bb9e Update PROJECT_CONTEXT.md`
 
 ## Stack y Despliegue
 
@@ -65,6 +64,8 @@ public/
   api.php                API JSON de salas, acciones y admin.
   assets/app.js          Cliente JS: tablero SVG, preferencias, turnos, preguntas, polling.
   assets/styles.css      Estilos UI, tablero, overlays, marcador y fullscreen.
+  assets/home-board-art.png  Recorte decorativo para la portada.
+  assets/local-board-art.png Recorte decorativo para configuracion local.
 
 src/
   bootstrap.php          Carga config, conecta DB, crea schema.
@@ -77,13 +78,20 @@ src/
 tests/run.php            Test runner PHP sin framework.
 data/questions-demo.csv  Preguntas demo para probar las 6 categorias.
 database/schema.mysql.sql Schema MySQL opcional/manual.
-tablero.jpg              Imagen de referencia inicial del tablero.
+Mockups/                 Mockups y tablero de referencia usados para la portada/configuracion local.
 ```
 
 ## Reglas Implementadas
 
 - 2 a 6 equipos.
 - Seis categorias: `geography`, `art`, `history`, `entertainment`, `science`, `sports`.
+- Colores/categorias clasicas:
+  - `geography`: azul, Geografia.
+  - `entertainment`: rosa, Entretenimiento.
+  - `history`: amarillo, Historia.
+  - `art`: marron, Arte y literatura.
+  - `science`: verde, Ciencia y naturaleza.
+  - `sports`: naranja, Deportes y ocio.
 - Los jugadores empiezan en `center`.
 - En su turno tiran dado y eligen una casilla valida.
 - El tablero se modela como grafo en `GameEngine::graph()`.
@@ -97,7 +105,15 @@ tablero.jpg              Imagen de referencia inicial del tablero.
   - Cada casilla `wedge_*` esta en el anillo exterior, alineada con su radio y con color de categoria.
   - Cada sector exterior tiene 6 casillas entre quesitos con patron estructural `pregunta, reroll, pregunta, pregunta, reroll, pregunta`.
   - Hay 12 casillas `roll_again`, integradas en el anillo exterior.
-- Los radios tienen categorias alternadas.
+- Distribucion de quesitos clasica desde las 3 en punto y en sentido antihorario:
+  - `history`, `sports`, `geography`, `art`, `science`, `entertainment`.
+- `GameEngine::boardDistribution()` centraliza la distribucion logica de quesitos, aro exterior y radios.
+- Las 3 casillas vecinas de cada quesito usan la categoria opuesta:
+  - `history` <-> `art`.
+  - `sports` <-> `science`.
+  - `geography` <-> `entertainment`.
+- Cada categoria aparece 10 veces contando su quesito: 1 quesito + 9 casillas normales.
+- Los radios tienen 5 casillas normales y no contienen `roll_again`.
 - Las casillas `roll_again` estan integradas en el anillo exterior y se pintan en gris.
 - Casilla `roll_again`: no hay pregunta, el mismo equipo vuelve a tirar.
 - Casilla `wedge_*`: si acierta, gana el quesito de esa categoria.
@@ -109,7 +125,8 @@ tablero.jpg              Imagen de referencia inicial del tablero.
 
 ### Online
 
-- Crear sala online con codigo.
+- Crear sala online con codigo desde la portada.
+- El formulario de crear sala online pide el nombre del equipo directamente, sin pantalla intermedia.
 - Unirse con codigo.
 - Validacion automatica con 4 opciones.
 - Polling HTTP cada 2.5 segundos desde `public/assets/app.js`.
@@ -120,6 +137,8 @@ Al crear partida local se elige:
 
 - `auto`: 4 opciones y validacion automatica.
 - `judge`: modo clasico con juez.
+- La portada abre una vista separada `#localSetupView` para configurar partida local.
+- `#localSetupView` permite escribir de 2 a 6 equipos, muestra contador `N/6 equipos` y tiene boton `Volver`.
 
 En modo `judge`:
 
@@ -151,6 +170,12 @@ Preferencias actuales:
 - `Duracion resultado dado`.
   - `localStorage`: `board:diceResultDelayMs`.
   - Selector con valores `0.5s`, `1s`, `1.5s`, `2s`; por defecto `1s`.
+- `Pack de colores`.
+  - `localStorage`: `board:colorPack`.
+  - Valores: `classic` y `alternative`; por defecto `classic`.
+  - `classic`: azul, rosa, amarillo, marron, verde, naranja.
+  - `alternative`: conserva los colores anteriores donde `art` usa morado y `entertainment` usa rojo.
+  - Solo cambia el color visual asociado a cada categoria en tablero, marcador y tarjetas; no cambia distribucion, IDs, grafo ni reglas.
 
 Los bordes negros de seleccion/jugador se renderizan en una capa superior separada (`space-highlight`) para evitar que casillas vecinas los tapen.
 
@@ -174,6 +199,12 @@ Los bordes negros de seleccion/jugador se renderizan en una capa superior separa
 
 Mejoras actuales en `public/assets/app.js` y `public/assets/styles.css`:
 
+- Pantalla principal redisenada:
+  - `#homeView` tiene hero con ilustracion decorativa del tablero y tarjetas de accion.
+  - `Partida local` abre `#localSetupView`.
+  - `Crear sala online` incluye input de nombre de equipo.
+  - `Unirse a sala` mantiene codigo de sala + nombre de equipo.
+  - Usa recortes decorativos `public/assets/home-board-art.png` y `public/assets/local-board-art.png`.
 - Boton `fullscreenBoardButton` en la cabecera del tablero.
 - Boton `preferencesButton` con icono de engranaje en la cabecera del tablero.
 - `topDiceStatus` muestra un dado compacto y el estado/turno actual en la barra superior.
@@ -280,14 +311,20 @@ Get-ChildItem -Recurse -Filter *.php | ForEach-Object { & C:\xampp\php\php.exe -
 Resultado esperado actual de tests:
 
 ```text
-39 passed, 0 failed
+44 passed, 0 failed
 ```
 
 Verificacion visual reciente:
 
-- App levantada por el usuario en `http://127.0.0.1:4181/?room=ABWCHL`.
-- Se uso el navegador integrado para recargar la sala y medir elementos.
+- App levantada en `http://127.0.0.1:4190/` y sala `http://127.0.0.1:4190/?room=WPY23T`.
+- Se uso el navegador integrado para recargar la app y medir elementos.
 - Verificado:
+  - Home desktop/mobile sin overflow horizontal.
+  - Vista `#localSetupView`, contador de equipos y boton `Volver`.
+  - Crear sala online desde portada con nombre de equipo.
+  - Crear partida local desde `#localSetupView`.
+  - Distribucion clasica de categorias del tablero con 12 `roll_again`.
+  - Selector de pack de colores en preferencias: `classic` y `alternative`.
   - Marcador principal sobre el tablero.
   - Columna derecha eliminada.
   - Dado compacto y boton de preferencias en la barra superior.
@@ -313,10 +350,12 @@ Verificacion visual reciente:
 - No meter `storage/dev.sqlite` al repo.
 - `php-server*.log` esta ignorado.
 - El tablero depende de que `GameEngine::boardDefinition()` y `public/assets/app.js` interpreten igual `track`, `spoke`, `index` y `visual.shape`.
+- La distribucion logica de categorias vive en `GameEngine::boardDistribution()`. Si se cambia, actualizar tests de distribucion clasica.
 - La geometria de radios se calcula desde `hubRadius`, `hubSideLength`, `spokeWidth`, `outerRingInner`, `spokeOuterVertexRadius` y `spokeLength`.
 - No volver a usar alturas fijas tipo `36` para las casillas de radio si se quiere mantener igualdad entre vertices.
 - La forma `curved_spoke_end` requiere que los vertices exteriores de la ultima casilla caigan en la curva interior del anillo, no que se anada una extension extra.
-- El tablero actual esta considerado estable visualmente; si se cambia marcador o fullscreen, no tocar `renderBoard()`, `GameEngine::boardDefinition()` ni la geometria SVG salvo peticion explicita.
+- El tablero actual esta considerado estable visualmente; si se cambia marcador o fullscreen, no tocar `renderBoard()`, la geometria SVG ni los metadatos `visual` salvo peticion explicita.
+- Cambiar los packs de colores debe hacerse en `categoryColorPacks` de `public/assets/app.js`; no tocar la distribucion ni el grafo para cambios solo visuales.
 - El fullscreen nativo puede fallar en el navegador integrado; `fullscreen-fallback` es parte esperada del comportamiento.
 - En fullscreen, no dimensionar `board-frame` solo contra `100vh`; debe respetar la altura real de `board-mount`.
 - `scoreboardBox` debe quedarse fuera de `boardMount` para no interferir con overlays del tablero.
