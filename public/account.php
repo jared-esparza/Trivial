@@ -14,11 +14,16 @@ $config = app_config();
 <body>
     <header class="topbar">
         <a class="brand" href="./"><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></a>
-        <a class="admin-link" href="./">Volver al juego</a>
+        <nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal">
+            <a class="topbar-link" href="./">Juego</a>
+            <a class="topbar-link active" href="account.php">Login / registro</a>
+        </nav>
     </header>
 
     <main class="shell admin-shell">
         <section id="accountStatus" class="panel admin-panel" aria-live="polite">
+            <p class="eyebrow">Acceso</p>
+            <h1>Login o registro</h1>
             <p class="muted">Consultando la sesi&oacute;n...</p>
         </section>
 
@@ -37,6 +42,7 @@ $config = app_config();
                 <p class="eyebrow">Nueva cuenta</p>
                 <h1>Registrarse</h1>
                 <form id="registerForm">
+                    <label>Nombre visible<input name="displayName" autocomplete="nickname" minlength="2" maxlength="40" required></label>
                     <label>Email<input name="email" type="email" autocomplete="email" required></label>
                     <label>Contrase&ntilde;a<input name="password" type="password" autocomplete="new-password" minlength="10" required></label>
                     <button type="submit">Crear cuenta</button>
@@ -63,6 +69,7 @@ $config = app_config();
     </main>
 
     <div id="toast" class="toast hidden"></div>
+    <script src="assets/session-nav.js"></script>
     <script src="assets/account.js"></script>
 </body>
 </html>

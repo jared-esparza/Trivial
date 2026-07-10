@@ -19,6 +19,7 @@ final class AuthController
         $router->add('POST', '/auth/verify', fn (ApiRequest $request): ApiResponse => $this->verify($request));
         $router->add('POST', '/auth/login', fn (ApiRequest $request): ApiResponse => $this->login($request));
         $router->add('GET', '/auth/me', fn (ApiRequest $request): ApiResponse => $this->me($request));
+        $router->add('POST', '/auth/profile', fn (ApiRequest $request): ApiResponse => $this->profile($request));
         $router->add('POST', '/auth/logout', fn (ApiRequest $request): ApiResponse => $this->logout($request));
         $router->add('POST', '/auth/password/forgot', fn (ApiRequest $request): ApiResponse => $this->forgotPassword($request));
         $router->add('POST', '/auth/password/reset', fn (ApiRequest $request): ApiResponse => $this->resetPassword($request));
@@ -29,7 +30,8 @@ final class AuthController
     {
         $user = $this->auth->register(
             (string) ($request->body['email'] ?? ''),
-            (string) ($request->body['password'] ?? '')
+            (string) ($request->body['password'] ?? ''),
+            (string) ($request->body['displayName'] ?? '')
         );
 
         return new ApiResponse(['user' => $this->publicUser($user)], 201);
@@ -86,15 +88,7 @@ final class AuthController
 
     private function logout(ApiRequest $request): ApiResponse
     {
-        $token = (string) ($request->cookies[self::COOKIE_NAME] ?? '');
-        $user = $token === '' ? null : $this->sessions->findUserByToken($token);
-        if ($user === null) {
-            throw new ApiException(401, 'AUTH_REQUIRED', 'Debes iniciar sesion.');
-        }
-        $providedCsrf = $request->header('x-csrf-token') ?? '';
-        if ($providedCsrf === '' || !hash_equals((string) $user['csrf_token'], $providedCsrf)) {
-            throw new ApiException(403, 'CSRF_INVALID', 'Token CSRF no valido.');
-        }
+        [$token] = $this->requireSession($request, true);
 
         $this->auth->logout($token);
 
@@ -105,21 +99,24 @@ final class AuthController
         );
     }
 
+    private function profile(ApiRequest $request): ApiResponse
+    {
+        [, $user] = $this->requireSession($request, true);
+        $updated = $this->auth->updateDisplayName(
+            (int) $user['id'],
+            (string) ($request->body['displayName'] ?? '')
+        );
+
+        return new ApiResponse(['user' => $this->publicUser($updated)]);
+    }
+
     private function deleteAccount(ApiRequest $request): ApiResponse
     {
         if ($this->accountDeletion === null) {
             throw new ApiException(503, 'ACCOUNT_DELETION_UNAVAILABLE', 'El borrado de cuenta no esta disponible.');
         }
 
-        $token = (string) ($request->cookies[self::COOKIE_NAME] ?? '');
-        $user = $token === '' ? null : $this->sessions->findUserByToken($token);
-        if ($user === null) {
-            throw new ApiException(401, 'AUTH_REQUIRED', 'Debes iniciar sesion.');
-        }
-        $providedCsrf = $request->header('x-csrf-token') ?? '';
-        if ($providedCsrf === '' || !hash_equals((string) $user['csrf_token'], $providedCsrf)) {
-            throw new ApiException(403, 'CSRF_INVALID', 'Token CSRF no valido.');
-        }
+        [, $user] = $this->requireSession($request, true);
         if (!password_verify((string) ($request->body['password'] ?? ''), (string) $user['password_hash'])) {
             throw new InvalidArgumentException('La contrasena actual no es correcta.');
         }
@@ -138,10 +135,28 @@ final class AuthController
         return [
             'id' => (int) $user['id'],
             'email' => (string) $user['email'],
+            'displayName' => (string) $user['display_name'],
             'role' => (string) $user['role'],
             'status' => (string) $user['status'],
             'emailVerified' => ($user['email_verified_at'] ?? null) !== null,
         ];
+    }
+
+    private function requireSession(ApiRequest $request, bool $csrf): array
+    {
+        $token = (string) ($request->cookies[self::COOKIE_NAME] ?? '');
+        $user = $token === '' ? null : $this->sessions->findUserByToken($token);
+        if ($user === null) {
+            throw new ApiException(401, 'AUTH_REQUIRED', 'Debes iniciar sesion.');
+        }
+        if ($csrf) {
+            $providedCsrf = $request->header('x-csrf-token') ?? '';
+            if ($providedCsrf === '' || !hash_equals((string) $user['csrf_token'], $providedCsrf)) {
+                throw new ApiException(403, 'CSRF_INVALID', 'Token CSRF no valido.');
+            }
+        }
+
+        return [$token, $user];
     }
 
     private function sessionCookie(string $value, string $expiresAt): array

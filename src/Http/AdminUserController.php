@@ -87,6 +87,7 @@ final class AdminUserController
         return [
             'id' => (int) $user['id'],
             'email' => (string) $user['email'],
+            'displayName' => (string) $user['display_name'],
             'role' => (string) $user['role'],
             'status' => (string) $user['status'],
             'emailVerified' => ($user['email_verified_at'] ?? null) !== null,

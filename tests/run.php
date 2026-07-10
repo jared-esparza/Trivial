@@ -137,12 +137,14 @@ $runner->test('migration runner applies each migration exactly once', function (
     $runner->migrate();
 
     $applied = (int) $pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn();
-    assertSameValue(7, $applied);
+    assertSameValue(8, $applied);
 
     $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'table'")->fetchAll(PDO::FETCH_COLUMN);
     foreach (['rooms', 'questions', 'users', 'auth_sessions', 'account_tokens', 'auth_attempts', 'question_packs', 'pack_revisions', 'pack_categories', 'color_schemes', 'color_scheme_slots', 'room_participants', 'answer_events'] as $table) {
         assertContainsValue($table, $tables, "missing migrated table {$table}");
     }
+    $userColumns = $pdo->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_ASSOC);
+    assertContainsValue('display_name', array_column($userColumns, 'name'), 'users should include display_name');
 });
 
 $runner->test('application bootstrap runs versioned migrations instead of inline schema creation', function (): void {
@@ -167,15 +169,38 @@ $runner->test('registration normalizes email hashes password and sends verificat
         'http://localhost'
     );
 
-    $user = $service->register('  PERSONA@Example.COM ', 'contrasena-segura');
+    $user = $service->register('  PERSONA@Example.COM ', 'contrasena-segura', '  Persona   Azul  ');
     $stored = (new UserRepository($pdo))->findByEmail('persona@example.com');
 
     assertSameValue('persona@example.com', $user['email']);
+    assertSameValue('Persona Azul', $user['display_name']);
     assertSameValue('persona@example.com', $stored['email']);
+    assertSameValue('Persona Azul', $stored['display_name']);
     assertTrueValue(password_verify('contrasena-segura', $stored['password_hash']));
     assertSameValue(null, $stored['email_verified_at']);
     assertSameValue(1, count($mailer->messages));
     assertTrueValue(str_contains($mailer->messages[0]['body'], '/account.php?action=verify&token='));
+});
+
+$runner->test('registration requires a normalized display name', function (): void {
+    $pdo = migratedPdo();
+    $service = new AuthService(
+        new UserRepository($pdo),
+        new SessionRepository($pdo),
+        new AccountTokenRepository($pdo),
+        new TestMailer(),
+        'http://localhost'
+    );
+
+    foreach (['', 'A', str_repeat('x', 41), "Nombre\nRoto"] as $displayName) {
+        try {
+            $service->register('persona' . strlen($displayName) . '@example.com', 'contrasena-segura', $displayName);
+        } catch (InvalidArgumentException) {
+            $rejected = true;
+        }
+        assertTrueValue($rejected ?? false, 'invalid display name should be rejected');
+        unset($rejected);
+    }
 });
 
 $runner->test('login permits pending accounts while verified policy unlocks after token use', function (): void {
@@ -190,7 +215,7 @@ $runner->test('login permits pending accounts while verified policy unlocks afte
         $mailer,
         'http://localhost'
     );
-    $service->register('persona@example.com', 'contrasena-segura');
+    $service->register('persona@example.com', 'contrasena-segura', 'Persona Azul');
 
     $pendingSession = $service->login('persona@example.com', 'contrasena-segura');
     assertSameValue(null, $pendingSession['user']['email_verified_at']);
@@ -217,7 +242,7 @@ $runner->test('password reset revokes existing sessions and logout revokes one s
     $users = new UserRepository($pdo);
     $sessions = new SessionRepository($pdo);
     $service = new AuthService($users, $sessions, new AccountTokenRepository($pdo), $mailer, 'http://localhost');
-    $service->register('persona@example.com', 'contrasena-segura');
+    $service->register('persona@example.com', 'contrasena-segura', 'Persona Azul');
     preg_match('/token=([A-Za-z0-9_-]+)/', $mailer->messages[0]['body'], $verifyMatch);
     $service->verify($verifyMatch[1]);
 
@@ -293,7 +318,7 @@ $runner->test('auth service applies persistent login throttling', function (): v
         'http://localhost',
         $limiter
     );
-    $service->register('persona@example.com', 'contrasena-segura');
+    $service->register('persona@example.com', 'contrasena-segura', 'Persona Azul');
 
     for ($attempt = 1; $attempt <= 4; $attempt++) {
         try {
@@ -340,8 +365,10 @@ $runner->test('auth http routes issue session cookie expose csrf and protect log
     $register = $router->dispatch(new ApiRequest('POST', '/auth/register', [
         'email' => 'persona@example.com',
         'password' => 'contrasena-segura',
+        'displayName' => 'Persona Azul',
     ]));
     assertSameValue(201, $register->status);
+    assertSameValue('Persona Azul', $register->payload['user']['displayName']);
 
     $login = $router->dispatch(new ApiRequest('POST', '/auth/login', [
         'email' => 'persona@example.com',
@@ -353,8 +380,23 @@ $runner->test('auth http routes issue session cookie expose csrf and protect log
 
     $me = $router->dispatch(new ApiRequest('GET', '/auth/me', [], [], ['rq_session' => $sessionToken]));
     assertSameValue('persona@example.com', $me->payload['user']['email']);
+    assertSameValue('Persona Azul', $me->payload['user']['displayName']);
     assertTrueValue(!isset($me->payload['user']['password_hash']));
     $csrf = $me->payload['csrfToken'];
+
+    $profileBlocked = $router->dispatch(new ApiRequest('POST', '/auth/profile', ['displayName' => 'Persona Nueva'], [], ['rq_session' => $sessionToken]));
+    assertSameValue(403, $profileBlocked->status);
+
+    $profile = $router->dispatch(new ApiRequest(
+        'POST',
+        '/auth/profile',
+        ['displayName' => 'Persona Nueva'],
+        [],
+        ['rq_session' => $sessionToken],
+        ['x-csrf-token' => $csrf]
+    ));
+    assertSameValue(200, $profile->status);
+    assertSameValue('Persona Nueva', $profile->payload['user']['displayName']);
 
     $blocked = $router->dispatch(new ApiRequest('POST', '/auth/logout', [], [], ['rq_session' => $sessionToken]));
     assertSameValue(403, $blocked->status);
@@ -385,11 +427,13 @@ $runner->test('auth http routes verify email and reset password without account 
     $router->dispatch(new ApiRequest('POST', '/auth/register', [
         'email' => 'persona@example.com',
         'password' => 'contrasena-segura',
+        'displayName' => 'Persona Azul',
     ]));
     preg_match('/token=([A-Za-z0-9_-]+)/', $mailer->messages[0]['body'], $verifyMatch);
     $verified = $router->dispatch(new ApiRequest('POST', '/auth/verify', ['token' => $verifyMatch[1]]));
     assertSameValue(200, $verified->status);
     assertSameValue(true, $verified->payload['user']['emailVerified']);
+    assertSameValue('Persona Azul', $verified->payload['user']['displayName']);
 
     $missing = $router->dispatch(new ApiRequest('POST', '/auth/password/forgot', ['email' => 'missing@example.com']));
     assertSameValue(200, $missing->status);
@@ -420,14 +464,19 @@ $runner->test('public api delegates auth paths to the modular router', function 
 $runner->test('account ui and admin panel use session authentication without shared keys', function (): void {
     assertTrueValue(is_file(__DIR__ . '/../public/account.php'), 'account page should exist');
     assertTrueValue(is_file(__DIR__ . '/../public/assets/account.js'), 'account script should exist');
+    assertTrueValue(is_file(__DIR__ . '/../public/assets/session-nav.js'), 'shared session navigation script should exist');
     assertTrueValue(is_file(__DIR__ . '/../bin/create-admin.php'), 'admin bootstrap command should exist');
 
     $index = file_get_contents(__DIR__ . '/../public/index.php');
+    $accountPage = file_get_contents(__DIR__ . '/../public/account.php');
     $admin = file_get_contents(__DIR__ . '/../public/admin.php');
     $api = file_get_contents(__DIR__ . '/../public/api.php');
     $bootstrap = file_get_contents(__DIR__ . '/../src/bootstrap.php');
     assertTrueValue(is_string($index) && is_string($admin) && is_string($api) && is_string($bootstrap));
     assertTrueValue(str_contains($index, 'href="account.php"'), 'home should link to account');
+    assertTrueValue(str_contains($index, 'assets/session-nav.js'), 'home should load shared navigation');
+    assertTrueValue(is_string($accountPage) && str_contains($accountPage, 'Login o registro'), 'account page should identify anonymous login/register state');
+    assertTrueValue(str_contains($accountPage, 'name="displayName"'), 'account page should collect display name');
     assertTrueValue(!str_contains($admin, 'name="adminKey"'), 'admin page should not ask for shared key');
     assertTrueValue(str_contains($bootstrap, 'new AdminUserController('), 'admin api should use modular role protected routes');
     assertTrueValue(!str_contains($api, "\$_GET['admin_key']"), 'admin key query authentication should be removed');
@@ -437,7 +486,8 @@ $runner->test('account ui and admin panel use session authentication without sha
     assertTrueValue(is_file(__DIR__ . '/../public/packs.php'), 'pack management page should exist');
     assertTrueValue(is_file(__DIR__ . '/../public/assets/packs.js'), 'pack management script should exist');
     $account = file_get_contents(__DIR__ . '/../public/assets/account.js');
-    assertTrueValue(is_string($account) && str_contains($account, 'packs.php'), 'account should link to private packs');
+    assertTrueValue(is_string($account) && str_contains($account, '/auth/profile'), 'account should update display name');
+    assertTrueValue(str_contains($account, 'data-auth-title'), 'account should render clear auth state');
 });
 
 $runner->test('admin user routes enforce role csrf and last-admin protection', function (): void {
@@ -463,6 +513,7 @@ $runner->test('admin user routes enforce role csrf and last-admin protection', f
     $listed = $router->dispatch(new ApiRequest('GET', '/admin/users', [], [], ['rq_session' => $adminSession['token']]));
     assertSameValue(2, count($listed->payload['users']));
     assertTrueValue(!isset($listed->payload['users'][0]['password_hash']));
+    assertSameValue('admin', $listed->payload['users'][0]['displayName']);
 
     $lastAdmin = $router->dispatch(new ApiRequest(
         'POST',
@@ -713,12 +764,21 @@ $runner->test('admins create system packs and manage public color schemes', func
 $runner->test('pack management ui exposes admin system and color controls conditionally', function (): void {
     $page = file_get_contents(__DIR__ . '/../public/packs.php');
     $script = file_get_contents(__DIR__ . '/../public/assets/packs.js');
-    assertTrueValue(is_string($page) && is_string($script));
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+    assertTrueValue(is_string($page) && is_string($script) && is_string($styles));
     assertTrueValue(str_contains($page, 'adminPackControls'));
     assertTrueValue(str_contains($page, 'colorSchemeForm'));
+    assertTrueValue(str_contains($page, 'color-grid'), 'color form should use unified color grid');
     assertTrueValue(str_contains($script, "me.user?.role === 'admin'"));
     assertTrueValue(str_contains($script, '/packs/colors/create'));
     assertTrueValue(str_contains($script, '/packs/colors/delete'));
+    assertTrueValue(str_contains($script, 'withSubmitting'), 'pack forms should prevent duplicate submissions');
+    assertTrueValue(str_contains($script, 'const formElement = event.currentTarget'), 'async submit handlers should keep the form reference');
+    assertTrueValue(str_contains($script, 'selectedPackId === pack.id'), 'pack list should expose selected state');
+    assertTrueValue(str_contains($script, 'renderColorInputs'), 'color inputs should show visible values');
+    assertTrueValue(str_contains($styles, '.pack-list-item'), 'pack list styles should exist');
+    assertTrueValue(str_contains($styles, 'color: var(--ink);'), 'pack list buttons should not inherit white button text');
+    assertTrueValue(str_contains($styles, '.admin-user-email'), 'admin email should have overflow-safe styling');
 });
 
 $runner->test('room stores active pack revision and immutable category snapshot', function (): void {

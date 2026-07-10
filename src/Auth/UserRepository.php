@@ -8,17 +8,19 @@ final class UserRepository
     {
     }
 
-    public function create(string $email, string $passwordHash, string $role = 'user'): array
+    public function create(string $email, string $passwordHash, string $role = 'user', ?string $displayName = null): array
     {
         $now = gmdate('c');
+        $displayName = self::normalizeDisplayName($displayName ?? self::displayNameFromEmail($email));
         $stmt = $this->pdo->prepare(
-            'INSERT INTO users (email, password_hash, role, status, created_at, updated_at)
-             VALUES (:email, :password_hash, :role, :status, :created_at, :updated_at)'
+            'INSERT INTO users (email, display_name, password_hash, role, status, created_at, updated_at)
+             VALUES (:email, :display_name, :password_hash, :role, :status, :created_at, :updated_at)'
         );
 
         try {
             $stmt->execute([
                 ':email' => $email,
+                ':display_name' => $displayName,
                 ':password_hash' => $passwordHash,
                 ':role' => $role,
                 ':status' => 'active',
@@ -33,6 +35,25 @@ final class UserRepository
         }
 
         return $this->findById((int) $this->pdo->lastInsertId());
+    }
+
+    public static function displayNameFromEmail(string $email): string
+    {
+        $name = trim((string) strtok($email, '@'));
+        return self::normalizeDisplayName($name === '' ? 'Usuario' : $name);
+    }
+
+    public static function normalizeDisplayName(string $displayName): string
+    {
+        if (preg_match('/[\x00-\x1F\x7F]/', $displayName)) {
+            throw new InvalidArgumentException('El nombre visible debe tener entre 2 y 40 caracteres.');
+        }
+        $normalized = trim(preg_replace('/\s+/', ' ', $displayName) ?? $displayName);
+        if ($normalized === '' || strlen($normalized) < 2 || strlen($normalized) > 40) {
+            throw new InvalidArgumentException('El nombre visible debe tener entre 2 y 40 caracteres.');
+        }
+
+        return $normalized;
     }
 
     public function findByEmail(string $email): ?array
@@ -81,6 +102,24 @@ final class UserRepository
         if ($stmt->rowCount() !== 1) {
             throw new RuntimeException('Usuario no encontrado.');
         }
+    }
+
+    public function updateDisplayName(int $id, string $displayName): array
+    {
+        $displayName = self::normalizeDisplayName($displayName);
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET display_name = :display_name, updated_at = :updated_at WHERE id = :id'
+        );
+        $stmt->execute([
+            ':display_name' => $displayName,
+            ':updated_at' => gmdate('c'),
+            ':id' => $id,
+        ]);
+        if ($stmt->rowCount() !== 1) {
+            throw new RuntimeException('Usuario no encontrado.');
+        }
+
+        return $this->findById($id) ?? throw new RuntimeException('Usuario no encontrado.');
     }
 
     public function updateRole(int $id, string $role): void

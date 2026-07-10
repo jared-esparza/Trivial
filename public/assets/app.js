@@ -318,8 +318,9 @@ function renderAdminUsers(users, csrfToken) {
     if (!box) return;
     box.innerHTML = users.map((user) => `
         <article class="question-item admin-user-row" data-user-id="${Number(user.id)}">
-            <div>
-                <strong>${escapeHtml(user.email)}</strong>
+            <div class="admin-user-identity">
+                <strong>${escapeHtml(user.displayName ?? user.email)}</strong>
+                <p class="admin-user-email">${escapeHtml(user.email)}</p>
                 <p class="muted">${user.emailVerified ? 'Verificado' : 'Pendiente de verificar'}</p>
             </div>
             <label>Rol

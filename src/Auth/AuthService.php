@@ -14,7 +14,7 @@ final class AuthService
     ) {
     }
 
-    public function register(string $email, string $password): array
+    public function register(string $email, string $password, string $displayName): array
     {
         $normalizedEmail = strtolower(trim($email));
         if (filter_var($normalizedEmail, FILTER_VALIDATE_EMAIL) === false) {
@@ -24,7 +24,7 @@ final class AuthService
             throw new InvalidArgumentException('La contrasena debe tener al menos 10 caracteres.');
         }
 
-        $user = $this->users->create($normalizedEmail, password_hash($password, PASSWORD_DEFAULT));
+        $user = $this->users->create($normalizedEmail, password_hash($password, PASSWORD_DEFAULT), 'user', $displayName);
         $token = $this->tokens->issue($user['id'], 'verify_email', 24 * 60 * 60);
         $url = rtrim($this->baseUrl, '/') . '/account.php?action=verify&token=' . rawurlencode($token);
         $this->mailer->send(
@@ -90,6 +90,11 @@ final class AuthService
         $userId = $this->tokens->consume($token, 'reset_password');
         $this->users->updatePassword($userId, password_hash($newPassword, PASSWORD_DEFAULT));
         $this->sessions->deleteAllForUser($userId);
+    }
+
+    public function updateDisplayName(int $userId, string $displayName): array
+    {
+        return $this->users->updateDisplayName($userId, $displayName);
     }
 
     public function logout(string $sessionToken): void

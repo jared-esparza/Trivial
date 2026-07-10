@@ -51,6 +51,7 @@ final class AccountDeletionService
             $user = $this->pdo->prepare(
                 "UPDATE users
                  SET email = :email,
+                     display_name = :display_name,
                      password_hash = :password_hash,
                      role = 'user',
                      status = 'disabled',
@@ -61,6 +62,7 @@ final class AccountDeletionService
             );
             $user->execute([
                 ':email' => $deletedEmail,
+                ':display_name' => 'Usuario eliminado',
                 ':password_hash' => password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT),
                 ':deleted_at' => $now,
                 ':updated_at' => $now,

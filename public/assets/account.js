@@ -13,6 +13,7 @@ function bindAccountForms() {
     });
     bindJsonForm('#loginForm', '/auth/login', async () => {
         await refreshAccount();
+        await refreshSharedNav();
     });
     bindJsonForm('#forgotForm', '/auth/password/forgot', () => {
         showAccountMessage('Si la cuenta existe, recibir&aacute;s un enlace de recuperaci&oacute;n.');
@@ -65,8 +66,9 @@ async function refreshAccount() {
     const status = document.querySelector('#accountStatus');
     const guestForms = document.querySelector('#accountGuestForms');
     if (!data.user) {
-        if (status) status.innerHTML = '<h1>Mi cuenta</h1><p class="muted">Juega como invitado o inicia sesi&oacute;n para usar packs e historial.</p>';
+        if (status) status.innerHTML = '<p class="eyebrow">Acceso</p><h1 data-auth-title>Login o registro</h1><p class="muted">Juega como invitado o inicia sesi&oacute;n para usar packs e historial.</p>';
         guestForms?.classList.remove('hidden');
+        await refreshSharedNav();
         return;
     }
 
@@ -74,12 +76,23 @@ async function refreshAccount() {
     if (status) {
         status.innerHTML = `
             <p class="eyebrow">Sesi&oacute;n iniciada</p>
-            <h1>${escapeAccount(data.user.email)}</h1>
-            <p>${data.user.emailVerified ? 'Email verificado' : 'Email pendiente de verificaci&oacute;n'} &middot; ${escapeAccount(data.user.role)}</p>
-            ${data.user.emailVerified ? '<p><a href="packs.php">Gestionar mis packs</a></p>' : ''}
-            ${data.user.emailVerified ? '<p><a href="history.php">Ver historial de partidas</a></p>' : ''}
-            ${data.user.role === 'admin' ? '<p><a href="admin.php">Abrir administraci&oacute;n</a></p>' : ''}
-            <button id="logoutButton" type="button">Cerrar sesi&oacute;n</button>
+            <h1 data-auth-title>${escapeAccount(data.user.displayName)}</h1>
+            <p class="muted">${escapeAccount(data.user.email)}</p>
+            <div class="account-badges">
+                <span>${data.user.emailVerified ? 'Email verificado' : 'Email pendiente de verificaci&oacute;n'}</span>
+                <span>${escapeAccount(data.user.role)}</span>
+            </div>
+            <nav class="account-actions" aria-label="Accesos de cuenta">
+                <a href="./">Juego</a>
+                ${data.user.emailVerified ? '<a href="packs.php">Gestionar packs</a>' : ''}
+                ${data.user.emailVerified ? '<a href="history.php">Historial</a>' : ''}
+                ${data.user.role === 'admin' ? '<a href="admin.php">Administraci&oacute;n</a>' : ''}
+            </nav>
+            <form id="profileForm" class="inline-form account-profile-form">
+                <label>Nombre visible<input name="displayName" value="${escapeAccount(data.user.displayName)}" minlength="2" maxlength="40" required></label>
+                <button type="submit">Guardar nombre</button>
+            </form>
+            <button id="logoutButton" class="secondary" type="button">Cerrar sesi&oacute;n</button>
             <hr>
             <details class="danger-zone">
                 <summary>Eliminar mi cuenta</summary>
@@ -93,6 +106,7 @@ async function refreshAccount() {
             await request('/auth/logout', {}, currentCsrfToken);
             currentCsrfToken = null;
             await refreshAccount();
+            await refreshSharedNav();
         });
         status.querySelector('#deleteAccountForm')?.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -103,6 +117,19 @@ async function refreshAccount() {
                 currentCsrfToken = null;
                 showAccountMessage('Cuenta eliminada y datos personales anonimizados.');
                 await refreshAccount();
+                await refreshSharedNav();
+            } catch (error) {
+                showAccountMessage(error.message, true);
+            }
+        });
+        status.querySelector('#profileForm')?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const displayName = new FormData(event.currentTarget).get('displayName');
+            try {
+                await request('/auth/profile', { displayName }, currentCsrfToken);
+                showAccountMessage('Nombre visible actualizado.');
+                await refreshAccount();
+                await refreshSharedNav();
             } catch (error) {
                 showAccountMessage(error.message, true);
             }
@@ -121,6 +148,12 @@ async function request(path, payload, csrfToken = null) {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error?.message ?? 'No se pudo completar la operaci&oacute;n.');
     return data;
+}
+
+async function refreshSharedNav() {
+    if (typeof refreshSessionNav === 'function') {
+        await refreshSessionNav();
+    }
 }
 
 function showAccountMessage(message, error = false) {

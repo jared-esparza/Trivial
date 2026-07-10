@@ -8,7 +8,7 @@ try {
     Authorization::requireAdmin($adminUser);
 } catch (Throwable) {
     http_response_code(403);
-    ?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acceso restringido</title><link rel="stylesheet" href="assets/styles.css"></head><body><main class="shell admin-shell"><section class="panel admin-panel"><h1>Acceso restringido</h1><p>Inicia sesi&oacute;n con una cuenta administradora.</p><a href="account.php">Ir a Mi cuenta</a></section></main></body></html><?php
+    ?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acceso restringido</title><link rel="stylesheet" href="assets/styles.css"></head><body><header class="topbar"><a class="brand" href="./"><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></a><nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal"><a class="topbar-link" href="account.php">Login / registro</a></nav></header><main class="shell admin-shell"><section class="panel admin-panel"><h1>Acceso restringido</h1><p>Inicia sesi&oacute;n con una cuenta administradora.</p><a href="account.php">Ir a Mi cuenta</a></section></main><script src="assets/session-nav.js"></script></body></html><?php
     exit;
 }
 ?>
@@ -23,7 +23,11 @@ try {
 <body>
     <header class="topbar">
         <a class="brand" href="./"><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></a>
-        <a class="admin-link" href="./">Volver al juego</a>
+        <nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal">
+            <a class="topbar-link" href="./">Juego</a>
+            <a class="topbar-link" href="account.php">Cuenta</a>
+            <a class="topbar-link active" href="admin.php">Admin</a>
+        </nav>
     </header>
 
     <main class="shell admin-shell">
@@ -43,6 +47,7 @@ try {
     </main>
 
     <div id="toast" class="toast hidden"></div>
+    <script src="assets/session-nav.js"></script>
     <script src="assets/app.js"></script>
 </body>
 </html>

@@ -17,10 +17,9 @@ $config = app_config();
             <span class="brand-mark" aria-hidden="true"></span>
             <span><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></span>
         </a>
-        <a class="admin-link" href="account.php">
-            <span class="admin-help-icon" aria-hidden="true">?</span>
-            <span>Mi cuenta</span>
-        </a>
+        <nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal">
+            <a class="topbar-link" href="account.php">Login / registro</a>
+        </nav>
     </header>
 
     <main class="shell">
@@ -173,6 +172,7 @@ Equipo Rojo</textarea>
     </main>
 
     <div id="toast" class="toast hidden"></div>
+    <script src="assets/session-nav.js"></script>
     <script src="assets/app.js"></script>
 </body>
 </html>

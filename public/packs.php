@@ -22,7 +22,11 @@ try {
 <body>
     <header class="topbar">
         <a class="brand" href="./"><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></a>
-        <a class="admin-link" href="account.php">Mi cuenta</a>
+        <nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal">
+            <a class="topbar-link" href="./">Juego</a>
+            <a class="topbar-link" href="account.php">Cuenta</a>
+            <a class="topbar-link active" href="packs.php">Packs</a>
+        </nav>
     </header>
     <main class="shell admin-shell">
         <section class="panel admin-panel">
@@ -43,9 +47,10 @@ try {
             <h2>Packs de colores p&uacute;blicos</h2>
             <form id="colorSchemeForm">
                 <label>Nombre<input name="name" maxlength="100" required></label>
-                <div class="inline-form">
+                <div id="colorInputs" class="color-grid">
                     <?php for ($slot = 0; $slot < 6; $slot++): ?>
-                        <label>Color <?= $slot + 1 ?><input name="colors[]" type="color" value="#<?= str_repeat(dechex(2 + $slot), 6) ?>" required></label>
+                        <?php $color = '#' . str_repeat(dechex(2 + $slot), 6); ?>
+                        <label class="color-field">Color <?= $slot + 1 ?><input name="colors[]" type="color" value="<?= $color ?>" required><span><?= $color ?></span></label>
                     <?php endfor; ?>
                 </div>
                 <button type="submit">Crear pack de colores</button>
@@ -86,6 +91,7 @@ try {
         </section>
     </main>
     <div id="toast" class="toast hidden"></div>
+    <script src="assets/session-nav.js"></script>
     <script src="assets/packs.js"></script>
 </body>
 </html>

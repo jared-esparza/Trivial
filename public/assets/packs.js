@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isAdmin = me.user?.role === 'admin';
     document.querySelector('#adminPackControls')?.classList.toggle('hidden', !isAdmin);
     document.querySelector('#colorSchemeAdmin')?.classList.toggle('hidden', !isAdmin);
+    renderColorInputs();
     bindPackForms();
     await Promise.all([loadPacks(), isAdmin ? loadColorSchemes() : Promise.resolve()]);
 });
@@ -18,19 +19,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 function bindPackForms() {
     document.querySelector('#createPackForm')?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const form = new FormData(event.currentTarget);
-        const result = await postJson('/packs/create', { name: form.get('name'), kind: form.get('kind') ?? 'user' });
-        selectedPackId = result.pack.id;
-        event.currentTarget.reset();
-        await loadPacks();
+        const formElement = event.currentTarget;
+        await withSubmitting(formElement, async () => {
+            const form = new FormData(formElement);
+            const result = await postJson('/packs/create', { name: form.get('name'), kind: form.get('kind') ?? 'user' });
+            selectedPackId = result.pack.id;
+            formElement.reset();
+            notifyPack('Pack creado y seleccionado.');
+            await loadPacks();
+        });
     });
     document.querySelector('#importPackForm')?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const result = await postJson('/packs/import', { format: data.get('format'), content: data.get('content') });
-        selectedPackId = result.pack.id;
-        event.currentTarget.reset();
-        await loadPacks();
+        const formElement = event.currentTarget;
+        await withSubmitting(formElement, async () => {
+            const data = new FormData(formElement);
+            const result = await postJson('/packs/import', { format: data.get('format'), content: data.get('content') });
+            selectedPackId = result.pack.id;
+            formElement.reset();
+            notifyPack('Pack importado y seleccionado.');
+            await loadPacks();
+        });
     });
     document.querySelector('#categoriesForm')?.addEventListener('submit', saveCategories);
     document.querySelector('#questionForm')?.addEventListener('submit', addQuestion);
@@ -41,10 +50,15 @@ function bindPackForms() {
     document.querySelector('#exportCsvButton')?.addEventListener('click', () => exportPack('csv'));
     document.querySelector('#colorSchemeForm')?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const form = new FormData(event.currentTarget);
-        await postJson('/packs/colors/create', { name: form.get('name'), colors: form.getAll('colors[]') });
-        event.currentTarget.reset();
-        await loadColorSchemes();
+        const formElement = event.currentTarget;
+        await withSubmitting(formElement, async () => {
+            const form = new FormData(formElement);
+            await postJson('/packs/colors/create', { name: form.get('name'), colors: form.getAll('colors[]') });
+            formElement.reset();
+            renderColorInputs();
+            notifyPack('Pack de colores creado.');
+            await loadColorSchemes();
+        });
     });
 }
 
@@ -58,11 +72,14 @@ async function loadPacks() {
 
 function renderPackList() {
     const list = document.querySelector('#packList');
-    list.innerHTML = packs.map((pack) => `
-        <button class="question-item pack-list-item" type="button" data-pack-id="${pack.id}">
+    list.innerHTML = packs.map((pack) => {
+        const selected = selectedPackId === pack.id;
+        return `
+        <button class="question-item pack-list-item${selected ? ' selected' : ''}" type="button" data-pack-id="${pack.id}" aria-pressed="${selected ? 'true' : 'false'}">
             <strong>${escapePack(pack.name)}</strong>
             <span>${escapePack(pack.kind === 'system' ? 'Sistema' : pack.status)}</span>
-        </button>`).join('');
+        </button>`;
+    }).join('');
     list.querySelectorAll('[data-pack-id]').forEach((button) => {
         button.addEventListener('click', () => {
             selectedPackId = Number(button.dataset.packId);
@@ -148,6 +165,31 @@ async function loadColorSchemes() {
         await postJson('/packs/colors/delete', { colorSchemeId: Number(button.dataset.deleteScheme) });
         await loadColorSchemes();
     }));
+}
+
+function renderColorInputs() {
+    document.querySelectorAll('.color-field input[type="color"]').forEach((input) => {
+        const value = input.value || '#222222';
+        input.value = value;
+        const label = input.closest('.color-field');
+        const text = label?.querySelector('span');
+        if (text) text.textContent = value.toUpperCase();
+        input.addEventListener('input', () => {
+            const span = input.closest('.color-field')?.querySelector('span');
+            if (span) span.textContent = input.value.toUpperCase();
+        });
+    });
+}
+
+async function withSubmitting(form, operation) {
+    const button = form.querySelector('button[type="submit"]');
+    if (button?.disabled) return;
+    if (button) button.disabled = true;
+    try {
+        await operation();
+    } finally {
+        if (button) button.disabled = false;
+    }
 }
 
 function selectedPack() { return packs.find((pack) => pack.id === selectedPackId); }
