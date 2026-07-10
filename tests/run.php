@@ -13,6 +13,34 @@ if (is_file($migrationRunnerFile)) {
     require_once $migrationRunnerFile;
 }
 
+foreach ([
+    __DIR__ . '/../src/Mail/Mailer.php',
+    __DIR__ . '/../src/Auth/UserRepository.php',
+    __DIR__ . '/../src/Auth/SessionRepository.php',
+    __DIR__ . '/../src/Auth/AccountTokenRepository.php',
+    __DIR__ . '/../src/Auth/AuthService.php',
+    __DIR__ . '/../src/Auth/Authorization.php',
+    __DIR__ . '/../src/Auth/UserAdminService.php',
+    __DIR__ . '/../src/Mail/LocalOutboxMailer.php',
+    __DIR__ . '/../src/Mail/NativeMailer.php',
+] as $optionalSource) {
+    if (is_file($optionalSource)) {
+        require_once $optionalSource;
+    }
+}
+
+if (interface_exists('Mailer')) {
+    final class TestMailer implements Mailer
+    {
+        public array $messages = [];
+
+        public function send(string $to, string $subject, string $body): void
+        {
+            $this->messages[] = compact('to', 'subject', 'body');
+        }
+    }
+}
+
 final class TestRunner
 {
     private int $passed = 0;
@@ -71,6 +99,16 @@ function testPdo(): PDO
     return $pdo;
 }
 
+function migratedPdo(): PDO
+{
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $runner = new MigrationRunner($pdo, __DIR__ . '/../database/migrations');
+    $runner->migrate();
+
+    return $pdo;
+}
+
 $runner = new TestRunner();
 
 $runner->test('migration runner applies each migration exactly once', function (): void {
@@ -98,6 +136,130 @@ $runner->test('application bootstrap runs versioned migrations instead of inline
     assertTrueValue(str_contains($bootstrap, 'new MigrationRunner('), 'bootstrap should create the migration runner');
     assertTrueValue(str_contains($bootstrap, '->migrate()'), 'bootstrap should run pending migrations');
     assertTrueValue(!str_contains($bootstrap, 'Database::createSchema('), 'bootstrap should not create the schema inline');
+});
+
+$runner->test('registration normalizes email hashes password and sends verification', function (): void {
+    assertTrueValue(class_exists('AuthService'), 'AuthService should be available');
+
+    $pdo = migratedPdo();
+    $mailer = new TestMailer();
+    $service = new AuthService(
+        new UserRepository($pdo),
+        new SessionRepository($pdo),
+        new AccountTokenRepository($pdo),
+        $mailer,
+        'http://localhost'
+    );
+
+    $user = $service->register('  PERSONA@Example.COM ', 'contrasena-segura');
+    $stored = (new UserRepository($pdo))->findByEmail('persona@example.com');
+
+    assertSameValue('persona@example.com', $user['email']);
+    assertSameValue('persona@example.com', $stored['email']);
+    assertTrueValue(password_verify('contrasena-segura', $stored['password_hash']));
+    assertSameValue(null, $stored['email_verified_at']);
+    assertSameValue(1, count($mailer->messages));
+    assertTrueValue(str_contains($mailer->messages[0]['body'], '/account.php?action=verify&token='));
+});
+
+$runner->test('login permits pending accounts while verified policy unlocks after token use', function (): void {
+    assertTrueValue(class_exists('Authorization'), 'Authorization should be available');
+
+    $pdo = migratedPdo();
+    $mailer = new TestMailer();
+    $service = new AuthService(
+        new UserRepository($pdo),
+        new SessionRepository($pdo),
+        new AccountTokenRepository($pdo),
+        $mailer,
+        'http://localhost'
+    );
+    $service->register('persona@example.com', 'contrasena-segura');
+
+    $pendingSession = $service->login('persona@example.com', 'contrasena-segura');
+    assertSameValue(null, $pendingSession['user']['email_verified_at']);
+    try {
+        Authorization::requireVerifiedUser($pendingSession['user']);
+    } catch (RuntimeException $e) {
+        assertSameValue('EMAIL_NOT_VERIFIED', $e->getMessage());
+        $blocked = true;
+    }
+    assertTrueValue($blocked ?? false, 'pending account should be blocked by verified policy');
+
+    preg_match('/token=([A-Za-z0-9_-]+)/', $mailer->messages[0]['body'], $matches);
+    assertTrueValue(isset($matches[1]), 'verification token should be present in mail');
+    $service->verify($matches[1]);
+
+    $verifiedSession = $service->login('persona@example.com', 'contrasena-segura');
+    assertTrueValue($verifiedSession['user']['email_verified_at'] !== null);
+    assertSameValue('persona@example.com', Authorization::requireVerifiedUser($verifiedSession['user'])['email']);
+});
+
+$runner->test('password reset revokes existing sessions and logout revokes one session', function (): void {
+    $pdo = migratedPdo();
+    $mailer = new TestMailer();
+    $users = new UserRepository($pdo);
+    $sessions = new SessionRepository($pdo);
+    $service = new AuthService($users, $sessions, new AccountTokenRepository($pdo), $mailer, 'http://localhost');
+    $service->register('persona@example.com', 'contrasena-segura');
+    preg_match('/token=([A-Za-z0-9_-]+)/', $mailer->messages[0]['body'], $verifyMatch);
+    $service->verify($verifyMatch[1]);
+
+    $firstSession = $service->login('persona@example.com', 'contrasena-segura');
+    assertSameValue('persona@example.com', $sessions->findUserByToken($firstSession['token'])['email']);
+
+    $service->requestPasswordReset('persona@example.com');
+    preg_match('/token=([A-Za-z0-9_-]+)/', $mailer->messages[1]['body'], $resetMatch);
+    $service->resetPassword($resetMatch[1], 'nueva-contrasena-segura');
+    assertSameValue(null, $sessions->findUserByToken($firstSession['token']));
+
+    $secondSession = $service->login('persona@example.com', 'nueva-contrasena-segura');
+    $service->logout($secondSession['token']);
+    assertSameValue(null, $sessions->findUserByToken($secondSession['token']));
+});
+
+$runner->test('user administration protects last admin and revokes disabled user sessions', function (): void {
+    assertTrueValue(class_exists('UserAdminService'), 'UserAdminService should be available');
+
+    $pdo = migratedPdo();
+    $users = new UserRepository($pdo);
+    $sessions = new SessionRepository($pdo);
+    $admin = $users->create('admin@example.com', password_hash('contrasena-admin', PASSWORD_DEFAULT), 'admin');
+    $users->markVerified($admin['id']);
+    $adminSession = $sessions->create($admin['id']);
+    $service = new UserAdminService($pdo, $users, $sessions);
+
+    try {
+        $service->changeRole($admin['id'], 'user');
+    } catch (RuntimeException $e) {
+        assertSameValue('LAST_ADMIN', $e->getMessage());
+        $protected = true;
+    }
+    assertTrueValue($protected ?? false, 'last admin should not be demoted');
+
+    $second = $users->create('second@example.com', password_hash('contrasena-admin', PASSWORD_DEFAULT), 'admin');
+    $service->changeRole($admin['id'], 'user');
+    assertSameValue('user', $users->findById($admin['id'])['role']);
+
+    $service->disable($admin['id']);
+    assertSameValue(null, $sessions->findUserByToken($adminSession['token']));
+    assertSameValue('disabled', $users->findById($admin['id'])['status']);
+    assertSameValue('admin', $users->findById($second['id'])['role']);
+});
+
+$runner->test('local outbox mailer stores account links outside public output', function (): void {
+    assertTrueValue(class_exists('LocalOutboxMailer'), 'LocalOutboxMailer should be available');
+    $path = tempnam(sys_get_temp_dir(), 'rueda-mail-');
+    assertTrueValue(is_string($path));
+
+    $mailer = new LocalOutboxMailer($path);
+    $mailer->send('persona@example.com', 'Asunto', 'Cuerpo con enlace');
+    $contents = file_get_contents($path);
+    unlink($path);
+
+    assertTrueValue(is_string($contents));
+    assertTrueValue(str_contains($contents, 'persona@example.com'));
+    assertTrueValue(str_contains($contents, 'Cuerpo con enlace'));
 });
 
 $runner->test('each radial spoke contains multiple categories', function (): void {
