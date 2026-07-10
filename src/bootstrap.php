@@ -24,6 +24,11 @@ require_once __DIR__ . '/Http/ApiResponse.php';
 require_once __DIR__ . '/Http/ApiRouter.php';
 require_once __DIR__ . '/Http/AuthController.php';
 require_once __DIR__ . '/Http/AdminUserController.php';
+require_once __DIR__ . '/Packs/PackRepository.php';
+require_once __DIR__ . '/Packs/PackService.php';
+require_once __DIR__ . '/Packs/PackImporter.php';
+require_once __DIR__ . '/Packs/PackExporter.php';
+require_once __DIR__ . '/Packs/PackSeeder.php';
 
 function app_config(): array
 {
@@ -71,6 +76,8 @@ function app_pdo(): PDO
     $pdo = Database::connect($config['database']);
     $migrations = new MigrationRunner($pdo, dirname(__DIR__) . '/database/migrations');
     $migrations->migrate();
+    $seeder = new PackSeeder($pdo, dirname(__DIR__) . '/data/questions-demo.csv');
+    $seeder->seed();
 
     return $pdo;
 }

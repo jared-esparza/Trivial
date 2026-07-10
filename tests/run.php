@@ -30,6 +30,11 @@ foreach ([
     __DIR__ . '/../src/Http/ApiRouter.php',
     __DIR__ . '/../src/Http/AuthController.php',
     __DIR__ . '/../src/Http/AdminUserController.php',
+    __DIR__ . '/../src/Packs/PackRepository.php',
+    __DIR__ . '/../src/Packs/PackService.php',
+    __DIR__ . '/../src/Packs/PackImporter.php',
+    __DIR__ . '/../src/Packs/PackExporter.php',
+    __DIR__ . '/../src/Packs/PackSeeder.php',
 ] as $optionalSource) {
     if (is_file($optionalSource)) {
         require_once $optionalSource;
@@ -129,7 +134,7 @@ $runner->test('migration runner applies each migration exactly once', function (
     $runner->migrate();
 
     $applied = (int) $pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn();
-    assertSameValue(5, $applied);
+    assertSameValue(6, $applied);
 
     $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'table'")->fetchAll(PDO::FETCH_COLUMN);
     foreach (['rooms', 'questions', 'users', 'auth_sessions', 'account_tokens', 'auth_attempts', 'question_packs', 'pack_revisions', 'pack_categories', 'color_schemes', 'color_scheme_slots', 'room_participants', 'answer_events'] as $table) {
@@ -143,6 +148,7 @@ $runner->test('application bootstrap runs versioned migrations instead of inline
     assertTrueValue(str_contains($bootstrap, 'new MigrationRunner('), 'bootstrap should create the migration runner');
     assertTrueValue(str_contains($bootstrap, '->migrate()'), 'bootstrap should run pending migrations');
     assertTrueValue(!str_contains($bootstrap, 'Database::createSchema('), 'bootstrap should not create the schema inline');
+    assertTrueValue(str_contains($bootstrap, 'new PackSeeder('), 'bootstrap should seed required system content');
 });
 
 $runner->test('registration normalizes email hashes password and sends verification', function (): void {
@@ -472,6 +478,114 @@ $runner->test('admin user routes enforce role csrf and last-admin protection', f
     ));
     assertSameValue('disabled', $updated->payload['user']['status']);
     assertSameValue('admin', $users->findById($secondAdmin['id'])['role']);
+});
+
+$runner->test('pack activation freezes revision and editing clones a private draft', function (): void {
+    assertTrueValue(class_exists('PackService'), 'PackService should be available');
+
+    $pdo = migratedPdo();
+    $users = new UserRepository($pdo);
+    $owner = $users->create('owner@example.com', password_hash('contrasena-owner', PASSWORD_DEFAULT));
+    $other = $users->create('other@example.com', password_hash('contrasena-other', PASSWORD_DEFAULT));
+    $repo = new PackRepository($pdo);
+    $service = new PackService($repo);
+    $pack = $service->createDraft($owner['id'], 'Pack personal');
+
+    $categories = [];
+    foreach (GameEngine::categories() as $slot => $category) {
+        $categories[] = [
+            'slot' => $slot,
+            'key' => $category['slug'],
+            'name' => $category['name'],
+            'color' => $category['color'],
+        ];
+    }
+    $service->replaceCategories($owner['id'], $pack['id'], $categories);
+    foreach ($categories as $category) {
+        $service->addQuestion($owner['id'], $pack['id'], $category['slot'], [
+            'question' => 'Pregunta ' . $category['slot'],
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct' => 0,
+        ]);
+    }
+    $active = $service->activate($owner['id'], $pack['id']);
+    assertSameValue('active', $active['status']);
+    assertSameValue(1, $active['currentRevision']['revisionNumber']);
+
+    try {
+        $repo->addQuestion($active['currentRevision']['id'], 0, [
+            'question' => 'No permitida',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct' => 0,
+        ]);
+    } catch (RuntimeException $e) {
+        assertSameValue('REVISION_IMMUTABLE', $e->getMessage());
+        $immutable = true;
+    }
+    assertTrueValue($immutable ?? false, 'active revision should be immutable');
+
+    try {
+        $service->beginEdit($other['id'], $pack['id']);
+    } catch (RuntimeException $e) {
+        assertSameValue('PACK_FORBIDDEN', $e->getMessage());
+        $forbidden = true;
+    }
+    assertTrueValue($forbidden ?? false, 'other user should not edit private pack');
+
+    $draft = $service->beginEdit($owner['id'], $pack['id']);
+    assertSameValue(2, $draft['revisionNumber']);
+    assertSameValue(6, count($draft['categories']));
+    assertSameValue(6, count($draft['questions']));
+});
+
+$runner->test('complete pack round trips through versioned json and row-based csv', function (): void {
+    assertTrueValue(class_exists('PackImporter'), 'PackImporter should be available');
+    assertTrueValue(class_exists('PackExporter'), 'PackExporter should be available');
+
+    $definition = ['name' => 'Viaje', 'categories' => [], 'questions' => [], 'ownerUserId' => 999, 'kind' => 'system'];
+    foreach (GameEngine::categories() as $slot => $category) {
+        $definition['categories'][] = [
+            'slot' => $slot,
+            'key' => $category['slug'],
+            'name' => $category['name'],
+            'color' => $category['color'],
+        ];
+        $definition['questions'][] = [
+            'slot' => $slot,
+            'question' => 'Pregunta ' . $slot,
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct' => $slot % 4,
+        ];
+    }
+
+    $json = PackExporter::toJson($definition);
+    $fromJson = PackImporter::fromJson($json);
+    assertSameValue('Viaje', $fromJson['name']);
+    assertSameValue(6, count($fromJson['categories']));
+    assertSameValue(6, count($fromJson['questions']));
+    assertTrueValue(!isset($fromJson['ownerUserId']) && !isset($fromJson['kind']));
+
+    $csv = PackExporter::toCsv($definition);
+    assertTrueValue(str_starts_with($csv, 'pack_name,category_slot,category_key,category_name,category_color,question,option_a,option_b,option_c,option_d,correct'));
+    $fromCsv = PackImporter::fromCsv($csv);
+    assertSameValue($fromJson, $fromCsv);
+});
+
+$runner->test('default pack seeder creates classic content and color schemes idempotently', function (): void {
+    assertTrueValue(class_exists('PackSeeder'), 'PackSeeder should be available');
+    $pdo = migratedPdo();
+    $seeder = new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv');
+
+    $seeder->seed();
+    $seeder->seed();
+
+    assertSameValue(1, (int) $pdo->query("SELECT COUNT(*) FROM question_packs WHERE kind = 'system' AND name = 'Clasico'")->fetchColumn());
+    assertSameValue(2, (int) $pdo->query('SELECT COUNT(*) FROM color_schemes')->fetchColumn());
+    assertSameValue(12, (int) $pdo->query('SELECT COUNT(*) FROM color_scheme_slots')->fetchColumn());
+    $packId = (int) $pdo->query("SELECT id FROM question_packs WHERE kind = 'system' AND name = 'Clasico'")->fetchColumn();
+    $classic = (new PackRepository($pdo))->get($packId);
+    assertSameValue('active', $classic['status']);
+    assertSameValue(12, count($classic['currentRevision']['questions']));
 });
 
 $runner->test('each radial spoke contains multiple categories', function (): void {
