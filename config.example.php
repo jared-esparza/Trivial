@@ -2,7 +2,12 @@
 
 return [
     'app_name' => 'trivial',
+    'base_url' => 'https://tu-dominio.example',
     'admin_key' => 'cambia-esta-clave',
+    'mail' => [
+        'transport' => 'native',
+        'from' => 'no-reply@tu-dominio.example',
+    ],
     'database' => [
         'driver' => 'mysql',
         'host' => 'localhost',

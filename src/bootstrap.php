@@ -8,6 +8,22 @@ require_once __DIR__ . '/GameEngine.php';
 require_once __DIR__ . '/QuestionImporter.php';
 require_once __DIR__ . '/QuestionRepository.php';
 require_once __DIR__ . '/RoomRepository.php';
+require_once __DIR__ . '/Mail/Mailer.php';
+require_once __DIR__ . '/Mail/NativeMailer.php';
+require_once __DIR__ . '/Mail/LocalOutboxMailer.php';
+require_once __DIR__ . '/Auth/UserRepository.php';
+require_once __DIR__ . '/Auth/SessionRepository.php';
+require_once __DIR__ . '/Auth/AccountTokenRepository.php';
+require_once __DIR__ . '/Auth/AuthService.php';
+require_once __DIR__ . '/Auth/AuthRateLimiter.php';
+require_once __DIR__ . '/Auth/Authorization.php';
+require_once __DIR__ . '/Auth/UserAdminService.php';
+require_once __DIR__ . '/Http/ApiException.php';
+require_once __DIR__ . '/Http/ApiRequest.php';
+require_once __DIR__ . '/Http/ApiResponse.php';
+require_once __DIR__ . '/Http/ApiRouter.php';
+require_once __DIR__ . '/Http/AuthController.php';
+require_once __DIR__ . '/Http/AdminUserController.php';
 
 function app_config(): array
 {
@@ -15,8 +31,13 @@ function app_config(): array
     if (!file_exists($local)) {
         return [
             'app_name' => 'trivial',
+            'base_url' => 'http://127.0.0.1:4181',
             'admin_key' => 'admin-local',
             'using_default_config' => true,
+            'mail' => [
+                'transport' => 'local',
+                'outbox' => dirname(__DIR__) . '/storage/mail-outbox.log',
+            ],
             'database' => [
                 'driver' => 'sqlite',
                 'path' => dirname(__DIR__) . '/storage/dev.sqlite',
@@ -52,4 +73,47 @@ function app_pdo(): PDO
     $migrations->migrate();
 
     return $pdo;
+}
+
+function app_mailer(): Mailer
+{
+    static $mailer = null;
+    if ($mailer instanceof Mailer) {
+        return $mailer;
+    }
+
+    $config = app_config();
+    $mail = $config['mail'] ?? [];
+    if (($mail['transport'] ?? 'local') === 'native') {
+        $mailer = new NativeMailer((string) ($mail['from'] ?? 'no-reply@localhost'));
+    } else {
+        $mailer = new LocalOutboxMailer(
+            (string) ($mail['outbox'] ?? dirname(__DIR__) . '/storage/mail-outbox.log')
+        );
+    }
+
+    return $mailer;
+}
+
+function app_auth_router(): ApiRouter
+{
+    $pdo = app_pdo();
+    $sessions = new SessionRepository($pdo);
+    $auth = new AuthService(
+        new UserRepository($pdo),
+        $sessions,
+        new AccountTokenRepository($pdo),
+        app_mailer(),
+        (string) (app_config()['base_url'] ?? 'http://127.0.0.1:4181'),
+        new AuthRateLimiter($pdo)
+    );
+    $router = new ApiRouter();
+    (new AuthController($auth, $sessions))->registerRoutes($router);
+    (new AdminUserController(
+        new UserRepository($pdo),
+        $sessions,
+        new UserAdminService($pdo, new UserRepository($pdo), $sessions)
+    ))->registerRoutes($router);
+
+    return $router;
 }

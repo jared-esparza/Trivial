@@ -44,4 +44,14 @@ final class UserAdminService
 
         return $this->users->findById($userId) ?? throw new RuntimeException('USER_NOT_FOUND');
     }
+
+    public function enable(int $userId): array
+    {
+        if ($this->users->findById($userId) === null) {
+            throw new RuntimeException('USER_NOT_FOUND');
+        }
+        $this->users->updateStatus($userId, 'active');
+
+        return $this->users->findById($userId) ?? throw new RuntimeException('USER_NOT_FOUND');
+    }
 }

@@ -116,6 +116,15 @@ final class UserRepository
         )->fetchColumn();
     }
 
+    public function all(): array
+    {
+        $rows = $this->pdo->query(
+            'SELECT * FROM users WHERE deleted_at IS NULL ORDER BY created_at, id'
+        )->fetchAll();
+
+        return array_map([$this, 'hydrate'], $rows);
+    }
+
     private function hydrate(array $row): array
     {
         $row['id'] = (int) $row['id'];

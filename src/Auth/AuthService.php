@@ -10,6 +10,7 @@ final class AuthService
         private AccountTokenRepository $tokens,
         private Mailer $mailer,
         private string $baseUrl,
+        private ?AuthRateLimiter $rateLimiter = null,
     ) {
     }
 
@@ -44,13 +45,18 @@ final class AuthService
 
     public function login(string $email, string $password): array
     {
-        $user = $this->users->findByEmail($email);
+        $normalizedEmail = strtolower(trim($email));
+        $this->rateLimiter?->assertAllowed('login', $normalizedEmail);
+        $user = $this->users->findByEmail($normalizedEmail);
         if ($user === null || !password_verify($password, $user['password_hash'])) {
+            $this->rateLimiter?->registerFailure('login', $normalizedEmail, 5, 15 * 60);
             throw new InvalidArgumentException('Email o contrasena incorrectos.');
         }
         if ($user['status'] !== 'active') {
             throw new RuntimeException('ACCOUNT_DISABLED');
         }
+
+        $this->rateLimiter?->clear('login', $normalizedEmail);
 
         return [
             ...$this->sessions->create($user['id']),
@@ -60,7 +66,9 @@ final class AuthService
 
     public function requestPasswordReset(string $email): void
     {
-        $user = $this->users->findByEmail($email);
+        $normalizedEmail = strtolower(trim($email));
+        $this->rateLimiter?->registerFailure('password_reset', $normalizedEmail, 5, 15 * 60);
+        $user = $this->users->findByEmail($normalizedEmail);
         if ($user === null || $user['status'] !== 'active') {
             return;
         }

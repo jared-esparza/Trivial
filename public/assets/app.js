@@ -244,15 +244,26 @@ function bindAdminForms() {
     const importForm = document.querySelector('#adminImportForm');
     const listForm = document.querySelector('#adminListForm');
 
+    let csrfToken = null;
+    if (importForm || listForm) {
+        fetch(`${apiBase}/auth/me`)
+            .then((response) => response.json())
+            .then((data) => {
+                csrfToken = data.csrfToken ?? null;
+                if (data.user?.role === 'admin') return loadAdminUsers(csrfToken);
+                return null;
+            })
+            .catch(() => toast('No se pudo comprobar la sesion.'));
+    }
+
     if (importForm) {
         importForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const data = new FormData(importForm);
             const response = await apiFetch('/admin/questions', {
-                adminKey: data.get('adminKey'),
                 csv: data.get('csv'),
                 replace: data.get('replace') === 'on'
-            });
+            }, csrfToken ? { 'X-CSRF-Token': csrfToken } : {});
             toast(`${response.imported} preguntas importadas.`);
             renderQuestions(response.questions);
         });
@@ -261,27 +272,81 @@ function bindAdminForms() {
     if (listForm) {
         listForm.addEventListener('submit', async (event) => {
             event.preventDefault();
-            const data = new FormData(listForm);
-            const response = await fetch(`${apiBase}/admin/questions?admin_key=${encodeURIComponent(data.get('adminKey'))}`);
+            const response = await fetch(`${apiBase}/admin/questions`);
             const json = await response.json();
-            if (!response.ok) throw new Error(json.error ?? 'Error al cargar preguntas.');
+            if (!response.ok) throw new Error(apiErrorMessage(json, 'Error al cargar preguntas.'));
             renderQuestions(json.questions);
         });
     }
 }
 
-async function apiFetch(path, payload) {
+async function apiFetch(path, payload, extraHeaders = {}) {
     const response = await fetch(apiBase + path, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...extraHeaders },
         body: JSON.stringify(payload)
     });
     const json = await response.json();
     if (!response.ok) {
-        toast(json.error ?? 'Error de API.');
-        throw new Error(json.error ?? 'Error de API.');
+        const message = apiErrorMessage(json, 'Error de API.');
+        toast(message);
+        throw new Error(message);
     }
     return json;
+}
+
+async function loadAdminUsers(csrfToken) {
+    const response = await fetch(`${apiBase}/admin/users`);
+    const json = await response.json();
+    if (!response.ok) throw new Error(apiErrorMessage(json, 'No se pudieron cargar los usuarios.'));
+    renderAdminUsers(json.users, csrfToken);
+}
+
+function renderAdminUsers(users, csrfToken) {
+    const box = document.querySelector('#adminUsers');
+    if (!box) return;
+    box.innerHTML = users.map((user) => `
+        <article class="question-item admin-user-row" data-user-id="${Number(user.id)}">
+            <div>
+                <strong>${escapeHtml(user.email)}</strong>
+                <p class="muted">${user.emailVerified ? 'Verificado' : 'Pendiente de verificar'}</p>
+            </div>
+            <label>Rol
+                <select data-user-field="role">
+                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>Usuario</option>
+                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                </select>
+            </label>
+            <label>Estado
+                <select data-user-field="status">
+                    <option value="active" ${user.status === 'active' ? 'selected' : ''}>Activo</option>
+                    <option value="disabled" ${user.status === 'disabled' ? 'selected' : ''}>Desactivado</option>
+                </select>
+            </label>
+        </article>
+    `).join('');
+
+    box.querySelectorAll('[data-user-field]').forEach((select) => {
+        select.addEventListener('change', async () => {
+            const row = select.closest('[data-user-id]');
+            const payload = {
+                userId: Number(row.dataset.userId),
+                [select.dataset.userField]: select.value
+            };
+            try {
+                await apiFetch('/admin/users/update', payload, { 'X-CSRF-Token': csrfToken });
+                toast('Usuario actualizado.');
+                await loadAdminUsers(csrfToken);
+            } catch (error) {
+                toast(error.message);
+                await loadAdminUsers(csrfToken);
+            }
+        });
+    });
+}
+
+function apiErrorMessage(json, fallback) {
+    return typeof json?.error === 'string' ? json.error : json?.error?.message ?? fallback;
 }
 
 async function getRoom(code) {

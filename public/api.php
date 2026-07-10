@@ -16,6 +16,11 @@ try {
     $path = api_path();
     $body = request_json();
 
+    if (str_starts_with($path, '/auth/') || str_starts_with($path, '/admin/users')) {
+        $request = new ApiRequest($method, $path, $body, $_GET, $_COOKIE, request_headers());
+        write_api_response(app_auth_router()->dispatch($request));
+    }
+
     if ($method === 'POST' && $path === '/rooms') {
         $mode = (string) ($body['mode'] ?? 'online');
         if ($mode === 'local') {
@@ -43,12 +48,12 @@ try {
     }
 
     if ($method === 'GET' && $path === '/admin/questions') {
-        require_admin(scalar_string($_GET['admin_key'] ?? ''));
+        require_admin_session(false);
         json_response(['questions' => $questions->all(), 'categories' => GameEngine::categories()]);
     }
 
     if ($method === 'POST' && $path === '/admin/questions') {
-        require_admin(scalar_string($body['adminKey'] ?? ''));
+        require_admin_session(true);
         $rows = isset($body['csv'])
             ? QuestionImporter::fromCsv(scalar_string($body['csv']))
             : normalize_questions($body['questions'] ?? []);
@@ -60,6 +65,9 @@ try {
 
     json_response(['error' => 'Ruta no encontrada.'], 404);
 } catch (Throwable $e) {
+    if ($e instanceof ApiException) {
+        json_response(['error' => ['code' => $e->errorCode, 'message' => $e->getMessage()]], $e->status);
+    }
     json_response(['error' => $e->getMessage()], $e instanceof InvalidArgumentException ? 422 : 500);
 }
 
@@ -105,6 +113,31 @@ function json_response(array $payload, int $status = 200): never
     exit;
 }
 
+function request_headers(): array
+{
+    $headers = [];
+    foreach ($_SERVER as $key => $value) {
+        if (str_starts_with($key, 'HTTP_')) {
+            $name = strtolower(str_replace('_', '-', substr($key, 5)));
+            $headers[$name] = $value;
+        }
+    }
+
+    return $headers;
+}
+
+function write_api_response(ApiResponse $response): never
+{
+    foreach ($response->cookies as $name => $cookie) {
+        $value = (string) ($cookie['value'] ?? '');
+        $options = $cookie;
+        unset($options['value']);
+        setcookie((string) $name, $value, $options);
+    }
+
+    json_response($response->payload, $response->status);
+}
+
 function normalize_players(array $players): array
 {
     $colors = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#0891b2'];
@@ -135,12 +168,24 @@ function import_append(QuestionRepository $repo, array $rows): int
     return $count;
 }
 
-function require_admin(string $key): void
+function require_admin_session(bool $requireCsrf): array
 {
-    $config = app_config();
-    if (!hash_equals((string) $config['admin_key'], $key)) {
-        throw new InvalidArgumentException('Clave admin incorrecta.');
+    $token = (string) ($_COOKIE['rq_session'] ?? '');
+    $user = $token === '' ? null : (new SessionRepository(app_pdo()))->findUserByToken($token);
+    try {
+        $admin = Authorization::requireAdmin($user);
+    } catch (RuntimeException $e) {
+        $status = $e->getMessage() === 'AUTH_REQUIRED' ? 401 : 403;
+        throw new ApiException($status, $e->getMessage(), 'No tienes acceso a esta operacion.');
     }
+    if ($requireCsrf) {
+        $provided = request_headers()['x-csrf-token'] ?? '';
+        if ($provided === '' || !hash_equals((string) $admin['csrf_token'], (string) $provided)) {
+            throw new ApiException(403, 'CSRF_INVALID', 'Token CSRF no valido.');
+        }
+    }
+
+    return $admin;
 }
 
 function apply_action(array $room, array $body, RoomRepository $rooms, QuestionRepository $questions): array

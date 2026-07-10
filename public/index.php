@@ -17,9 +17,9 @@ $config = app_config();
             <span class="brand-mark" aria-hidden="true"></span>
             <span><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></span>
         </a>
-        <a class="admin-link" href="admin.php">
+        <a class="admin-link" href="account.php">
             <span class="admin-help-icon" aria-hidden="true">?</span>
-            <span>Admin preguntas</span>
+            <span>Mi cuenta</span>
         </a>
     </header>
 
