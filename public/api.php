@@ -10,30 +10,53 @@ header('Content-Type: application/json; charset=utf-8');
 
 $rooms = new RoomRepository(app_pdo());
 $questions = new QuestionRepository(app_pdo());
+$packRepository = new PackRepository(app_pdo());
+$participantTokens = new ParticipantTokenService(app_pdo());
+$roomService = new RoomService($rooms, $packRepository, $participantTokens);
 
 try {
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $path = api_path();
     $body = request_json();
 
-    if (str_starts_with($path, '/auth/') || str_starts_with($path, '/admin/users')) {
+    if (str_starts_with($path, '/auth/') || str_starts_with($path, '/admin/users') || str_starts_with($path, '/packs')) {
         $request = new ApiRequest($method, $path, $body, $_GET, $_COOKIE, request_headers());
         write_api_response(app_auth_router()->dispatch($request));
     }
 
     if ($method === 'POST' && $path === '/rooms') {
         $mode = (string) ($body['mode'] ?? 'online');
+        $user = current_optional_user();
+        $packId = optional_positive_int($body['packId'] ?? null);
+        $colorSchemeId = optional_positive_int($body['colorSchemeId'] ?? null);
         if ($mode === 'local') {
-            $room = $rooms->createLocalRoom((string) ($body['answerMode'] ?? 'judge'), normalize_players($body['players'] ?? []));
+            $room = $roomService->createLocal(
+                $user,
+                (string) ($body['answerMode'] ?? 'judge'),
+                normalize_players($body['players'] ?? []),
+                $packId,
+                $colorSchemeId
+            );
         } else {
-            $room = $rooms->createRoom('online', 'auto', (string) ($body['teamName'] ?? 'Equipo 1'), (string) ($body['color'] ?? '#2563eb'));
+            $room = $roomService->createOnline(
+                $user,
+                (string) ($body['teamName'] ?? 'Equipo 1'),
+                (string) ($body['color'] ?? '#2563eb'),
+                $packId,
+                $colorSchemeId
+            );
         }
-        json_response(['room' => sanitize_room($room)]);
+        json_response(room_response($room));
     }
 
     if ($method === 'POST' && preg_match('#^/rooms/([A-Z0-9]{6})/join$#', $path, $m)) {
-        $room = $rooms->joinRoom($m[1], (string) ($body['teamName'] ?? 'Equipo'), (string) ($body['color'] ?? '#dc2626'));
-        json_response(['room' => sanitize_room($room)]);
+        $room = $roomService->joinOnline(
+            current_optional_user(),
+            $m[1],
+            (string) ($body['teamName'] ?? 'Equipo'),
+            (string) ($body['color'] ?? '#dc2626')
+        );
+        json_response(room_response($room));
     }
 
     if ($method === 'GET' && preg_match('#^/rooms/([A-Z0-9]{6})/state$#', $path, $m)) {
@@ -41,26 +64,86 @@ try {
         json_response(['room' => sanitize_room($room)]);
     }
 
+    if ($method === 'GET' && preg_match('#^/rooms/([A-Z0-9]{6})/statistics$#', $path, $m)) {
+        $room = $rooms->getRoom($m[1]);
+        try {
+            $participantTokens->authorize($room, (string) (request_headers()['x-participant-token'] ?? ''));
+        } catch (RuntimeException) {
+            throw new ApiException(403, 'PARTICIPANT_TOKEN_INVALID', 'No puedes consultar esta partida.');
+        }
+        $stats = new StatisticsService(app_pdo(), new AnswerEventRepository(app_pdo()));
+        json_response(['statistics' => $stats->roomReport($room['code'])]);
+    }
+
+    if ($method === 'GET' && $path === '/me/games') {
+        $user = current_required_user();
+        $stats = new StatisticsService(app_pdo(), new AnswerEventRepository(app_pdo()));
+        json_response(['games' => $stats->historyForUser((int) $user['id'])]);
+    }
+
+    if ($method === 'GET' && preg_match('#^/me/games/([A-Z0-9]{6})$#', $path, $m)) {
+        $user = current_required_user();
+        $stats = new StatisticsService(app_pdo(), new AnswerEventRepository(app_pdo()));
+        try {
+            $report = $stats->roomReportForUser($m[1], (int) $user['id']);
+        } catch (RuntimeException $e) {
+            if ($e->getMessage() === 'HISTORY_FORBIDDEN') {
+                throw new ApiException(403, 'HISTORY_FORBIDDEN', 'No puedes consultar esta partida.');
+            }
+            throw $e;
+        }
+        json_response(['statistics' => $report]);
+    }
+
     if ($method === 'POST' && preg_match('#^/rooms/([A-Z0-9]{6})/actions$#', $path, $m)) {
         $room = $rooms->getRoom($m[1]);
-        $room = apply_action($room, $body, $rooms, $questions);
+        $expectedVersion = filter_var($body['expectedVersion'] ?? null, FILTER_VALIDATE_INT);
+        if ($expectedVersion === false || $expectedVersion !== $room['version']) {
+            throw new ApiException(409, 'ROOM_VERSION_CONFLICT', 'La sala ha cambiado; vuelve a sincronizar.');
+        }
+        try {
+            $participant = $participantTokens->authorize(
+                $room,
+                (string) (request_headers()['x-participant-token'] ?? '')
+            );
+        } catch (RuntimeException) {
+            throw new ApiException(403, 'PARTICIPANT_TOKEN_INVALID', 'No puedes actuar por este equipo.');
+        }
+        if ($room['mode'] === 'online') {
+            $body['playerId'] = $participant['slot'];
+            if (($body['action'] ?? '') === 'start' && $participant['slot'] !== 0) {
+                throw new ApiException(403, 'HOST_REQUIRED', 'Solo el anfitrion puede iniciar la partida.');
+            }
+        }
+        $playerId = (int) ($body['playerId'] ?? 0);
+        $actingParticipant = ($participant['controller'] ?? false)
+            ? $participantTokens->participantForSlot($room['code'], $playerId)
+            : $participant;
+        $pdo = app_pdo();
+        $pdo->beginTransaction();
+        try {
+            $previousState = $room['state'];
+            $room = apply_action($room, $body, $rooms, $questions, $expectedVersion);
+            if (($body['action'] ?? '') === 'answer') {
+                $question = $previousState['currentQuestion'] ?? [];
+                $slot = $question['categorySlot'] ?? category_slot_for_room($room, (string) ($question['category'] ?? ''));
+                (new AnswerEventRepository($pdo))->record(
+                    $room['code'],
+                    (int) $actingParticipant['id'],
+                    (int) $slot,
+                    isset($question['id']) ? (int) $question['id'] : null,
+                    ($room['state']['lastResult']['type'] ?? '') === 'correct',
+                    (string) ($room['answer_mode'] ?? 'auto')
+                );
+            }
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
         json_response(['room' => sanitize_room($room)]);
-    }
-
-    if ($method === 'GET' && $path === '/admin/questions') {
-        require_admin_session(false);
-        json_response(['questions' => $questions->all(), 'categories' => GameEngine::categories()]);
-    }
-
-    if ($method === 'POST' && $path === '/admin/questions') {
-        require_admin_session(true);
-        $rows = isset($body['csv'])
-            ? QuestionImporter::fromCsv(scalar_string($body['csv']))
-            : normalize_questions($body['questions'] ?? []);
-        $count = !empty($body['replace'])
-            ? $questions->replaceAll($rows)
-            : import_append($questions, $rows);
-        json_response(['imported' => $count, 'questions' => $questions->all()]);
     }
 
     json_response(['error' => 'Ruta no encontrada.'], 404);
@@ -95,15 +178,6 @@ function request_json(): array
     }
 
     return $data;
-}
-
-function scalar_string(mixed $value): string
-{
-    if (!is_scalar($value) && $value !== null) {
-        throw new InvalidArgumentException('Se esperaba un valor de texto.');
-    }
-
-    return (string) $value;
 }
 
 function json_response(array $payload, int $status = 200): never
@@ -152,47 +226,17 @@ function normalize_players(array $players): array
     return $normalized;
 }
 
-function normalize_questions(array $questions): array
-{
-    return array_map(fn (array $row): array => QuestionImporter::normalizeRow($row), $questions);
-}
-
-function import_append(QuestionRepository $repo, array $rows): int
-{
-    $count = 0;
-    foreach ($rows as $row) {
-        $repo->insert($row);
-        $count++;
-    }
-
-    return $count;
-}
-
-function require_admin_session(bool $requireCsrf): array
-{
-    $token = (string) ($_COOKIE['rq_session'] ?? '');
-    $user = $token === '' ? null : (new SessionRepository(app_pdo()))->findUserByToken($token);
-    try {
-        $admin = Authorization::requireAdmin($user);
-    } catch (RuntimeException $e) {
-        $status = $e->getMessage() === 'AUTH_REQUIRED' ? 401 : 403;
-        throw new ApiException($status, $e->getMessage(), 'No tienes acceso a esta operacion.');
-    }
-    if ($requireCsrf) {
-        $provided = request_headers()['x-csrf-token'] ?? '';
-        if ($provided === '' || !hash_equals((string) $admin['csrf_token'], (string) $provided)) {
-            throw new ApiException(403, 'CSRF_INVALID', 'Token CSRF no valido.');
-        }
-    }
-
-    return $admin;
-}
-
-function apply_action(array $room, array $body, RoomRepository $rooms, QuestionRepository $questions): array
+function apply_action(
+    array $room,
+    array $body,
+    RoomRepository $rooms,
+    QuestionRepository $questions,
+    ?int $expectedVersion = null,
+): array
 {
     $action = (string) ($body['action'] ?? '');
     if ($action === 'start') {
-        return $rooms->startGame($room['code']);
+        return $rooms->startGame($room['code'], $expectedVersion);
     }
 
     $state = $room['state'];
@@ -204,7 +248,22 @@ function apply_action(array $room, array $body, RoomRepository $rooms, QuestionR
         $state = GameEngine::move($state, $playerId, (string) ($body['destination'] ?? ''));
         if (($state['phase'] ?? '') === 'question') {
             $category = (string) ($state['pendingSpace']['category'] ?? '');
-            $state = GameEngine::attachQuestion($state, $questions->randomByCategory($category));
+            if ($room['pack_revision_id'] !== null && is_array($room['pack_snapshot'])) {
+                $slot = null;
+                foreach ($room['pack_snapshot'] as $snapshotCategory) {
+                    if (($snapshotCategory['slug'] ?? null) === $category) {
+                        $slot = (int) $snapshotCategory['slot'];
+                        break;
+                    }
+                }
+                if ($slot === null) {
+                    throw new RuntimeException('Categoria de sala no encontrada.');
+                }
+                $question = $questions->randomByRevisionSlot($room['pack_revision_id'], $slot);
+            } else {
+                $question = $questions->randomByCategory($category);
+            }
+            $state = GameEngine::attachQuestion($state, $question);
         }
     } elseif ($action === 'answer') {
         $answer = ($state['answerMode'] ?? 'auto') === 'judge'
@@ -215,7 +274,7 @@ function apply_action(array $room, array $body, RoomRepository $rooms, QuestionR
         throw new InvalidArgumentException('Accion no valida.');
     }
 
-    return $rooms->updateState($room['code'], $state);
+    return $rooms->updateState($room['code'], $state, $expectedVersion);
 }
 
 function sanitize_room(array $room): array
@@ -233,7 +292,59 @@ function sanitize_room(array $room): array
         'status' => $room['status'],
         'version' => $room['version'],
         'state' => $state,
-        'categories' => GameEngine::categories(),
+        'categories' => $room['pack_snapshot'] ?? GameEngine::categories(),
         'spaces' => GameEngine::boardSpaces(),
     ];
+}
+
+function room_response(array $room): array
+{
+    $response = ['room' => sanitize_room($room)];
+    if (isset($room['participant_token'])) {
+        $response['participantToken'] = $room['participant_token'];
+    }
+    return $response;
+}
+
+function current_optional_user(): ?array
+{
+    $token = (string) ($_COOKIE['rq_session'] ?? '');
+    return $token === '' ? null : (new SessionRepository(app_pdo()))->findUserByToken($token);
+}
+
+function current_required_user(): array
+{
+    try {
+        return Authorization::requireVerifiedUser(current_optional_user());
+    } catch (RuntimeException $e) {
+        $status = $e->getMessage() === 'AUTH_REQUIRED' ? 401 : 403;
+        throw new ApiException($status, $e->getMessage(), 'Necesitas una cuenta verificada.');
+    }
+}
+
+function category_slot_for_room(array $room, string $slug): int
+{
+    foreach (($room['pack_snapshot'] ?? []) as $category) {
+        if (($category['slug'] ?? null) === $slug) {
+            return (int) $category['slot'];
+        }
+    }
+    foreach (GameEngine::categories() as $slot => $category) {
+        if ($category['slug'] === $slug) {
+            return $slot;
+        }
+    }
+    throw new RuntimeException('Categoria de sala no encontrada.');
+}
+
+function optional_positive_int(mixed $value): ?int
+{
+    if ($value === null || $value === '') {
+        return null;
+    }
+    $number = filter_var($value, FILTER_VALIDATE_INT);
+    if ($number === false || $number < 1) {
+        throw new InvalidArgumentException('Identificador no valido.');
+    }
+    return $number;
 }

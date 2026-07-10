@@ -1615,8 +1615,32 @@ button:disabled {
     align-items: end;
 }
 
+.pack-list-item {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    text-align: left;
+}
+
 @media (max-width: 680px) {
     .admin-user-row {
         grid-template-columns: 1fr;
     }
+}
+.color-swatch {
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    margin-inline: .15rem;
+    border: 1px solid rgba(255, 255, 255, .5);
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.danger-zone {
+    margin-top: 1rem;
+}
+
+.danger-button {
+    background: #a52020;
 }

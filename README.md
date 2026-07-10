@@ -1,50 +1,78 @@
-# trivial
+# Rueda Quiz
 
-Juego web de preguntas por categorias inspirado en mecanicas de tablero circular, quesitos y tiradas de dado.
+Juego web de preguntas con tablero circular, seis categorias, quesitos, modo local y salas online. El proyecto usa PHP, PDO, JavaScript y CSS sin framework ni proceso de build.
 
 ## Ejecucion local
 
-Requisitos: PHP 8.1+ con PDO.
+Requisitos: PHP 8.1+ con PDO SQLite.
 
 ```powershell
-php -S 127.0.0.1:4178 -t public
+php -S 127.0.0.1:4181 -t public
 ```
 
-Abre `http://127.0.0.1:4178`. Si no existe `config.php`, la app usa SQLite local en `storage/dev.sqlite` y clave admin `admin-local`.
+Abre `http://127.0.0.1:4181`. Sin `config.php`, se usa `storage/dev.sqlite`, correo local en `storage/mail-outbox.log`, migraciones automaticas y el pack Clasico de demostracion.
 
-Para cargar preguntas demo:
+Para crear el primer administrador:
 
-1. Entra en `http://127.0.0.1:4178/admin.php`.
-2. Usa la clave `admin-local`.
-3. Pega el contenido de `data/questions-demo.csv`.
-4. Marca "Reemplazar todas las preguntas existentes" e importa.
+```powershell
+php bin/create-admin.php --email=admin@example.com --password=una-clave-segura
+```
 
-## Despliegue en IONOS con MySQL
+El administrador inicia sesion en `account.php` y accede a `admin.php`. Ya no existe una clave de administracion compartida.
 
-1. Crea una base de datos MySQL/MariaDB en IONOS.
+## Cuentas, packs e historial
+
+- Jugar como invitado sigue siendo posible.
+- Las cuentas verificadas pueden crear packs privados, importar/exportar CSV o JSON y consultar su historial.
+- Los administradores gestionan usuarios, packs del sistema y esquemas publicos de colores.
+- Cada partida conserva la revision y las categorias del pack con las que se creo.
+- Las acciones online requieren un token de participante y una version esperada para evitar actuaciones cruzadas o sobrescrituras.
+- Al eliminar una cuenta se anonimizan sus datos personales sin destruir historiales compartidos.
+
+La limpieza de partidas completamente anonimas y finalizadas usa la retencion configurada (30 dias por defecto):
+
+```powershell
+php bin/cleanup.php
+php bin/cleanup.php --days=45
+```
+
+Programa este comando como tarea periodica en produccion.
+
+## Configuracion y despliegue MySQL
+
+1. Crea una base MySQL/MariaDB.
 2. Copia `config.example.php` como `config.php`.
-3. Cambia `admin_key` y los datos de conexion MySQL.
-4. Sube el proyecto por FTP.
-5. Configura el document root del dominio a la carpeta `public` si tu panel lo permite.
+3. Ajusta `base_url`, correo, retencion y credenciales de base de datos.
+4. Sube el proyecto y apunta el document root a `public/`.
+5. Abre la aplicacion una vez para ejecutar las migraciones y el seed idempotente.
+6. Crea el administrador con `bin/create-admin.php`.
 
-Si no puedes apuntar el document root a `public`, sube el contenido de `public` a la carpeta publica del hosting y deja `src`, `database`, `data`, `storage` y `config.php` un nivel por encima siempre que el hosting lo permita.
+La fuente de verdad incremental es `database/migrations`. `database/schema.mysql.sql` refleja el esquema final para inspeccion o instalaciones manuales nuevas; una instalacion existente debe dejar que `MigrationRunner` aplique solo las versiones pendientes.
 
-La app crea las tablas automaticamente al primer uso. Tambien puedes ejecutar manualmente `database/schema.mysql.sql`.
+Transportes de correo:
 
-## Categorias
+- `native`: usa `mail()` de PHP con la direccion `from` configurada.
+- `local`: escribe los enlaces de verificacion y recuperacion fuera de `public/`, en el fichero `outbox`.
 
-- `geography`: Geografia
-- `art`: Arte y literatura
-- `history`: Historia
-- `entertainment`: Entretenimiento
-- `science`: Ciencia y naturaleza
-- `sports`: Deportes y ocio
+## Packs completos
 
-## Formato CSV
+El JSON portable usa `format_version: 1` y contiene nombre, seis categorias y preguntas. El CSV completo utiliza:
 
 ```csv
-category,question,option_a,option_b,option_c,option_d,correct
-geography,Capital de Francia,Paris,Lyon,Burdeos,Niza,0
+pack_name,category_slot,category_key,category_name,category_color,question,option_a,option_b,option_c,option_d,correct
+Clasico,0,history,Historia,#f2c94c,Fecha clave,1492,1789,1914,2001,0
 ```
 
-`correct` es el indice de la opcion correcta: `0`, `1`, `2` o `3`.
+`category_slot` va de `0` a `5`; `correct` es el indice `0..3`. Una importacion siempre crea un nuevo borrador privado y no acepta propietario ni visibilidad desde el archivo.
+
+## Verificacion
+
+```powershell
+php tests/run.php
+node --check public/assets/app.js
+node --check public/assets/account.js
+node --check public/assets/packs.js
+node --check public/assets/history.js
+```
+
+El arranque aplica de forma idempotente las migraciones de `database/migrations` y siembra el contenido Clasico cuando falta.

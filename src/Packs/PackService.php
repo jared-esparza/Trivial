@@ -13,6 +13,11 @@ final class PackService
         return $this->packs->createDraft($ownerUserId, $name, 'user');
     }
 
+    public function createSystemDraft(string $name): array
+    {
+        return $this->packs->createDraft(null, $name, 'system');
+    }
+
     public function replaceCategories(int $actorUserId, int $packId, array $categories, bool $admin = false): array
     {
         $this->authorize($actorUserId, $packId, $admin);
@@ -38,6 +43,47 @@ final class PackService
     {
         $this->authorize($actorUserId, $packId, $admin);
         return $this->packs->beginEdit($packId);
+    }
+
+    public function importDraft(int $ownerUserId, string $format, string $content): array
+    {
+        $definition = match (strtolower($format)) {
+            'json' => PackImporter::fromJson($content),
+            'csv' => PackImporter::fromCsv($content),
+            default => throw new InvalidArgumentException('Formato de importacion no valido.'),
+        };
+        $pack = $this->createDraft($ownerUserId, $definition['name']);
+        $this->replaceCategories($ownerUserId, $pack['id'], $definition['categories']);
+        foreach ($definition['questions'] as $question) {
+            $this->addQuestion($ownerUserId, $pack['id'], $question['slot'], $question);
+        }
+
+        return $this->packs->get($pack['id']);
+    }
+
+    public function export(int $actorUserId, int $packId, string $format, bool $admin = false): string
+    {
+        $pack = $this->packs->get($packId);
+        if ($pack['kind'] === 'system' && !$admin) {
+            throw new RuntimeException('PACK_FORBIDDEN');
+        }
+        $this->authorize($actorUserId, $packId, $admin);
+        $definition = $this->packs->portableDefinition($packId);
+
+        return match (strtolower($format)) {
+            'json' => PackExporter::toJson($definition),
+            'csv' => PackExporter::toCsv($definition),
+            default => throw new InvalidArgumentException('Formato de exportacion no valido.'),
+        };
+    }
+
+    public function delete(int $actorUserId, int $packId, bool $admin = false): void
+    {
+        $pack = $this->authorize($actorUserId, $packId, $admin);
+        if ($pack['kind'] === 'system' && $pack['name'] === 'Clasico') {
+            throw new RuntimeException('DEFAULT_PACK_REQUIRED');
+        }
+        $this->packs->softDelete($packId);
     }
 
     private function authorize(int $actorUserId, int $packId, bool $admin): array

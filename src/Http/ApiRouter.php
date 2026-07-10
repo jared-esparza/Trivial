@@ -36,6 +36,18 @@ final class ApiRouter
             if ($e->getMessage() === 'ACCOUNT_DISABLED') {
                 return $this->error(403, 'ACCOUNT_DISABLED', 'La cuenta esta desactivada.');
             }
+            if ($e->getMessage() === 'PACK_FORBIDDEN') {
+                return $this->error(403, 'PACK_FORBIDDEN', 'No tienes acceso a este pack.');
+            }
+            if ($e->getMessage() === 'PACK_INCOMPLETE') {
+                return $this->error(422, 'PACK_INCOMPLETE', 'El pack necesita preguntas en sus seis categorias.');
+            }
+            if ($e->getMessage() === 'LAST_ADMIN') {
+                return $this->error(409, 'LAST_ADMIN', 'No puedes eliminar al ultimo administrador activo.');
+            }
+            if ($e->getMessage() === 'DEFAULT_PACK_REQUIRED') {
+                return $this->error(409, 'DEFAULT_PACK_REQUIRED', 'El pack Clasico es necesario como valor por defecto.');
+            }
             throw $e;
         }
     }

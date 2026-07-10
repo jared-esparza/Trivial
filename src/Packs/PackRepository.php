@@ -73,6 +73,198 @@ final class PackRepository
         ];
     }
 
+    public function listAvailable(?int $userId, bool $admin = false): array
+    {
+        if ($userId === null) {
+            $stmt = $this->pdo->prepare(
+                "SELECT id FROM question_packs
+                 WHERE kind = 'system' AND status = 'active' AND deleted_at IS NULL
+                 ORDER BY name, id"
+            );
+            $stmt->execute();
+        } elseif ($admin) {
+            $stmt = $this->pdo->prepare(
+                "SELECT id FROM question_packs
+                 WHERE deleted_at IS NULL
+                   AND (kind = 'system' OR owner_user_id = :owner_user_id)
+                 ORDER BY kind, name, id"
+            );
+            $stmt->execute([':owner_user_id' => $userId]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                "SELECT id FROM question_packs
+                 WHERE deleted_at IS NULL
+                   AND ((kind = 'system' AND status = 'active') OR owner_user_id = :owner_user_id)
+                 ORDER BY kind, name, id"
+            );
+            $stmt->execute([':owner_user_id' => $userId]);
+        }
+
+        return array_map(fn ($id): array => $this->get((int) $id), $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    public function listColorSchemes(): array
+    {
+        $schemes = [];
+        $rows = $this->pdo->query(
+            "SELECT id, name FROM color_schemes WHERE status = 'active' AND deleted_at IS NULL ORDER BY name, id"
+        )->fetchAll();
+        foreach ($rows as $row) {
+            $schemes[] = [
+                'id' => (int) $row['id'],
+                'name' => $row['name'],
+                'colors' => array_values($this->colorSchemeColors((int) $row['id'])),
+            ];
+        }
+        return $schemes;
+    }
+
+    public function createColorScheme(string $name, array $colors): array
+    {
+        $name = trim($name);
+        $colors = array_values($colors);
+        if ($name === '' || count($colors) !== 6) {
+            throw new InvalidArgumentException('El pack de colores necesita nombre y seis colores.');
+        }
+        foreach ($colors as $color) {
+            if (!is_string($color) || !preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+                throw new InvalidArgumentException('Color no valido.');
+            }
+        }
+
+        $now = gmdate('c');
+        $this->pdo->beginTransaction();
+        try {
+            $scheme = $this->pdo->prepare(
+                "INSERT INTO color_schemes (name, status, created_at, updated_at)
+                 VALUES (:name, 'active', :created_at, :updated_at)"
+            );
+            $scheme->execute([':name' => $name, ':created_at' => $now, ':updated_at' => $now]);
+            $id = (int) $this->pdo->lastInsertId();
+            $slot = $this->pdo->prepare(
+                'INSERT INTO color_scheme_slots (color_scheme_id, slot, color) VALUES (:id, :slot, :color)'
+            );
+            foreach ($colors as $position => $color) {
+                $slot->execute([':id' => $id, ':slot' => $position, ':color' => strtolower($color)]);
+            }
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+
+        return ['id' => $id, 'name' => $name, 'colors' => array_map('strtolower', $colors)];
+    }
+
+    public function softDeleteColorScheme(int $colorSchemeId): void
+    {
+        $now = gmdate('c');
+        $stmt = $this->pdo->prepare(
+            "UPDATE color_schemes
+             SET status = 'disabled', deleted_at = :deleted_at, updated_at = :updated_at
+             WHERE id = :id AND deleted_at IS NULL"
+        );
+        $stmt->execute([':deleted_at' => $now, ':updated_at' => $now, ':id' => $colorSchemeId]);
+        if ($stmt->rowCount() !== 1) {
+            throw new RuntimeException('COLOR_SCHEME_NOT_FOUND');
+        }
+    }
+
+    public function portableDefinition(int $packId): array
+    {
+        $pack = $this->get($packId);
+        $revision = $pack['currentRevision'] ?? $pack['draftRevision'] ?? throw new RuntimeException('REVISION_NOT_FOUND');
+
+        return [
+            'name' => $pack['name'],
+            'categories' => array_map(static fn (array $category): array => [
+                'slot' => $category['slot'],
+                'key' => $category['key'],
+                'name' => $category['name'],
+                'color' => $category['color'],
+            ], $revision['categories']),
+            'questions' => array_map(static fn (array $question): array => [
+                'slot' => $question['slot'],
+                'question' => $question['question'],
+                'options' => $question['options'],
+                'correct' => $question['correct'],
+            ], $revision['questions']),
+        ];
+    }
+
+    public function roomSelection(?int $userId, ?int $packId, ?int $colorSchemeId): array
+    {
+        if ($packId === null) {
+            $stmt = $this->pdo->prepare(
+                "SELECT id FROM question_packs
+                 WHERE kind = 'system' AND name = 'Clasico' AND status = 'active' AND deleted_at IS NULL
+                 LIMIT 1"
+            );
+            $stmt->execute();
+            $packId = (int) $stmt->fetchColumn();
+        }
+        $pack = $this->get($packId);
+        $allowed = $pack['kind'] === 'system' && $pack['status'] === 'active';
+        if ($userId !== null && $pack['ownerUserId'] === $userId && $pack['status'] === 'active') {
+            $allowed = true;
+        }
+        if (!$allowed || $pack['currentRevision'] === null) {
+            throw new RuntimeException('PACK_FORBIDDEN');
+        }
+
+        $schemeColors = $colorSchemeId === null ? [] : $this->colorSchemeColors($colorSchemeId);
+        $internal = GameEngine::categories();
+        $categories = [];
+        foreach ($pack['currentRevision']['categories'] as $category) {
+            $slot = $category['slot'];
+            $categories[] = [
+                'slot' => $slot,
+                'slug' => $internal[$slot]['slug'],
+                'key' => $category['key'],
+                'name' => $category['name'],
+                'color' => $schemeColors[$slot] ?? $category['color'],
+            ];
+        }
+
+        return [
+            'packId' => $pack['id'],
+            'packName' => $pack['name'],
+            'revisionId' => $pack['currentRevision']['id'],
+            'categories' => $categories,
+        ];
+    }
+
+    public function softDelete(int $packId): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE question_packs SET deleted_at = :deleted_at, status = :status, updated_at = :updated_at WHERE id = :id'
+        );
+        $now = gmdate('c');
+        $stmt->execute([':deleted_at' => $now, ':status' => 'disabled', ':updated_at' => $now, ':id' => $packId]);
+    }
+
+    private function colorSchemeColors(int $colorSchemeId): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT s.slot, s.color
+             FROM color_scheme_slots s
+             INNER JOIN color_schemes c ON c.id = s.color_scheme_id
+             WHERE c.id = :id AND c.status = 'active' AND c.deleted_at IS NULL
+             ORDER BY s.slot"
+        );
+        $stmt->execute([':id' => $colorSchemeId]);
+        $colors = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $colors[(int) $row['slot']] = $row['color'];
+        }
+        if (count($colors) !== 6) {
+            throw new InvalidArgumentException('Pack de colores no valido.');
+        }
+        return $colors;
+    }
+
     public function replaceCategories(int $revisionId, array $categories): array
     {
         $this->assertDraft($revisionId);

@@ -13,6 +13,7 @@ require_once __DIR__ . '/Mail/NativeMailer.php';
 require_once __DIR__ . '/Mail/LocalOutboxMailer.php';
 require_once __DIR__ . '/Auth/UserRepository.php';
 require_once __DIR__ . '/Auth/SessionRepository.php';
+require_once __DIR__ . '/Auth/AccountDeletionService.php';
 require_once __DIR__ . '/Auth/AccountTokenRepository.php';
 require_once __DIR__ . '/Auth/AuthService.php';
 require_once __DIR__ . '/Auth/AuthRateLimiter.php';
@@ -29,6 +30,12 @@ require_once __DIR__ . '/Packs/PackService.php';
 require_once __DIR__ . '/Packs/PackImporter.php';
 require_once __DIR__ . '/Packs/PackExporter.php';
 require_once __DIR__ . '/Packs/PackSeeder.php';
+require_once __DIR__ . '/Http/PackController.php';
+require_once __DIR__ . '/Game/RoomService.php';
+require_once __DIR__ . '/Game/ParticipantTokenService.php';
+require_once __DIR__ . '/Stats/AnswerEventRepository.php';
+require_once __DIR__ . '/Stats/StatisticsService.php';
+require_once __DIR__ . '/Maintenance/CleanupService.php';
 
 function app_config(): array
 {
@@ -37,7 +44,7 @@ function app_config(): array
         return [
             'app_name' => 'trivial',
             'base_url' => 'http://127.0.0.1:4181',
-            'admin_key' => 'admin-local',
+            'anonymous_room_retention_days' => 30,
             'using_default_config' => true,
             'mail' => [
                 'transport' => 'local',
@@ -51,10 +58,6 @@ function app_config(): array
     }
 
     $config = require $local;
-
-    if (($config['admin_key'] ?? '') === 'cambia-esta-clave') {
-        $config['using_example_config'] = !file_exists($local);
-    }
 
     return $config;
 }
@@ -115,12 +118,18 @@ function app_auth_router(): ApiRouter
         new AuthRateLimiter($pdo)
     );
     $router = new ApiRouter();
-    (new AuthController($auth, $sessions))->registerRoutes($router);
+    (new AuthController(
+        $auth,
+        $sessions,
+        new AccountDeletionService($pdo, new UserRepository($pdo), $sessions)
+    ))->registerRoutes($router);
     (new AdminUserController(
         new UserRepository($pdo),
         $sessions,
         new UserAdminService($pdo, new UserRepository($pdo), $sessions)
     ))->registerRoutes($router);
+    $packRepository = new PackRepository($pdo);
+    (new PackController(new PackService($packRepository), $packRepository, $sessions))->registerRoutes($router);
 
     return $router;
 }

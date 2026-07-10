@@ -82,6 +82,29 @@ final class QuestionRepository
         return $this->hydrate($row);
     }
 
+    public function randomByRevisionSlot(int $revisionId, int $slot): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT q.*
+             FROM questions q
+             INNER JOIN pack_categories c ON c.id = q.pack_category_id
+             WHERE q.pack_revision_id = :revision_id AND c.slot = :slot
+             ORDER BY ' . $this->randomFunction . ' LIMIT 1'
+        );
+        $stmt->execute([':revision_id' => $revisionId, ':slot' => $slot]);
+        $row = $stmt->fetch();
+        if ($row === false) {
+            throw new RuntimeException('No hay preguntas para la categoria seleccionada.');
+        }
+        $question = $this->hydrate($row);
+        $internal = GameEngine::categories();
+        $question['categoryKey'] = $question['category'];
+        $question['category'] = $internal[$slot]['slug'] ?? throw new InvalidArgumentException('Slot de categoria no valido.');
+        $question['categorySlot'] = $slot;
+
+        return $question;
+    }
+
     private function hydrate(array $row): array
     {
         return [

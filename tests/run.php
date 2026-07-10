@@ -35,6 +35,13 @@ foreach ([
     __DIR__ . '/../src/Packs/PackImporter.php',
     __DIR__ . '/../src/Packs/PackExporter.php',
     __DIR__ . '/../src/Packs/PackSeeder.php',
+    __DIR__ . '/../src/Http/PackController.php',
+    __DIR__ . '/../src/Game/RoomService.php',
+    __DIR__ . '/../src/Game/ParticipantTokenService.php',
+    __DIR__ . '/../src/Stats/AnswerEventRepository.php',
+    __DIR__ . '/../src/Stats/StatisticsService.php',
+    __DIR__ . '/../src/Auth/AccountDeletionService.php',
+    __DIR__ . '/../src/Maintenance/CleanupService.php',
 ] as $optionalSource) {
     if (is_file($optionalSource)) {
         require_once $optionalSource;
@@ -104,11 +111,7 @@ function assertTrueValue(bool $actual, string $message = ''): void
 
 function testPdo(): PDO
 {
-    $pdo = new PDO('sqlite::memory:');
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    Database::createSchema($pdo);
-
-    return $pdo;
+    return migratedPdo();
 }
 
 function migratedPdo(): PDO
@@ -134,7 +137,7 @@ $runner->test('migration runner applies each migration exactly once', function (
     $runner->migrate();
 
     $applied = (int) $pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn();
-    assertSameValue(6, $applied);
+    assertSameValue(7, $applied);
 
     $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'table'")->fetchAll(PDO::FETCH_COLUMN);
     foreach (['rooms', 'questions', 'users', 'auth_sessions', 'account_tokens', 'auth_attempts', 'question_packs', 'pack_revisions', 'pack_categories', 'color_schemes', 'color_scheme_slots', 'room_participants', 'answer_events'] as $table) {
@@ -422,14 +425,19 @@ $runner->test('account ui and admin panel use session authentication without sha
     $index = file_get_contents(__DIR__ . '/../public/index.php');
     $admin = file_get_contents(__DIR__ . '/../public/admin.php');
     $api = file_get_contents(__DIR__ . '/../public/api.php');
-    assertTrueValue(is_string($index) && is_string($admin) && is_string($api));
+    $bootstrap = file_get_contents(__DIR__ . '/../src/bootstrap.php');
+    assertTrueValue(is_string($index) && is_string($admin) && is_string($api) && is_string($bootstrap));
     assertTrueValue(str_contains($index, 'href="account.php"'), 'home should link to account');
     assertTrueValue(!str_contains($admin, 'name="adminKey"'), 'admin page should not ask for shared key');
-    assertTrueValue(str_contains($api, 'require_admin_session('), 'admin api should require a user session');
+    assertTrueValue(str_contains($bootstrap, 'new AdminUserController('), 'admin api should use modular role protected routes');
     assertTrueValue(!str_contains($api, "\$_GET['admin_key']"), 'admin key query authentication should be removed');
     assertTrueValue(str_contains($admin, 'id="adminUsers"'), 'admin page should expose user management');
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     assertTrueValue(is_string($appJs) && str_contains($appJs, 'renderAdminUsers'), 'admin script should render users');
+    assertTrueValue(is_file(__DIR__ . '/../public/packs.php'), 'pack management page should exist');
+    assertTrueValue(is_file(__DIR__ . '/../public/assets/packs.js'), 'pack management script should exist');
+    $account = file_get_contents(__DIR__ . '/../public/assets/account.js');
+    assertTrueValue(is_string($account) && str_contains($account, 'packs.php'), 'account should link to private packs');
 });
 
 $runner->test('admin user routes enforce role csrf and last-admin protection', function (): void {
@@ -586,6 +594,382 @@ $runner->test('default pack seeder creates classic content and color schemes ide
     $classic = (new PackRepository($pdo))->get($packId);
     assertSameValue('active', $classic['status']);
     assertSameValue(12, count($classic['currentRevision']['questions']));
+    try {
+        (new PackService(new PackRepository($pdo)))->delete(1, $packId, true);
+    } catch (RuntimeException $e) {
+        assertSameValue('DEFAULT_PACK_REQUIRED', $e->getMessage());
+        $classicProtected = true;
+    }
+    assertTrueValue($classicProtected ?? false, 'classic default pack should not be deleted');
+});
+
+$runner->test('pack http routes expose public packs and create imports as private drafts', function (): void {
+    assertTrueValue(class_exists('PackController'), 'PackController should be available');
+    $pdo = migratedPdo();
+    (new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv'))->seed();
+    $users = new UserRepository($pdo);
+    $user = $users->create('owner@example.com', password_hash('contrasena-owner', PASSWORD_DEFAULT));
+    $users->markVerified($user['id']);
+    $sessions = new SessionRepository($pdo);
+    $session = $sessions->create($user['id']);
+    $repo = new PackRepository($pdo);
+    $router = new ApiRouter();
+    (new PackController(new PackService($repo), $repo, $sessions))->registerRoutes($router);
+
+    $public = $router->dispatch(new ApiRequest('GET', '/packs'));
+    assertSameValue(1, count($public->payload['packs']));
+    assertSameValue('Clasico', $public->payload['packs'][0]['name']);
+
+    $create = $router->dispatch(new ApiRequest(
+        'POST', '/packs/create', ['name' => 'Propio'], [], ['rq_session' => $session['token']], ['x-csrf-token' => $session['csrfToken']]
+    ));
+    assertSameValue(201, $create->status);
+    assertSameValue(6, count($create->payload['pack']['draftRevision']['categories']));
+    $createdPackId = $create->payload['pack']['id'];
+    for ($slot = 0; $slot < 6; $slot++) {
+        $question = $router->dispatch(new ApiRequest(
+            'POST',
+            '/packs/questions',
+            ['packId' => $createdPackId, 'slot' => $slot, 'question' => 'Pregunta ' . $slot, 'options' => ['A', 'B', 'C', 'D'], 'correct' => 0],
+            [],
+            ['rq_session' => $session['token']],
+            ['x-csrf-token' => $session['csrfToken']]
+        ));
+        assertSameValue(201, $question->status);
+    }
+    $activated = $router->dispatch(new ApiRequest(
+        'POST', '/packs/activate', ['packId' => $createdPackId], [], ['rq_session' => $session['token']], ['x-csrf-token' => $session['csrfToken']]
+    ));
+    assertSameValue('active', $activated->payload['pack']['status']);
+    $exported = $router->dispatch(new ApiRequest(
+        'GET', '/packs/export', [], ['id' => $createdPackId, 'format' => 'json'], ['rq_session' => $session['token']]
+    ));
+    assertSameValue(200, $exported->status);
+    assertTrueValue(str_contains($exported->payload['content'], '"format_version": 1'));
+
+    $definition = ['name' => 'Importado', 'categories' => [], 'questions' => []];
+    foreach (GameEngine::categories() as $slot => $category) {
+        $definition['categories'][] = ['slot' => $slot, 'key' => $category['slug'], 'name' => $category['name'], 'color' => $category['color']];
+        $definition['questions'][] = ['slot' => $slot, 'question' => 'Pregunta ' . $slot, 'options' => ['A', 'B', 'C', 'D'], 'correct' => 0];
+    }
+    $import = $router->dispatch(new ApiRequest(
+        'POST',
+        '/packs/import',
+        ['format' => 'json', 'content' => PackExporter::toJson($definition)],
+        [],
+        ['rq_session' => $session['token']],
+        ['x-csrf-token' => $session['csrfToken']]
+    ));
+    assertSameValue(201, $import->status);
+    assertSameValue('draft', $import->payload['pack']['status']);
+
+    $mine = $router->dispatch(new ApiRequest('GET', '/packs', [], [], ['rq_session' => $session['token']]));
+    assertSameValue(3, count($mine->payload['packs']));
+});
+
+$runner->test('admins create system packs and manage public color schemes', function (): void {
+    $pdo = migratedPdo();
+    $users = new UserRepository($pdo);
+    $sessions = new SessionRepository($pdo);
+    $admin = $users->create('admin@example.com', password_hash('contrasena-admin', PASSWORD_DEFAULT), 'admin');
+    $users->markVerified($admin['id']);
+    $adminSession = $sessions->create($admin['id']);
+    $member = $users->create('member@example.com', password_hash('contrasena-member', PASSWORD_DEFAULT));
+    $users->markVerified($member['id']);
+    $memberSession = $sessions->create($member['id']);
+    $repo = new PackRepository($pdo);
+    $router = new ApiRouter();
+    (new PackController(new PackService($repo), $repo, $sessions))->registerRoutes($router);
+
+    $forbidden = $router->dispatch(new ApiRequest(
+        'POST', '/packs/create', ['name' => 'No permitido', 'kind' => 'system'], [],
+        ['rq_session' => $memberSession['token']], ['x-csrf-token' => $memberSession['csrfToken']]
+    ));
+    assertSameValue(403, $forbidden->status);
+
+    $created = $router->dispatch(new ApiRequest(
+        'POST', '/packs/create', ['name' => 'Historia local', 'kind' => 'system'], [],
+        ['rq_session' => $adminSession['token']], ['x-csrf-token' => $adminSession['csrfToken']]
+    ));
+    assertSameValue(201, $created->status);
+    assertSameValue('system', $created->payload['pack']['kind']);
+    assertSameValue(null, $created->payload['pack']['ownerUserId']);
+
+    $scheme = $router->dispatch(new ApiRequest(
+        'POST', '/packs/colors/create', ['name' => 'Alto contraste', 'colors' => ['#111111', '#222222', '#333333', '#444444', '#555555', '#666666']], [],
+        ['rq_session' => $adminSession['token']], ['x-csrf-token' => $adminSession['csrfToken']]
+    ));
+    assertSameValue(201, $scheme->status);
+    assertSameValue(6, count($scheme->payload['colorScheme']['colors']));
+
+    $deleted = $router->dispatch(new ApiRequest(
+        'POST', '/packs/colors/delete', ['colorSchemeId' => $scheme->payload['colorScheme']['id']], [],
+        ['rq_session' => $adminSession['token']], ['x-csrf-token' => $adminSession['csrfToken']]
+    ));
+    assertSameValue(200, $deleted->status);
+    assertSameValue(0, count($repo->listColorSchemes()));
+});
+
+$runner->test('pack management ui exposes admin system and color controls conditionally', function (): void {
+    $page = file_get_contents(__DIR__ . '/../public/packs.php');
+    $script = file_get_contents(__DIR__ . '/../public/assets/packs.js');
+    assertTrueValue(is_string($page) && is_string($script));
+    assertTrueValue(str_contains($page, 'adminPackControls'));
+    assertTrueValue(str_contains($page, 'colorSchemeForm'));
+    assertTrueValue(str_contains($script, "me.user?.role === 'admin'"));
+    assertTrueValue(str_contains($script, '/packs/colors/create'));
+    assertTrueValue(str_contains($script, '/packs/colors/delete'));
+});
+
+$runner->test('room stores active pack revision and immutable category snapshot', function (): void {
+    $pdo = migratedPdo();
+    (new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv'))->seed();
+    $packs = new PackRepository($pdo);
+    $selection = $packs->roomSelection(null, null, null);
+    assertSameValue('Clasico', $selection['packName']);
+    assertSameValue(6, count($selection['categories']));
+    assertSameValue('history', $selection['categories'][0]['slug']);
+
+    $rooms = new RoomRepository($pdo);
+    $created = $rooms->createRoom(
+        'online',
+        'auto',
+        'Equipo Azul',
+        '#2563eb',
+        null,
+        $selection['packId'],
+        $selection['revisionId'],
+        $selection['categories']
+    );
+    assertSameValue($selection['revisionId'], $created['pack_revision_id']);
+    assertSameValue($selection['categories'], $created['pack_snapshot']);
+});
+
+$runner->test('room service selects pack and question repository scopes questions by revision slot', function (): void {
+    assertTrueValue(class_exists('RoomService'), 'RoomService should be available');
+    $pdo = migratedPdo();
+    (new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv'))->seed();
+    $rooms = new RoomRepository($pdo);
+    $packs = new PackRepository($pdo);
+    $tokens = new ParticipantTokenService($pdo);
+    $service = new RoomService($rooms, $packs, $tokens);
+
+    $room = $service->createOnline(null, 'Equipo Azul', '#2563eb', null, null);
+    assertSameValue('Clasico', $room['pack_name']);
+    assertSameValue(6, count($room['pack_snapshot']));
+    assertTrueValue(isset($room['participant_token']));
+    $participant = $tokens->authorize($room, $room['participant_token']);
+    assertSameValue(0, $participant['slot']);
+    assertTrueValue($room['participant_token'] !== $participant['token_hash']);
+
+    $question = (new QuestionRepository($pdo))->randomByRevisionSlot($room['pack_revision_id'], 0);
+    assertSameValue('history', $question['category']);
+});
+
+$runner->test('room repository rejects stale expected versions', function (): void {
+    $pdo = migratedPdo();
+    $rooms = new RoomRepository($pdo);
+    $room = $rooms->createRoom('online', 'auto', 'Azul', '#2563eb');
+    $state = $room['state'];
+    $state['phase'] = 'playing';
+    $rooms->updateState($room['code'], $state, $room['version']);
+
+    try {
+        $rooms->updateState($room['code'], $state, $room['version']);
+    } catch (RuntimeException $e) {
+        assertSameValue('ROOM_VERSION_CONFLICT', $e->getMessage());
+        $conflict = true;
+    }
+    assertTrueValue($conflict ?? false, 'stale room update should conflict');
+});
+
+$runner->test('room start rejects stale expected version', function (): void {
+    $pdo = migratedPdo();
+    $rooms = new RoomRepository($pdo);
+    $room = $rooms->createRoom('online', 'auto', 'Uno', '#111111');
+    $rooms->joinRoom($room['code'], 'Dos', '#222222');
+    try {
+        $rooms->startGame($room['code'], $room['version']);
+    } catch (RuntimeException $e) {
+        assertSameValue('ROOM_VERSION_CONFLICT', $e->getMessage());
+        $staleStartRejected = true;
+    }
+    assertTrueValue($staleStartRejected ?? false, 'stale start should be rejected');
+});
+
+$runner->test('room service rolls back room when participant registration fails', function (): void {
+    $pdo = migratedPdo();
+    (new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv'))->seed();
+    $pdo->exec("CREATE TRIGGER reject_participant BEFORE INSERT ON room_participants BEGIN SELECT RAISE(FAIL, 'participant rejected'); END");
+    $service = new RoomService(
+        new RoomRepository($pdo),
+        new PackRepository($pdo),
+        new ParticipantTokenService($pdo)
+    );
+    try {
+        $service->createOnline(null, 'Equipo', '#123456', null, null);
+    } catch (PDOException) {
+        $registrationFailed = true;
+    }
+    assertTrueValue($registrationFailed ?? false, 'participant insert should fail');
+    assertSameValue(0, (int) $pdo->query('SELECT COUNT(*) FROM rooms')->fetchColumn());
+});
+
+$runner->test('statistics summarize accuracy by category and longest streak per participant', function (): void {
+    assertTrueValue(class_exists('StatisticsService'), 'StatisticsService should be available');
+    $participants = [['id' => 10, 'slot' => 0, 'name' => 'Azul', 'color' => '#2563eb']];
+    $events = [
+        ['participant_id' => 10, 'category_slot' => 0, 'correct' => 1, 'sequence_no' => 1],
+        ['participant_id' => 10, 'category_slot' => 0, 'correct' => 1, 'sequence_no' => 2],
+        ['participant_id' => 10, 'category_slot' => 1, 'correct' => 0, 'sequence_no' => 3],
+    ];
+
+    $summary = StatisticsService::summarize($participants, $events);
+    assertSameValue(3, $summary[0]['answers']);
+    assertSameValue(2, $summary[0]['correct']);
+    assertSameValue(1, $summary[0]['incorrect']);
+    assertSameValue(66.67, $summary[0]['accuracy']);
+    assertSameValue(2, $summary[0]['longestStreak']);
+    assertSameValue(100.0, $summary[0]['categories'][0]['accuracy']);
+    assertSameValue(0.0, $summary[0]['categories'][1]['accuracy']);
+});
+
+$runner->test('persisted answer events produce room report and authenticated history', function (): void {
+    $pdo = migratedPdo();
+    (new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv'))->seed();
+    $users = new UserRepository($pdo);
+    $user = $users->create('owner@example.com', password_hash('contrasena-owner', PASSWORD_DEFAULT));
+    $users->markVerified($user['id']);
+    $tokens = new ParticipantTokenService($pdo);
+    $room = (new RoomService(new RoomRepository($pdo), new PackRepository($pdo), $tokens))->createOnline(
+        $users->findById($user['id']), 'Azul', '#2563eb', null, null
+    );
+    $participant = $tokens->authorize($room, $room['participant_token']);
+    $events = new AnswerEventRepository($pdo);
+    $events->record($room['code'], $participant['id'], 0, null, true, 'auto');
+    $events->record($room['code'], $participant['id'], 1, null, false, 'auto');
+
+    $stats = new StatisticsService($pdo, $events);
+    $report = $stats->roomReport($room['code']);
+    assertSameValue(2, $report['teams'][0]['answers']);
+    assertSameValue(50.0, $report['teams'][0]['accuracy']);
+    $history = $stats->historyForUser($user['id']);
+    assertSameValue($room['code'], $history[0]['code']);
+    $detail = $stats->roomReportForUser($room['code'], $user['id']);
+    assertSameValue($room['code'], $detail['code']);
+    try {
+        $stats->roomReportForUser($room['code'], 9999);
+    } catch (RuntimeException $e) {
+        assertSameValue('HISTORY_FORBIDDEN', $e->getMessage());
+        $historyDenied = true;
+    }
+    assertTrueValue($historyDenied ?? false, 'unrelated users should not read private history details');
+});
+
+$runner->test('account deletion anonymizes shared history and cleanup removes expired anonymous rooms', function (): void {
+    assertTrueValue(class_exists('AccountDeletionService'), 'AccountDeletionService should be available');
+    assertTrueValue(class_exists('CleanupService'), 'CleanupService should be available');
+    $pdo = migratedPdo();
+    (new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv'))->seed();
+    $users = new UserRepository($pdo);
+    $user = $users->create('owner@example.com', password_hash('contrasena-owner', PASSWORD_DEFAULT));
+    $users->markVerified($user['id']);
+    $tokens = new ParticipantTokenService($pdo);
+    $room = (new RoomService(new RoomRepository($pdo), new PackRepository($pdo), $tokens))->createOnline(
+        $users->findById($user['id']), 'Azul', '#2563eb', null, null
+    );
+
+    (new AccountDeletionService($pdo, $users, new SessionRepository($pdo)))->delete($user['id']);
+    assertSameValue(null, $users->findById($user['id']));
+    assertSameValue(0, (int) $pdo->query("SELECT COUNT(*) FROM room_participants WHERE room_code = '{$room['code']}' AND user_id IS NOT NULL")->fetchColumn());
+    assertSameValue(1, (int) $pdo->query("SELECT COUNT(*) FROM rooms WHERE code = '{$room['code']}'")->fetchColumn());
+
+    $pdo->exec("UPDATE rooms SET status = 'finished', finished_at = '2020-01-01T00:00:00Z' WHERE code = '{$room['code']}'");
+    $deleted = (new CleanupService($pdo))->purgeAnonymousFinishedRooms(30, strtotime('2026-07-10T00:00:00Z'));
+    assertSameValue(1, $deleted);
+    assertSameValue(0, (int) $pdo->query("SELECT COUNT(*) FROM rooms WHERE code = '{$room['code']}'")->fetchColumn());
+
+    $admin = $users->create('last-admin@example.com', password_hash('contrasena-admin', PASSWORD_DEFAULT), 'admin');
+    try {
+        (new AccountDeletionService($pdo, $users, new SessionRepository($pdo)))->delete($admin['id']);
+    } catch (RuntimeException $e) {
+        assertSameValue('LAST_ADMIN', $e->getMessage());
+        $lastAdminProtected = true;
+    }
+    assertTrueValue($lastAdminProtected ?? false, 'last active admin should not be deleted');
+});
+
+$runner->test('account deletion route requires session csrf and current password', function (): void {
+    $pdo = migratedPdo();
+    $users = new UserRepository($pdo);
+    $sessions = new SessionRepository($pdo);
+    $tokens = new AccountTokenRepository($pdo);
+    $auth = new AuthService($users, $sessions, $tokens, new TestMailer(), 'http://localhost');
+    $user = $users->create('delete@example.com', password_hash('contrasena-segura', PASSWORD_DEFAULT));
+    $session = $sessions->create($user['id']);
+    $router = new ApiRouter();
+    (new AuthController($auth, $sessions, new AccountDeletionService($pdo, $users, $sessions)))->registerRoutes($router);
+
+    $wrong = $router->dispatch(new ApiRequest(
+        'POST', '/auth/delete', ['password' => 'otra-contrasena'], [], ['rq_session' => $session['token']], ['x-csrf-token' => $session['csrfToken']]
+    ));
+    assertSameValue(422, $wrong->status);
+    assertTrueValue($users->findById($user['id']) !== null);
+
+    $deleted = $router->dispatch(new ApiRequest(
+        'POST', '/auth/delete', ['password' => 'contrasena-segura'], [], ['rq_session' => $session['token']], ['x-csrf-token' => $session['csrfToken']]
+    ));
+    assertSameValue(200, $deleted->status);
+    assertSameValue(null, $users->findById($user['id']));
+    assertSameValue('', $deleted->cookies['rq_session']['value']);
+});
+
+$runner->test('room api and creation forms select packs and expose snapshot categories', function (): void {
+    $api = file_get_contents(__DIR__ . '/../public/api.php');
+    $index = file_get_contents(__DIR__ . '/../public/index.php');
+    $app = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    assertTrueValue(is_string($api) && is_string($index) && is_string($app));
+    assertTrueValue(str_contains($api, 'new RoomService('), 'room api should use pack-aware service');
+    assertTrueValue(str_contains($api, 'randomByRevisionSlot('), 'question selection should use frozen revision');
+    assertTrueValue(str_contains($api, 'ParticipantTokenService'), 'room api should authorize participant tokens');
+    assertTrueValue(str_contains($api, "#^/me/games/([A-Z0-9]{6})$#"), 'history api should expose authenticated game detail');
+    assertTrueValue(str_contains($api, "\$body['expectedVersion']"), 'room actions should require expected version');
+    assertTrueValue(str_contains($api, "\$room['pack_snapshot'] ?? GameEngine::categories()"), 'room response should expose snapshot categories');
+    assertTrueValue(substr_count($index, 'name="packId"') >= 2, 'local and online creation should select a pack');
+    assertTrueValue(substr_count($index, 'name="colorSchemeId"') >= 2, 'local and online creation should select a color scheme');
+    assertTrueValue(str_contains($app, 'loadAvailablePacks'), 'frontend should load selectable packs');
+    assertTrueValue(str_contains($app, "packId: data.get('packId')"), 'frontend should submit selected pack');
+    assertTrueValue(str_contains($app, "colorSchemeId: data.get('colorSchemeId')"), 'frontend should submit selected color scheme');
+    assertTrueValue(str_contains($app, 'X-Participant-Token'), 'frontend should authenticate room actions');
+    assertTrueValue(str_contains($app, 'expectedVersion: currentRoom.version'), 'frontend should send optimistic version');
+    assertTrueValue(str_contains($app, 'renderFinishedStatistics'), 'finished overlay should render statistics');
+    assertTrueValue(str_contains($api, 'new AnswerEventRepository('), 'answer action should persist statistics events');
+    assertTrueValue(str_contains($api, "/statistics$#'"), 'api should expose room statistics');
+    assertTrueValue(is_file(__DIR__ . '/../public/history.php'), 'history page should exist');
+    assertTrueValue(is_file(__DIR__ . '/../public/assets/history.js'), 'history script should exist');
+});
+
+$runner->test('deployment artifacts describe migrated schema and account based administration', function (): void {
+    $config = file_get_contents(__DIR__ . '/../config.example.php');
+    $bootstrap = file_get_contents(__DIR__ . '/../src/bootstrap.php');
+    $schema = file_get_contents(__DIR__ . '/../database/schema.mysql.sql');
+    $readme = file_get_contents(__DIR__ . '/../README.md');
+    assertTrueValue(is_string($config) && is_string($bootstrap) && is_string($schema) && is_string($readme));
+    assertTrueValue(!str_contains($config, 'admin_key'));
+    assertTrueValue(!str_contains($bootstrap, 'admin_key'));
+    foreach (['users', 'auth_sessions', 'question_packs', 'pack_revisions', 'room_participants', 'answer_events', 'auth_attempts'] as $table) {
+        assertTrueValue(str_contains($schema, "CREATE TABLE IF NOT EXISTS {$table}"), "mysql schema should include {$table}");
+    }
+    foreach (['pack_snapshot_json', 'controller_token_hash', 'pack_revision_id'] as $column) {
+        assertTrueValue(str_contains($schema, $column), "mysql schema should include {$column}");
+    }
+    assertTrueValue(str_contains($readme, 'bin/create-admin.php'));
+    assertTrueValue(str_contains($readme, 'bin/cleanup.php'));
+    assertTrueValue(str_contains($readme, 'database/migrations'));
+    $api = file_get_contents(__DIR__ . '/../public/api.php');
+    $admin = file_get_contents(__DIR__ . '/../public/admin.php');
+    assertTrueValue(is_string($api) && !str_contains($api, "'/admin/questions'"));
+    assertTrueValue(is_string($admin) && !str_contains($admin, 'name="replace"'));
 });
 
 $runner->test('each radial spoke contains multiple categories', function (): void {
@@ -1064,6 +1448,7 @@ $runner->test('preferences can switch category color packs without changing boar
     assertTrueValue(str_contains($appJs, 'categoryColorPacks'), 'frontend should define named category color packs');
     assertTrueValue(str_contains($appJs, 'classic'), 'classic color pack should be available');
     assertTrueValue(str_contains($appJs, 'alternative'), 'alternative color pack should be available');
+    assertTrueValue(str_contains($appJs, 'Colores de la sala'), 'room snapshot colors should be the default visual option');
     assertTrueValue(str_contains($appJs, 'colorPackSelect'), 'preferences should render a color pack selector');
     assertTrueValue(str_contains($appJs, 'categoriesWithColorPack'), 'renderers should derive category colors from the selected pack');
     assertTrueValue(str_contains($appJs, 'renderScoreboard();'), 'changing color pack should refresh the scoreboard');

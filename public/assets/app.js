@@ -9,6 +9,9 @@ const minimumDiceRollAnimationMs = 520;
 
 let currentRoom = null;
 let playerId = null;
+let participantToken = null;
+let currentStatistics = null;
+let statisticsLoading = false;
 let pollingTimer = null;
 let revealedJudgeQuestionKey = null;
 let lastAnimatedDiceKey = null;
@@ -50,6 +53,7 @@ const categoryColorPacks = {
 document.addEventListener('DOMContentLoaded', () => {
     bindHomeNavigation();
     bindGameForms();
+    loadAvailablePacks();
     bindAdminForms();
     bindFullscreenControls();
     bindPreferencesOverlayControls();
@@ -57,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const code = params.get('room');
     if (code) {
         playerId = Number(localStorage.getItem(`room:${code}:playerId`) ?? 0);
+        participantToken = localStorage.getItem(`room:${code}:participantToken`);
         loadRoom(code.toUpperCase());
     }
 });
@@ -130,9 +135,12 @@ function bindGameForms() {
             const response = await apiFetch('/rooms', {
                 mode: 'local',
                 answerMode: data.get('answerMode'),
-                players
+                players,
+                packId: data.get('packId'),
+                colorSchemeId: data.get('colorSchemeId')
             });
             playerId = 0;
+            persistParticipantToken(response);
             setRoom(response.room);
         });
     }
@@ -144,10 +152,13 @@ function bindGameForms() {
             const response = await apiFetch('/rooms', {
                 mode: 'online',
                 teamName: data.get('teamName'),
-                color: playerColors[0]
+                color: playerColors[0],
+                packId: data.get('packId'),
+                colorSchemeId: data.get('colorSchemeId')
             });
             playerId = 0;
             localStorage.setItem(`room:${response.room.code}:playerId`, String(playerId));
+            persistParticipantToken(response);
             setRoom(response.room);
         });
     }
@@ -164,6 +175,7 @@ function bindGameForms() {
             });
             playerId = response.room.state.players.length - 1;
             localStorage.setItem(`room:${response.room.code}:playerId`, String(playerId));
+            persistParticipantToken(response);
             setRoom(response.room);
         });
     }
@@ -241,42 +253,15 @@ function updateFullscreenButton() {
 }
 
 function bindAdminForms() {
-    const importForm = document.querySelector('#adminImportForm');
-    const listForm = document.querySelector('#adminListForm');
-
-    let csrfToken = null;
-    if (importForm || listForm) {
+    const users = document.querySelector('#adminUsers');
+    if (users) {
         fetch(`${apiBase}/auth/me`)
             .then((response) => response.json())
             .then((data) => {
-                csrfToken = data.csrfToken ?? null;
-                if (data.user?.role === 'admin') return loadAdminUsers(csrfToken);
+                if (data.user?.role === 'admin') return loadAdminUsers(data.csrfToken ?? null);
                 return null;
             })
             .catch(() => toast('No se pudo comprobar la sesion.'));
-    }
-
-    if (importForm) {
-        importForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const data = new FormData(importForm);
-            const response = await apiFetch('/admin/questions', {
-                csv: data.get('csv'),
-                replace: data.get('replace') === 'on'
-            }, csrfToken ? { 'X-CSRF-Token': csrfToken } : {});
-            toast(`${response.imported} preguntas importadas.`);
-            renderQuestions(response.questions);
-        });
-    }
-
-    if (listForm) {
-        listForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const response = await fetch(`${apiBase}/admin/questions`);
-            const json = await response.json();
-            if (!response.ok) throw new Error(apiErrorMessage(json, 'Error al cargar preguntas.'));
-            renderQuestions(json.questions);
-        });
     }
 }
 
@@ -293,6 +278,32 @@ async function apiFetch(path, payload, extraHeaders = {}) {
         throw new Error(message);
     }
     return json;
+}
+
+async function loadAvailablePacks() {
+    const selects = [...document.querySelectorAll('[data-pack-select]')];
+    if (!selects.length) return;
+    try {
+        const [response, colorResponse] = await Promise.all([
+            fetch(`${apiBase}/packs`),
+            fetch(`${apiBase}/packs/colors`)
+        ]);
+        const data = await response.json();
+        const colorData = await colorResponse.json();
+        if (!response.ok) throw new Error(apiErrorMessage(data, 'No se pudieron cargar los packs.'));
+        if (!colorResponse.ok) throw new Error(apiErrorMessage(colorData, 'No se pudieron cargar los colores.'));
+        const options = data.packs
+            .filter((pack) => pack.status === 'active')
+            .map((pack) => `<option value="${Number(pack.id)}">${escapeHtml(pack.name)}</option>`)
+            .join('');
+        selects.forEach((select) => { select.innerHTML = options; });
+        const colorOptions = '<option value="">Colores del pack</option>' + colorData.colorSchemes
+            .map((scheme) => `<option value="${Number(scheme.id)}">${escapeHtml(scheme.name)}</option>`)
+            .join('');
+        document.querySelectorAll('[data-color-scheme-select]').forEach((select) => { select.innerHTML = colorOptions; });
+    } catch (error) {
+        toast(error.message);
+    }
 }
 
 async function loadAdminUsers(csrfToken) {
@@ -349,6 +360,16 @@ function apiErrorMessage(json, fallback) {
     return typeof json?.error === 'string' ? json.error : json?.error?.message ?? fallback;
 }
 
+function persistParticipantToken(response) {
+    if (!response.participantToken || !response.room?.code) return;
+    participantToken = response.participantToken;
+    localStorage.setItem(`room:${response.room.code}:participantToken`, participantToken);
+}
+
+function participantHeaders() {
+    return participantToken ? { 'X-Participant-Token': participantToken } : {};
+}
+
 async function getRoom(code) {
     const response = await fetch(`${apiBase}/rooms/${code}/state`);
     const json = await response.json();
@@ -366,6 +387,7 @@ async function loadRoom(code) {
 }
 
 function setRoom(room) {
+    if (currentRoom?.code !== room.code) currentStatistics = null;
     currentRoom = room;
     pendingAnswerFeedback = null;
     document.querySelector('#homeView')?.classList.add('hidden');
@@ -509,6 +531,7 @@ function renderPreferencesOverlay() {
                 <label class="select-row">
                     <span>Pack de colores</span>
                     <select id="colorPackSelect">
+                        <option value="room" ${colorPack === 'room' ? 'selected' : ''}>Colores de la sala</option>
                         <option value="classic" ${colorPack === 'classic' ? 'selected' : ''}>Clasico</option>
                         <option value="alternative" ${colorPack === 'alternative' ? 'selected' : ''}>Alternativo</option>
                     </select>
@@ -572,10 +595,13 @@ function diceResultDelayPreferenceMs() {
 
 function colorPackPreference() {
     const stored = localStorage.getItem(colorPackPreferenceKey);
-    return Object.prototype.hasOwnProperty.call(categoryColorPacks, stored) ? stored : 'classic';
+    return stored === 'room' || Object.prototype.hasOwnProperty.call(categoryColorPacks, stored) ? stored : 'room';
 }
 
 function categoriesWithColorPack(categories) {
+    if (colorPackPreference() === 'room') {
+        return categories;
+    }
     const colors = categoryColorPacks[colorPackPreference()] ?? categoryColorPacks.classic;
     return categories.map((category) => ({
         ...category,
@@ -661,7 +687,10 @@ function scoreboardWheelPoint(cx, cy, radius, degrees) {
 
 async function sendAction(payload) {
     if (!currentRoom) return;
-    const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, payload);
+    const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, {
+        ...payload,
+        expectedVersion: currentRoom.version
+    }, participantHeaders());
     currentRoom = response.room;
     renderRoom();
 }
@@ -681,8 +710,9 @@ async function submitRollFromOverlay() {
     try {
         const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, {
             action: 'roll',
-            playerId: currentRoom.state.currentPlayer
-        });
+            playerId: currentRoom.state.currentPlayer,
+            expectedVersion: currentRoom.version
+        }, participantHeaders());
         const elapsed = Date.now() - rollStartedAt;
         if (elapsed < minimumDiceRollAnimationMs) {
             await new Promise((resolve) => setTimeout(resolve, minimumDiceRollAnimationMs - elapsed));
@@ -711,7 +741,10 @@ async function submitRollFromOverlay() {
 async function submitAnswerWithFeedback(payload) {
     if (!currentRoom) return;
     const previousState = currentRoom.state;
-    const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, payload);
+    const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, {
+        ...payload,
+        expectedVersion: currentRoom.version
+    }, participantHeaders());
     currentRoom = response.room;
     pendingAnswerFeedback = buildAnswerFeedback(previousState, currentRoom.state, payload);
     renderRoom();
@@ -896,7 +929,10 @@ async function moveWithTokenAnimation(destination) {
     await new Promise((resolve) => setTimeout(resolve, 560));
 
     try {
-        const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, payload);
+        const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, {
+            ...payload,
+            expectedVersion: currentRoom.version
+        }, participantHeaders());
         currentRoom = response.room;
     } catch (error) {
         toast(error.message);
@@ -937,6 +973,7 @@ function bindLobbyOverlayControls(state, canAct) {
 function renderFinishedOverlay(state) {
     if (state.phase !== 'finished') return '';
     const winner = state.players[state.winner];
+    if (!currentStatistics && !statisticsLoading) loadFinishedStatistics();
 
     return `
         <div class="question-overlay finished-overlay" role="dialog" aria-modal="true" aria-labelledby="finishedOverlayTitle">
@@ -944,9 +981,40 @@ function renderFinishedOverlay(state) {
                 <p class="eyebrow">Partida terminada</p>
                 <h2 id="finishedOverlayTitle">${escapeHtml(winner?.name ?? 'Un equipo')} ha ganado</h2>
                 <p class="muted">Todos los quesitos y pregunta final completados.</p>
+                ${renderFinishedStatistics(currentStatistics)}
             </article>
         </div>
     `;
+}
+
+function renderFinishedStatistics(statistics) {
+    if (!statistics) return '<p class="muted">Calculando estad&iacute;sticas...</p>';
+    return `<div class="finished-statistics">
+        ${statistics.teams.map((team) => `
+            <article class="question-item">
+                <strong>${escapeHtml(team.name)}</strong>
+                <p>${team.correct}/${team.answers} aciertos &middot; ${Number(team.accuracy).toFixed(2)}%</p>
+                <p class="muted">Mejor racha: ${team.longestStreak}</p>
+            </article>`).join('')}
+    </div>`;
+}
+
+async function loadFinishedStatistics() {
+    if (!currentRoom || !participantToken) return;
+    statisticsLoading = true;
+    try {
+        const response = await fetch(`${apiBase}/rooms/${currentRoom.code}/statistics`, {
+            headers: participantHeaders()
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(apiErrorMessage(data, 'No se pudieron cargar las estadisticas.'));
+        currentStatistics = data.statistics;
+    } catch (error) {
+        toast(error.message);
+    } finally {
+        statisticsLoading = false;
+        renderRoom();
+    }
 }
 
 function renderDiceRollOverlay(state, canAct) {
@@ -1353,22 +1421,6 @@ function tokenOffset(index, total) {
     if (total === 1) return { x: 0, y: 0 };
     const angle = (index / total) * Math.PI * 2;
     return { x: Math.cos(angle) * 11, y: Math.sin(angle) * 11 };
-}
-
-function renderQuestions(questions) {
-    const box = document.querySelector('#adminQuestions');
-    if (!box) return;
-    if (!questions.length) {
-        box.innerHTML = '<p class="muted">No hay preguntas cargadas.</p>';
-        return;
-    }
-    box.innerHTML = questions.map((question) => `
-        <article class="question-item">
-            <p class="eyebrow">${escapeHtml(categoryLabels[question.category] ?? question.category)}</p>
-            <strong>${escapeHtml(question.question)}</strong>
-            <p class="muted">${question.options.map(escapeHtml).join(' / ')}</p>
-        </article>
-    `).join('');
 }
 
 function toast(message) {

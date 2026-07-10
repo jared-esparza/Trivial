@@ -76,12 +76,36 @@ async function refreshAccount() {
             <p class="eyebrow">Sesi&oacute;n iniciada</p>
             <h1>${escapeAccount(data.user.email)}</h1>
             <p>${data.user.emailVerified ? 'Email verificado' : 'Email pendiente de verificaci&oacute;n'} &middot; ${escapeAccount(data.user.role)}</p>
+            ${data.user.emailVerified ? '<p><a href="packs.php">Gestionar mis packs</a></p>' : ''}
+            ${data.user.emailVerified ? '<p><a href="history.php">Ver historial de partidas</a></p>' : ''}
             ${data.user.role === 'admin' ? '<p><a href="admin.php">Abrir administraci&oacute;n</a></p>' : ''}
-            <button id="logoutButton" type="button">Cerrar sesi&oacute;n</button>`;
+            <button id="logoutButton" type="button">Cerrar sesi&oacute;n</button>
+            <hr>
+            <details class="danger-zone">
+                <summary>Eliminar mi cuenta</summary>
+                <form id="deleteAccountForm">
+                    <p class="muted">Se anonimizar&aacute; tu historial compartido y se retirar&aacute;n tus packs privados.</p>
+                    <label>Contrase&ntilde;a actual<input name="password" type="password" autocomplete="current-password" required></label>
+                    <button class="danger-button" type="submit">Eliminar definitivamente</button>
+                </form>
+            </details>`;
         status.querySelector('#logoutButton')?.addEventListener('click', async () => {
             await request('/auth/logout', {}, currentCsrfToken);
             currentCsrfToken = null;
             await refreshAccount();
+        });
+        status.querySelector('#deleteAccountForm')?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!window.confirm('Esta accion no se puede deshacer. ¿Eliminar tu cuenta?')) return;
+            const password = new FormData(event.currentTarget).get('password');
+            try {
+                await request('/auth/delete', { password }, currentCsrfToken);
+                currentCsrfToken = null;
+                showAccountMessage('Cuenta eliminada y datos personales anonimizados.');
+                await refreshAccount();
+            } catch (error) {
+                showAccountMessage(error.message, true);
+            }
         });
     }
 }

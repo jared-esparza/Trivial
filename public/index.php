@@ -68,6 +68,14 @@ $config = app_config();
                         Nombre de tu equipo
                         <input name="teamName" value="Equipo Azul" required>
                     </label>
+                    <label>
+                        Pack de preguntas
+                        <select name="packId" data-pack-select><option value="">Cl&aacute;sico</option></select>
+                    </label>
+                    <label>
+                        Pack de colores
+                        <select name="colorSchemeId" data-color-scheme-select><option value="">Colores del pack</option></select>
+                    </label>
                     <button class="wide-button purple-button" type="submit">
                         Crear sala
                         <span aria-hidden="true">&rsaquo;</span>
@@ -112,6 +120,14 @@ $config = app_config();
                         <option value="judge">Clasico con juez</option>
                         <option value="auto">4 opciones</option>
                     </select>
+                </label>
+                <label>
+                    Pack de preguntas
+                    <select name="packId" data-pack-select><option value="">Cl&aacute;sico</option></select>
+                </label>
+                <label>
+                    Pack de colores
+                    <select name="colorSchemeId" data-color-scheme-select><option value="">Colores del pack</option></select>
                 </label>
                 <label>
                     Equipos <span class="label-note">(minimo 2 &middot; maximo 6)</span>

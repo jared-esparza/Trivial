@@ -9,6 +9,7 @@ final class AuthController
     public function __construct(
         private AuthService $auth,
         private SessionRepository $sessions,
+        private ?AccountDeletionService $accountDeletion = null,
     ) {
     }
 
@@ -21,6 +22,7 @@ final class AuthController
         $router->add('POST', '/auth/logout', fn (ApiRequest $request): ApiResponse => $this->logout($request));
         $router->add('POST', '/auth/password/forgot', fn (ApiRequest $request): ApiResponse => $this->forgotPassword($request));
         $router->add('POST', '/auth/password/reset', fn (ApiRequest $request): ApiResponse => $this->resetPassword($request));
+        $router->add('POST', '/auth/delete', fn (ApiRequest $request): ApiResponse => $this->deleteAccount($request));
     }
 
     private function register(ApiRequest $request): ApiResponse
@@ -95,6 +97,34 @@ final class AuthController
         }
 
         $this->auth->logout($token);
+
+        return new ApiResponse(
+            ['ok' => true],
+            200,
+            [self::COOKIE_NAME => $this->sessionCookie('', gmdate('c', 1))]
+        );
+    }
+
+    private function deleteAccount(ApiRequest $request): ApiResponse
+    {
+        if ($this->accountDeletion === null) {
+            throw new ApiException(503, 'ACCOUNT_DELETION_UNAVAILABLE', 'El borrado de cuenta no esta disponible.');
+        }
+
+        $token = (string) ($request->cookies[self::COOKIE_NAME] ?? '');
+        $user = $token === '' ? null : $this->sessions->findUserByToken($token);
+        if ($user === null) {
+            throw new ApiException(401, 'AUTH_REQUIRED', 'Debes iniciar sesion.');
+        }
+        $providedCsrf = $request->header('x-csrf-token') ?? '';
+        if ($providedCsrf === '' || !hash_equals((string) $user['csrf_token'], $providedCsrf)) {
+            throw new ApiException(403, 'CSRF_INVALID', 'Token CSRF no valido.');
+        }
+        if (!password_verify((string) ($request->body['password'] ?? ''), (string) $user['password_hash'])) {
+            throw new InvalidArgumentException('La contrasena actual no es correcta.');
+        }
+
+        $this->accountDeletion->delete((int) $user['id']);
 
         return new ApiResponse(
             ['ok' => true],
