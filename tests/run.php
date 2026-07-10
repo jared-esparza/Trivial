@@ -8,6 +8,11 @@ require_once __DIR__ . '/../src/Database.php';
 require_once __DIR__ . '/../src/QuestionRepository.php';
 require_once __DIR__ . '/../src/RoomRepository.php';
 
+$migrationRunnerFile = __DIR__ . '/../src/Database/MigrationRunner.php';
+if (is_file($migrationRunnerFile)) {
+    require_once $migrationRunnerFile;
+}
+
 final class TestRunner
 {
     private int $passed = 0;
@@ -67,6 +72,33 @@ function testPdo(): PDO
 }
 
 $runner = new TestRunner();
+
+$runner->test('migration runner applies each migration exactly once', function (): void {
+    assertTrueValue(class_exists('MigrationRunner'), 'MigrationRunner should be available');
+
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $runner = new MigrationRunner($pdo, __DIR__ . '/../database/migrations');
+
+    $runner->migrate();
+    $runner->migrate();
+
+    $applied = (int) $pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn();
+    assertSameValue(4, $applied);
+
+    $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'table'")->fetchAll(PDO::FETCH_COLUMN);
+    foreach (['rooms', 'questions', 'users', 'auth_sessions', 'account_tokens', 'question_packs', 'pack_revisions', 'pack_categories', 'color_schemes', 'color_scheme_slots', 'room_participants', 'answer_events'] as $table) {
+        assertContainsValue($table, $tables, "missing migrated table {$table}");
+    }
+});
+
+$runner->test('application bootstrap runs versioned migrations instead of inline schema creation', function (): void {
+    $bootstrap = file_get_contents(__DIR__ . '/../src/bootstrap.php');
+    assertTrueValue(is_string($bootstrap));
+    assertTrueValue(str_contains($bootstrap, 'new MigrationRunner('), 'bootstrap should create the migration runner');
+    assertTrueValue(str_contains($bootstrap, '->migrate()'), 'bootstrap should run pending migrations');
+    assertTrueValue(!str_contains($bootstrap, 'Database::createSchema('), 'bootstrap should not create the schema inline');
+});
 
 $runner->test('each radial spoke contains multiple categories', function (): void {
     $spaces = GameEngine::boardSpaces();

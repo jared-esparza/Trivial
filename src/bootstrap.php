@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/Database/MigrationRunner.php';
 require_once __DIR__ . '/GameEngine.php';
 require_once __DIR__ . '/QuestionImporter.php';
 require_once __DIR__ . '/QuestionRepository.php';
@@ -47,7 +48,8 @@ function app_pdo(): PDO
         }
     }
     $pdo = Database::connect($config['database']);
-    Database::createSchema($pdo);
+    $migrations = new MigrationRunner($pdo, dirname(__DIR__) . '/database/migrations');
+    $migrations->migrate();
 
     return $pdo;
 }
