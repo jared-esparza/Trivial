@@ -1,6 +1,6 @@
 # Rueda Quiz - Contexto del proyecto
 
-Ultima actualizacion: 2026-07-10
+Ultima actualizacion: 2026-07-15
 
 ## Objetivo y stack
 
@@ -30,6 +30,12 @@ Primer administrador:
 php bin/create-admin.php --email=admin@example.com --password=una-clave-segura
 ```
 
+El nombre visible es opcional en CLI; si se omite se deriva del email:
+
+```powershell
+php bin/create-admin.php --email=admin@example.com --password=una-clave-segura --display-name="Admin principal"
+```
+
 Limpieza periodica:
 
 ```powershell
@@ -43,13 +49,14 @@ public/
   index.php                 Portada, configuracion y partida.
   api.php                   API de salas, acciones, estadisticas e historial.
   account.php               Registro, login, verificacion, reset y borrado.
-  admin.php                 Administracion de usuarios y preguntas.
+  admin.php                 Administracion de usuarios y acceso a packs/esquemas.
   packs.php                 Gestion de packs, revisiones e import/export.
   history.php               Historial e informes de la cuenta.
   assets/app.js             Cliente principal, tablero SVG y partida.
   assets/account.js         Cliente de cuenta.
   assets/packs.js           Cliente de packs y colores.
   assets/history.js         Cliente de historial.
+  assets/session-nav.js     Navegacion compartida segun sesion, verificacion y rol.
 
 src/
   bootstrap.php             Config, dependencias, migraciones, seed y router modular.
@@ -86,11 +93,13 @@ tests/run.php               Suite PHP sin framework.
 
 - Invitados pueden jugar sin cuenta.
 - Registro y login usan sesiones en cookie `HttpOnly`, CSRF en mutaciones y limitacion persistente de intentos.
+- `display_name` es obligatorio en registro, editable desde la cuenta y visible en la cabecera compartida.
 - Verificacion y recuperacion usan tokens de un solo uso con caducidad.
 - Las funciones de packs e historial requieren cuenta verificada.
+- La cabecera muestra `Login / registro` al invitado, el display name al usuario y enlaces contextuales a Packs, Historial y Admin.
 - Administracion usa rol `admin`; no existe `admin_key` compartida.
 - El ultimo administrador activo no se puede degradar o desactivar.
-- Borrar cuenta revoca sesiones, elimina datos personales y desasocia el usuario, pero conserva historial compartido anonimizado.
+- Borrar cuenta revoca sesiones, desactiva packs y esquemas privados, elimina datos personales y desasocia el usuario, pero conserva historial compartido anonimizado.
 
 ### Packs y revisiones
 
@@ -101,6 +110,8 @@ tests/run.php               Suite PHP sin framework.
 - Una sala guarda `pack_id`, `pack_revision_id` y `pack_snapshot_json`; partidas existentes no cambian si se edita el pack.
 - El administrador gestiona packs y esquemas de colores del sistema; cada usuario verificado puede gestionar esquemas privados propios.
 - Un pack guarda seis colores predeterminados. Aplicar un esquema copia sus colores y no crea una dependencia dinamica.
+- `Clasico` es el esquema inicial de packs nuevos y no se puede renombrar ni eliminar.
+- Cambiar solo nombres o colores conserva las preguntas; cambiar claves de categoria reinicia las preguntas del borrador.
 - JSON y CSV importados nunca deciden propietario o visibilidad; crean un borrador privado nuevo.
 
 ### Salas y concurrencia
@@ -123,14 +134,22 @@ tests/run.php               Suite PHP sin framework.
 
 ```text
 POST /api.php/auth/register
+POST /api.php/auth/verify
 POST /api.php/auth/login
 GET  /api.php/auth/me
+POST /api.php/auth/profile
 POST /api.php/auth/logout
+POST /api.php/auth/password/forgot
+POST /api.php/auth/password/reset
 POST /api.php/auth/delete
+
+GET  /api.php/admin/users
+POST /api.php/admin/users/update
 
 GET  /api.php/packs
 GET  /api.php/packs/colors
 POST /api.php/packs/create|import|categories|questions|edit|activate|delete
+POST /api.php/packs/colors/create|update|delete
 
 POST /api.php/rooms
 POST /api.php/rooms/{code}/join
@@ -150,6 +169,16 @@ node --check public/assets/app.js
 node --check public/assets/account.js
 node --check public/assets/packs.js
 node --check public/assets/history.js
+node --check public/assets/session-nav.js
 ```
 
 Antes de tocar UI de partida, preservar las regresiones de geometria, fullscreen, overlays y marcador. Antes de tocar persistencia, probar migracion nueva sobre base vacia y segunda ejecucion idempotente.
+
+Referencia verificada el 2026-07-15: `78 passed, 0 failed`, lint PHP de 54 archivos, checks Node y `git diff --check` limpio.
+
+## Estado reciente
+
+- Rama de trabajo: `codex/implement-roadmap`.
+- `dc102d2`: jerarquia unica de esquemas, biblioteca personal, colores de sala congelados y preferencias sin overrides locales.
+- `e4a291c`: display name, cuenta, navegacion compartida y mejoras de packs/admin.
+- `TODO_LIST.md` y `video/` son archivos locales no versionados y no forman parte de estos commits.
