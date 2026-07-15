@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/gsap.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        margin: 0;
+        overflow: hidden;
+        background: #031a46;
+        color: #f7f8ff;
+        font-family: "Oswald", sans-serif;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #031a46;
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background-color: #031a46;
+        transform-origin: 50% 50%;
+      }
+
+      #scene1 { z-index: 1; }
+      #scene2 { z-index: 2; opacity: 0; }
+      #scene3 { z-index: 3; opacity: 0; }
+      #scene4 { z-index: 4; opacity: 0; }
+
+      .scene-content {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        padding: 92px 118px;
+        gap: 30px;
+      }
+
+      .radial-glow {
+        position: absolute;
+        width: 980px;
+        height: 980px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(13, 79, 234, 0.42) 0%, rgba(13, 79, 234, 0) 68%);
+        pointer-events: none;
+      }
+
+      .gold-orbit {
+        position: absolute;
+        width: 820px;
+        height: 820px;
+        border: 4px solid rgba(231, 189, 91, 0.42);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        min-height: 54px;
+        padding: 0 22px;
+        border: 2px solid rgba(231, 189, 91, 0.72);
+        border-radius: 999px;
+        background: rgba(3, 26, 70, 0.82);
+        color: #e7bd5b;
+        font-size: 24px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .challenge-copy {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        width: 850px;
+        gap: 28px;
+      }
+
+      .challenge-title {
+        max-width: 850px;
+        margin: 0;
+        color: #f7f8ff;
+        font-size: 126px;
+        font-weight: 900;
+        line-height: 0.93;
+        letter-spacing: -0.05em;
+      }
+
+      .challenge-rule {
+        width: 560px;
+        height: 12px;
+        border-radius: 999px;
+        background: #e7bd5b;
+        transform-origin: left center;
+      }
+
+      .challenge-board {
+        position: absolute;
+        z-index: 2;
+        top: 42px;
+        right: -86px;
+        width: 1080px;
+        height: 996px;
+        object-fit: contain;
+        filter: drop-shadow(0 34px 50px rgba(0, 0, 0, 0.45));
+        will-change: transform;
+      }
+
+      #scene1 .radial-glow { top: 40px; right: -10px; }
+      #scene1 .gold-orbit { top: 130px; right: 62px; }
+
+      .mode-header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        width: 100%;
+      }
+
+      .mode-title {
+        margin: 0;
+        max-width: 1080px;
+        font-size: 74px;
+        font-weight: 900;
+        line-height: 0.94;
+        letter-spacing: -0.045em;
+      }
+
+      .mode-counter {
+        color: #e7bd5b;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+      }
+
+      .ui-stack {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        gap: 52px;
+      }
+
+      .ui-card {
+        display: flex;
+        flex-direction: column;
+        width: 740px;
+        height: 650px;
+        overflow: hidden;
+        border: 3px solid rgba(231, 189, 91, 0.68);
+        border-radius: 34px;
+        background: #f7f8ff;
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.38);
+        will-change: transform;
+      }
+
+      .ui-card-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 94px;
+        padding: 0 32px;
+        color: #031a46;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+
+      .ui-card-label span {
+        color: #0d4fea;
+        font-size: 42px;
+      }
+
+      .ui-shot {
+        display: block;
+        width: 100%;
+        height: 556px;
+        object-fit: cover;
+      }
+
+      #local-card .ui-shot { object-position: 64% 48%; }
+      #online-card .ui-shot { object-position: 36% 45%; }
+      #scene2 .radial-glow { bottom: -420px; left: 470px; }
+
+      .promise-layout {
+        display: flex;
+        flex: 1;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 70px;
+      }
+
+      .promise-board-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 780px;
+        height: 780px;
+        flex: 0 0 780px;
+      }
+
+      .promise-board {
+        width: 900px;
+        height: 800px;
+        object-fit: contain;
+        filter: drop-shadow(0 30px 54px rgba(0, 0, 0, 0.48));
+        will-change: transform;
+      }
+
+      .promise-copy {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 830px;
+        gap: 18px;
+      }
+
+      .promise-kicker {
+        color: #e7bd5b;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .promise-line {
+        margin: 0;
+        max-width: 830px;
+        font-size: 98px;
+        font-weight: 900;
+        line-height: 0.92;
+        letter-spacing: -0.055em;
+      }
+
+      .promise-line.gold { color: #e7bd5b; }
+
+      .category-chips {
+        display: flex;
+        gap: 18px;
+        margin-top: 24px;
+      }
+
+      .category-chip {
+        width: 58px;
+        height: 58px;
+        border: 4px solid #f7f8ff;
+        border-radius: 17px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+      }
+
+      .blue { background: #2563eb; }
+      .green { background: #16a34a; }
+      .yellow { background: #eab308; }
+      .orange { background: #f97316; }
+      .red { background: #ef4444; }
+      .purple { background: #7c3aed; }
+
+      #scene3 .radial-glow { top: 30px; left: -210px; }
+      #scene3 .gold-orbit { top: 124px; left: -8px; }
+
+      .brand-content {
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        text-align: center;
+      }
+
+      .brand-wheel {
+        position: relative;
+        width: 190px;
+        height: 190px;
+        border: 10px solid #e7bd5b;
+        border-radius: 50%;
+        background: conic-gradient(#2563eb 0deg 60deg, #16a34a 60deg 120deg, #eab308 120deg 180deg, #f97316 180deg 240deg, #ef4444 240deg 300deg, #7c3aed 300deg 360deg);
+        box-shadow: 0 0 0 5px #f7f8ff, 0 30px 60px rgba(0, 0, 0, 0.42);
+        will-change: transform;
+      }
+
+      .brand-wheel::after {
+        content: "";
+        position: absolute;
+        inset: 64px;
+        border: 6px solid #f7f8ff;
+        border-radius: 50%;
+        background: #031a46;
+      }
+
+      .brand-title {
+        margin: 0;
+        font-size: 138px;
+        font-weight: 900;
+        line-height: 0.9;
+        letter-spacing: -0.055em;
+      }
+
+      .brand-tagline {
+        margin: 0;
+        color: #e7bd5b;
+        font-size: 38px;
+        font-weight: 350;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+      }
+
+      .brand-dots {
+        display: flex;
+        gap: 16px;
+        margin-top: 18px;
+      }
+
+      .brand-dot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+      }
+
+      #scene4 .radial-glow { top: 80px; left: 470px; }
+      #scene4 .gold-orbit { top: 126px; left: 550px; }
+
+      .wipe {
+        position: absolute;
+        z-index: 30;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        transform: translateX(-1920px);
+        pointer-events: none;
+      }
+
+      #wipe-a { background: #2563eb; }
+      #wipe-b { background: #e7bd5b; }
+      #wipe-c { background: #ef4444; }
+    </style>
+  </head>
+  <body>
+    <main
+      id="root"
+      data-composition-id="rueda-quiz-promo"
+      data-start="0"
+      data-duration="10"
+      data-width="1920"
+      data-height="1080"
+    >
+      <section id="scene1" class="scene">
+        <div class="radial-glow" data-layout-ignore></div>
+        <div class="gold-orbit" data-layout-ignore></div>
+        <img class="challenge-board" src="assets/home-board-art.png" alt="Tablero circular de Rueda Quiz" data-layout-allow-overflow />
+        <div class="scene-content">
+          <div class="challenge-copy">
+            <div class="eyebrow">Reto de preguntas</div>
+            <h1 class="challenge-title">¿Cuánto sabes?</h1>
+            <div class="challenge-rule" data-layout-ignore></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene2" class="scene" data-layout-allow-occlusion data-layout-allow-overlap>
+        <div class="radial-glow" data-layout-ignore></div>
+        <div class="scene-content">
+          <div class="mode-header">
+            <h2 class="mode-title">Tú eliges cómo competir</h2>
+            <div class="mode-counter">LOCAL + ONLINE</div>
+          </div>
+          <div class="ui-stack">
+            <article id="local-card" class="ui-card" data-layout-ignore>
+              <div class="ui-card-label">PARTIDA LOCAL <span>●</span></div>
+              <img class="ui-shot" src="assets/local-ui.png" alt="Configuración de una partida local" />
+            </article>
+            <article id="online-card" class="ui-card" data-layout-ignore>
+              <div class="ui-card-label">SALA ONLINE <span>↗</span></div>
+              <img class="ui-shot" src="assets/home-ui.png" alt="Opciones para crear o unirse a una sala online" />
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene3" class="scene">
+        <div class="radial-glow" data-layout-ignore></div>
+        <div class="gold-orbit" data-layout-ignore></div>
+        <div class="scene-content">
+          <div class="promise-layout">
+            <div class="promise-board-wrap">
+              <img class="promise-board" src="assets/local-board-art.png" alt="Tablero y quesitos de Rueda Quiz" />
+            </div>
+            <div class="promise-copy">
+              <div class="promise-kicker">El reto está servido</div>
+              <h2 class="promise-line">Juega. Compite.</h2>
+              <h2 class="promise-line gold">Conquista los 6 quesitos.</h2>
+              <div class="category-chips" aria-label="Seis categorías">
+                <span class="category-chip blue"></span>
+                <span class="category-chip green"></span>
+                <span class="category-chip yellow"></span>
+                <span class="category-chip orange"></span>
+                <span class="category-chip red"></span>
+                <span class="category-chip purple"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene4" class="scene">
+        <div class="radial-glow" data-layout-ignore></div>
+        <div class="gold-orbit" data-layout-ignore></div>
+        <div class="scene-content brand-content">
+          <div class="brand-wheel" aria-label="Logotipo circular multicolor"></div>
+          <h2 class="brand-title">RUEDA QUIZ</h2>
+          <p class="brand-tagline">Pon a prueba tus conocimientos</p>
+          <div class="brand-dots" aria-hidden="true">
+            <span class="brand-dot blue"></span>
+            <span class="brand-dot green"></span>
+            <span class="brand-dot yellow"></span>
+            <span class="brand-dot orange"></span>
+            <span class="brand-dot red"></span>
+            <span class="brand-dot purple"></span>
+          </div>
+        </div>
+      </section>
+
+      <div id="wipe-a" class="wipe" data-layout-ignore></div>
+      <div id="wipe-b" class="wipe" data-layout-ignore></div>
+      <div id="wipe-c" class="wipe" data-layout-ignore></div>
+
+      <audio
+        id="promo-audio"
+        data-start="0"
+        data-duration="10"
+        data-track-index="10"
+        src="assets/rueda-quiz-promo.wav"
+        data-volume="0.8"
+      ></audio>
+    </main>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.from("#scene1 .radial-glow", { scale: 0.72, opacity: 0, duration: 0.72, ease: "sine.out" }, 0.15);
+      tl.from("#scene1 .gold-orbit", { scale: 0.82, rotation: -20, opacity: 0, duration: 0.62, ease: "circ.out" }, 0.18);
+      tl.from("#scene1 .eyebrow", { x: -80, opacity: 0, duration: 0.42, ease: "power4.out" }, 0.22);
+      tl.from("#scene1 .challenge-title", { y: 90, opacity: 0, duration: 0.54, ease: "expo.out" }, 0.31);
+      tl.from("#scene1 .challenge-rule", { scaleX: 0, opacity: 0, duration: 0.36, ease: "back.out(1.8)" }, 0.54);
+      tl.from("#scene1 .challenge-board", { scale: 0.58, rotation: -34, opacity: 0, duration: 0.74, ease: "back.out(1.45)" }, 0.2);
+      tl.to("#scene1 .challenge-board", { rotation: 4, scale: 1.025, duration: 0.66, ease: "sine.inOut" }, 0.98);
+
+      tl.to("#scene1", { scale: 2.2, opacity: 0, filter: "blur(6px)", duration: 0.35, ease: "power4.in" }, 1.7);
+      tl.fromTo("#scene2", { scale: 0.72, opacity: 0, filter: "blur(6px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.38, ease: "expo.out" }, 1.82);
+      tl.set("#scene1", { visibility: "hidden" }, 2.05);
+
+      tl.from("#scene2 .radial-glow", { scale: 0.7, opacity: 0, duration: 0.68, ease: "sine.out" }, 1.92);
+      tl.from("#scene2 .mode-title", { x: -120, opacity: 0, duration: 0.48, ease: "power4.out" }, 1.96);
+      tl.from("#scene2 .mode-counter", { y: -42, opacity: 0, duration: 0.34, ease: "circ.out" }, 2.12);
+      tl.from("#local-card", { x: -260, rotation: -7, opacity: 0, duration: 0.6, ease: "expo.out" }, 2.08);
+      tl.from("#online-card", { x: 260, rotation: 7, opacity: 0, duration: 0.64, ease: "back.out(1.5)" }, 2.18);
+      tl.from("#scene2 .ui-card-label", { y: -36, opacity: 0, duration: 0.32, stagger: 0.1, ease: "power3.out" }, 2.46);
+      tl.from("#scene2 .ui-shot", { scale: 1.08, opacity: 0, duration: 0.48, stagger: 0.12, ease: "sine.out" }, 2.5);
+      tl.to("#scene2 .ui-stack", { y: -12, duration: 2.35, ease: "sine.inOut" }, 3.28);
+
+      tl.to("#scene2", { scale: 2.15, opacity: 0, filter: "blur(6px)", duration: 0.34, ease: "power4.in" }, 5.9);
+      tl.fromTo("#scene3", { scale: 0.7, opacity: 0, filter: "blur(6px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.38, ease: "expo.out" }, 6.02);
+      tl.set("#scene2", { visibility: "hidden" }, 6.24);
+
+      tl.from("#scene3 .radial-glow", { scale: 0.76, opacity: 0, duration: 0.66, ease: "sine.out" }, 6.06);
+      tl.from("#scene3 .gold-orbit", { scale: 0.84, rotation: 18, opacity: 0, duration: 0.56, ease: "circ.out" }, 6.08);
+      tl.from("#scene3 .promise-board", { scale: 0.56, rotation: -28, opacity: 0, duration: 0.66, ease: "back.out(1.5)" }, 6.1);
+      tl.from("#scene3 .promise-kicker", { x: 110, opacity: 0, duration: 0.36, ease: "power4.out" }, 6.18);
+      tl.from("#scene3 .promise-line:not(.gold)", { y: 82, opacity: 0, duration: 0.44, ease: "expo.out" }, 6.28);
+      tl.from("#scene3 .promise-line.gold", { y: 90, opacity: 0, duration: 0.5, ease: "back.out(1.4)" }, 6.43);
+      tl.from("#scene3 .category-chip", { scale: 0, rotation: -18, opacity: 0, duration: 0.3, stagger: 0.055, ease: "elastic.out(1, 0.55)" }, 6.66);
+      tl.to("#scene3 .promise-board", { rotation: 5, scale: 1.02, duration: 1.1, ease: "sine.inOut" }, 7.12);
+
+      tl.set("#wipe-a, #wipe-b, #wipe-c", { x: -1920 }, 8.49);
+      tl.to("#wipe-a", { x: 0, duration: 0.25, ease: "power3.inOut" }, 8.5);
+      tl.to("#wipe-b", { x: 0, duration: 0.25, ease: "power3.inOut" }, 8.56);
+      tl.to("#wipe-c", { x: 0, duration: 0.25, ease: "power3.inOut" }, 8.62);
+      tl.set("#scene3", { opacity: 0 }, 8.76);
+      tl.set("#scene3", { visibility: "hidden" }, 8.77);
+      tl.set("#scene4", { opacity: 1 }, 8.76);
+      tl.to("#wipe-a", { x: 1920, duration: 0.25, ease: "power3.inOut" }, 8.82);
+      tl.to("#wipe-b", { x: 1920, duration: 0.25, ease: "power3.inOut" }, 8.88);
+      tl.to("#wipe-c", { x: 1920, duration: 0.25, ease: "power3.inOut" }, 8.94);
+
+      tl.from("#scene4 .radial-glow", { scale: 0.74, opacity: 0, duration: 0.64, ease: "sine.out" }, 8.9);
+      tl.from("#scene4 .gold-orbit", { scale: 0.82, rotation: -16, opacity: 0, duration: 0.58, ease: "circ.out" }, 8.92);
+      tl.from("#scene4 .brand-wheel", { scale: 0.35, rotation: -70, opacity: 0, duration: 0.56, ease: "back.out(1.7)" }, 8.96);
+      tl.from("#scene4 .brand-title", { y: 72, opacity: 0, duration: 0.44, ease: "power4.out" }, 9.03);
+      tl.from("#scene4 .brand-tagline", { x: 90, opacity: 0, duration: 0.46, ease: "expo.out" }, 9.14);
+      tl.from("#scene4 .brand-dot", { scale: 0, opacity: 0, duration: 0.26, stagger: 0.045, ease: "elastic.out(1, 0.5)" }, 9.2);
+
+      window.__timelines['rueda-quiz-promo'] = tl;
+    </script>
+  </body>
+</html>
