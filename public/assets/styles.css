@@ -521,6 +521,10 @@ button:disabled {
     z-index: 1;
 }
 
+.action-card > div:not(.action-icon) {
+    min-width: 0;
+}
+
 .action-icon {
     display: grid;
     place-items: center;
@@ -584,7 +588,8 @@ button:disabled {
     margin-bottom: 0;
 }
 
-.local-setup-view {
+.local-setup-view,
+.online-setup-view {
     position: relative;
     min-height: calc(100vh - 79px);
     display: grid;
@@ -593,6 +598,16 @@ button:disabled {
     gap: clamp(20px, 3vw, 42px);
     padding: clamp(24px, 3vw, 48px) clamp(18px, 5vw, 82px);
     overflow: hidden;
+}
+
+.online-board-art {
+    position: relative;
+    z-index: 1;
+    min-height: min(74vh, 700px);
+    margin-left: min(-70px, -4vw);
+    align-self: stretch;
+    background: url("home-board-art.png") center / contain no-repeat;
+    filter: drop-shadow(0 20px 28px rgba(3, 26, 70, 0.16));
 }
 
 .local-board-art {
@@ -647,6 +662,13 @@ button:disabled {
 
 .local-setup-card .ghost-button {
     margin-top: 10px;
+}
+
+.online-setup-card input,
+.online-setup-card select {
+    min-height: 52px;
+    border-radius: 8px;
+    font-size: 17px;
 }
 
 .local-form-hint {
@@ -1571,6 +1593,7 @@ button:disabled {
 
     .home-hero,
     .home-actions,
+    .online-setup-view,
     .local-setup-view,
     .game-view,
     .admin-shell {
@@ -1610,7 +1633,15 @@ button:disabled {
         grid-row: 1;
     }
 
-    .local-setup-card {
+    .online-board-art {
+        min-height: 270px;
+        margin: -24px -72px -72px -28px;
+        opacity: 0.5;
+        grid-row: 1;
+    }
+
+    .local-setup-card,
+    .online-setup-card {
         grid-row: 1;
     }
 

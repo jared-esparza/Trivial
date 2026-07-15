@@ -55,7 +55,7 @@ $config = app_config();
                     </button>
                 </article>
 
-                <form id="onlineCreateForm" class="action-card action-card-online">
+                <article class="action-card action-card-online">
                     <div class="action-icon action-icon-purple" aria-hidden="true">
                         <span>&#9678;</span>
                     </div>
@@ -63,26 +63,11 @@ $config = app_config();
                         <h2>Crear sala online</h2>
                         <p>Crea tu sala, invita a otros equipos y empieza a jugar.</p>
                     </div>
-                    <label>
-                        Nombre de tu equipo
-                        <input name="teamName" value="Equipo Azul" required>
-                    </label>
-                    <label>
-                        Pack de preguntas
-                        <select name="packId" data-pack-select><option value="">Cl&aacute;sico</option></select>
-                    </label>
-                    <details class="color-options">
-                        <summary>Personalizar colores de categor&iacute;as</summary>
-                        <label>Esquema de colores
-                            <select name="colorSchemeId" data-color-scheme-select><option value="">Usar colores predeterminados del pack</option></select>
-                        </label>
-                        <div class="color-scheme-preview" data-color-scheme-preview aria-label="Vista previa de colores"></div>
-                    </details>
-                    <button class="wide-button purple-button" type="submit">
+                    <button id="openOnlineSetupButton" class="wide-button purple-button" type="button">
                         Crear sala
                         <span aria-hidden="true">&rsaquo;</span>
                     </button>
-                </form>
+                </article>
 
                 <form id="joinForm" class="join-card">
                     <div class="join-heading">
@@ -91,11 +76,11 @@ $config = app_config();
                         </div>
                         <div>
                             <h2>Unirse a sala</h2>
-                            <p>Ingresa el codigo de la sala para unirte a la partida.</p>
+                            <p>Ingresa el c&oacute;digo de la sala para unirte a la partida.</p>
                         </div>
                     </div>
                     <label>
-                        Codigo de sala
+                        C&oacute;digo de sala
                         <input name="code" maxlength="6" placeholder="Ej: 57639L" required>
                     </label>
                     <label>
@@ -108,6 +93,32 @@ $config = app_config();
                     </button>
                 </form>
             </div>
+        </section>
+
+        <section id="onlineSetupView" class="online-setup-view hidden">
+            <div class="online-board-art" aria-hidden="true"></div>
+            <form id="onlineCreateForm" class="local-setup-card online-setup-card">
+                <p class="eyebrow"><span aria-hidden="true">&#9678;</span> Sala online</p>
+                <h1>Crea tu sala online</h1>
+                <p>Elige tu equipo y el pack de preguntas. Despu&eacute;s podr&aacute;s compartir el c&oacute;digo de sala con los dem&aacute;s jugadores.</p>
+                <label>
+                    Nombre de tu equipo
+                    <input name="teamName" value="Equipo Azul" required>
+                </label>
+                <label>
+                    Pack de preguntas
+                    <select name="packId" data-pack-select><option value="">Cl&aacute;sico</option></select>
+                </label>
+                <details class="color-options">
+                    <summary>Personalizar colores de categor&iacute;as</summary>
+                    <label>Esquema de colores
+                        <select name="colorSchemeId" data-color-scheme-select><option value="">Usar colores predeterminados del pack</option></select>
+                    </label>
+                    <div class="color-scheme-preview" data-color-scheme-preview aria-label="Vista previa de colores"></div>
+                </details>
+                <button class="wide-button purple-button" type="submit">Crear sala</button>
+                <button id="backHomeFromOnlineButton" class="wide-button ghost-button" type="button">Volver</button>
+            </form>
         </section>
 
         <section id="localSetupView" class="local-setup-view hidden">

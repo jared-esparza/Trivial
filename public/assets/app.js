@@ -50,10 +50,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function bindHomeNavigation() {
     const homeView = document.querySelector('#homeView');
+    const onlineSetupView = document.querySelector('#onlineSetupView');
     const localSetupView = document.querySelector('#localSetupView');
+    const openOnlineSetupButton = document.querySelector('#openOnlineSetupButton');
     const openLocalSetupButton = document.querySelector('#openLocalSetupButton');
+    const backHomeFromOnlineButton = document.querySelector('#backHomeFromOnlineButton');
     const backHomeButton = document.querySelector('#backHomeButton');
     const localPlayersInput = document.querySelector('#localForm textarea[name="players"]');
+
+    openOnlineSetupButton?.addEventListener('click', () => {
+        homeView?.classList.add('hidden');
+        onlineSetupView?.classList.remove('hidden');
+        document.querySelector('#onlineCreateForm input[name="teamName"]')?.focus();
+    });
 
     openLocalSetupButton?.addEventListener('click', () => {
         homeView?.classList.add('hidden');
@@ -64,6 +73,11 @@ function bindHomeNavigation() {
 
     backHomeButton?.addEventListener('click', () => {
         localSetupView?.classList.add('hidden');
+        homeView?.classList.remove('hidden');
+    });
+
+    backHomeFromOnlineButton?.addEventListener('click', () => {
+        onlineSetupView?.classList.add('hidden');
         homeView?.classList.remove('hidden');
     });
 

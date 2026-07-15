@@ -1433,17 +1433,25 @@ $runner->test('home exposes separate local setup view and navigation controls', 
     assertTrueValue(str_contains($styles, '.home-hero'), 'redesigned home hero should have dedicated styles');
 });
 
-$runner->test('landing forms keep online creation and join data on the home screen', function (): void {
+$runner->test('landing keeps compact actions and moves online creation to a separate setup view', function (): void {
     $index = file_get_contents(__DIR__ . '/../public/index.php');
+    $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
     $homeStart = strpos($index, 'id="homeView"');
+    $onlineStart = strpos($index, 'id="onlineSetupView"');
     $localStart = strpos($index, 'id="localSetupView"');
-    $homeMarkup = substr($index, $homeStart, $localStart - $homeStart);
+    $homeMarkup = substr($index, $homeStart, $onlineStart - $homeStart);
+    $onlineMarkup = substr($index, $onlineStart, $localStart - $onlineStart);
 
-    assertTrueValue(str_contains($homeMarkup, 'id="onlineCreateForm"'), 'online create form should stay on the home view');
-    assertTrueValue(str_contains($homeMarkup, 'name="teamName"'), 'online create form should ask for the team name');
+    assertTrueValue(str_contains($homeMarkup, 'id="openOnlineSetupButton"'), 'home should expose an online setup navigation button');
+    assertTrueValue(!str_contains($homeMarkup, 'id="onlineCreateForm"'), 'online form should not make the landing card taller');
     assertTrueValue(str_contains($homeMarkup, 'id="joinForm"'), 'join form should stay on the home view');
     assertTrueValue(str_contains($homeMarkup, 'name="code"'), 'join form should ask for a room code');
     assertTrueValue(str_contains($homeMarkup, 'name="teamName"'), 'join form should ask for a team name');
+    assertTrueValue(str_contains($onlineMarkup, 'id="onlineCreateForm"'), 'online setup should contain the creation form');
+    assertTrueValue(str_contains($onlineMarkup, 'id="backHomeFromOnlineButton"'), 'online setup should expose a back button');
+    assertTrueValue(str_contains($onlineMarkup, 'name="packId"'), 'online setup should keep pack selection');
+    assertTrueValue(str_contains($onlineMarkup, 'name="colorSchemeId"'), 'online setup should keep color selection');
+    assertTrueValue(str_contains($appJs, 'openOnlineSetupButton'), 'frontend should bind online setup navigation');
 });
 
 $runner->test('preferences are rendered in a floating overlay opened from a gear button', function (): void {
