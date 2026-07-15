@@ -4,11 +4,13 @@ const whiteBordersPreferenceKey = 'board:whiteBorders';
 const pulseDestinationsPreferenceKey = 'board:pulseDestinations';
 const animateTokensPreferenceKey = 'board:animateTokens';
 const diceResultDelayPreferenceKey = 'board:diceResultDelayMs';
-const colorPackPreferenceKey = 'board:colorPack';
 const minimumDiceRollAnimationMs = 520;
 
 let currentRoom = null;
 let playerId = null;
+let participantToken = null;
+let currentStatistics = null;
+let statisticsLoading = false;
 let pollingTimer = null;
 let revealedJudgeQuestionKey = null;
 let lastAnimatedDiceKey = null;
@@ -18,6 +20,8 @@ let pendingDiceRollFeedback = null;
 let isRollSubmitting = false;
 let preferencesOverlayOpen = false;
 let diceRollFeedbackTimer = null;
+let availablePacks = [];
+let availableColorSchemes = [];
 
 const categoryLabels = {
     geography: 'Geografia',
@@ -28,28 +32,10 @@ const categoryLabels = {
     sports: 'Deportes y ocio'
 };
 
-const categoryColorPacks = {
-    classic: {
-        geography: '#2f80ed',
-        art: '#8b5a2b',
-        history: '#f2c94c',
-        entertainment: '#d94a9b',
-        science: '#27ae60',
-        sports: '#f2994a'
-    },
-    alternative: {
-        geography: '#2f80ed',
-        art: '#7b3ff2',
-        history: '#f2c94c',
-        entertainment: '#eb5757',
-        science: '#27ae60',
-        sports: '#f2994a'
-    }
-};
-
 document.addEventListener('DOMContentLoaded', () => {
     bindHomeNavigation();
     bindGameForms();
+    loadAvailablePacks();
     bindAdminForms();
     bindFullscreenControls();
     bindPreferencesOverlayControls();
@@ -57,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const code = params.get('room');
     if (code) {
         playerId = Number(localStorage.getItem(`room:${code}:playerId`) ?? 0);
+        participantToken = localStorage.getItem(`room:${code}:participantToken`);
         loadRoom(code.toUpperCase());
     }
 });
@@ -116,6 +103,13 @@ function bindGameForms() {
     const joinForm = document.querySelector('#joinForm');
     const copyButton = document.querySelector('#copyRoomButton');
 
+    document.querySelectorAll('[data-pack-select]').forEach((select) => {
+        select.addEventListener('change', () => resetRoomColorScheme(select.closest('form')));
+    });
+    document.querySelectorAll('[data-color-scheme-select]').forEach((select) => {
+        select.addEventListener('change', () => renderRoomColorPreview(select.closest('form')));
+    });
+
     if (localForm) {
         localForm.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -130,9 +124,12 @@ function bindGameForms() {
             const response = await apiFetch('/rooms', {
                 mode: 'local',
                 answerMode: data.get('answerMode'),
-                players
+                players,
+                packId: data.get('packId'),
+                colorSchemeId: data.get('colorSchemeId')
             });
             playerId = 0;
+            persistParticipantToken(response);
             setRoom(response.room);
         });
     }
@@ -144,10 +141,13 @@ function bindGameForms() {
             const response = await apiFetch('/rooms', {
                 mode: 'online',
                 teamName: data.get('teamName'),
-                color: playerColors[0]
+                color: playerColors[0],
+                packId: data.get('packId'),
+                colorSchemeId: data.get('colorSchemeId')
             });
             playerId = 0;
             localStorage.setItem(`room:${response.room.code}:playerId`, String(playerId));
+            persistParticipantToken(response);
             setRoom(response.room);
         });
     }
@@ -164,6 +164,7 @@ function bindGameForms() {
             });
             playerId = response.room.state.players.length - 1;
             localStorage.setItem(`room:${response.room.code}:playerId`, String(playerId));
+            persistParticipantToken(response);
             setRoom(response.room);
         });
     }
@@ -241,47 +242,150 @@ function updateFullscreenButton() {
 }
 
 function bindAdminForms() {
-    const importForm = document.querySelector('#adminImportForm');
-    const listForm = document.querySelector('#adminListForm');
-
-    if (importForm) {
-        importForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const data = new FormData(importForm);
-            const response = await apiFetch('/admin/questions', {
-                adminKey: data.get('adminKey'),
-                csv: data.get('csv'),
-                replace: data.get('replace') === 'on'
-            });
-            toast(`${response.imported} preguntas importadas.`);
-            renderQuestions(response.questions);
-        });
-    }
-
-    if (listForm) {
-        listForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const data = new FormData(listForm);
-            const response = await fetch(`${apiBase}/admin/questions?admin_key=${encodeURIComponent(data.get('adminKey'))}`);
-            const json = await response.json();
-            if (!response.ok) throw new Error(json.error ?? 'Error al cargar preguntas.');
-            renderQuestions(json.questions);
-        });
+    const users = document.querySelector('#adminUsers');
+    if (users) {
+        fetch(`${apiBase}/auth/me`)
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.user?.role === 'admin') return loadAdminUsers(data.csrfToken ?? null);
+                return null;
+            })
+            .catch(() => toast('No se pudo comprobar la sesion.'));
     }
 }
 
-async function apiFetch(path, payload) {
+async function apiFetch(path, payload, extraHeaders = {}) {
     const response = await fetch(apiBase + path, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...extraHeaders },
         body: JSON.stringify(payload)
     });
     const json = await response.json();
     if (!response.ok) {
-        toast(json.error ?? 'Error de API.');
-        throw new Error(json.error ?? 'Error de API.');
+        const message = apiErrorMessage(json, 'Error de API.');
+        toast(message);
+        throw new Error(message);
     }
     return json;
+}
+
+async function loadAvailablePacks() {
+    const selects = [...document.querySelectorAll('[data-pack-select]')];
+    if (!selects.length) return;
+    try {
+        const [response, colorResponse] = await Promise.all([
+            fetch(`${apiBase}/packs`),
+            fetch(`${apiBase}/packs/colors`)
+        ]);
+        const data = await response.json();
+        const colorData = await colorResponse.json();
+        if (!response.ok) throw new Error(apiErrorMessage(data, 'No se pudieron cargar los packs.'));
+        if (!colorResponse.ok) throw new Error(apiErrorMessage(colorData, 'No se pudieron cargar los colores.'));
+        availablePacks = data.packs.filter((pack) => pack.status === 'active');
+        availableColorSchemes = colorData.colorSchemes;
+        const options = availablePacks
+            .map((pack) => `<option value="${Number(pack.id)}">${escapeHtml(pack.name)}</option>`)
+            .join('');
+        selects.forEach((select) => { select.innerHTML = options; });
+        const systemSchemes = availableColorSchemes.filter((scheme) => scheme.kind === 'system');
+        const personalSchemes = availableColorSchemes.filter((scheme) => scheme.kind === 'user');
+        const colorOptions = '<option value="">Usar colores predeterminados del pack</option>'
+            + (systemSchemes.length ? `<optgroup label="Sistema">${systemSchemes.map(colorSchemeOption).join('')}</optgroup>` : '')
+            + (personalSchemes.length ? `<optgroup label="Mis esquemas">${personalSchemes.map(colorSchemeOption).join('')}</optgroup>` : '');
+        document.querySelectorAll('[data-color-scheme-select]').forEach((select) => { select.innerHTML = colorOptions; });
+        document.querySelectorAll('[data-color-scheme-preview]').forEach((preview) => renderRoomColorPreview(preview.closest('form')));
+    } catch (error) {
+        toast(error.message);
+    }
+}
+
+function colorSchemeOption(scheme) {
+    return `<option value="${Number(scheme.id)}">${escapeHtml(scheme.name)}</option>`;
+}
+
+function resetRoomColorScheme(form) {
+    if (!form) return;
+    const select = form.querySelector('[data-color-scheme-select]');
+    if (select) select.value = '';
+    renderRoomColorPreview(form);
+}
+
+function renderRoomColorPreview(form) {
+    if (!form) return;
+    const preview = form.querySelector('[data-color-scheme-preview]');
+    if (!preview) return;
+    const schemeId = Number(form.querySelector('[data-color-scheme-select]')?.value) || null;
+    const scheme = availableColorSchemes.find((item) => item.id === schemeId);
+    const packId = Number(form.querySelector('[data-pack-select]')?.value) || null;
+    const pack = availablePacks.find((item) => item.id === packId) ?? availablePacks[0];
+    const revision = pack?.currentRevision ?? pack?.draftRevision;
+    const colors = scheme?.colors ?? (revision?.categories ?? []).map((category) => category.color);
+    preview.innerHTML = colors.map((color) => `<i class="color-swatch" title="${escapeAttr(color)}" style="background:${escapeAttr(color)}"></i>`).join('');
+}
+
+async function loadAdminUsers(csrfToken) {
+    const response = await fetch(`${apiBase}/admin/users`);
+    const json = await response.json();
+    if (!response.ok) throw new Error(apiErrorMessage(json, 'No se pudieron cargar los usuarios.'));
+    renderAdminUsers(json.users, csrfToken);
+}
+
+function renderAdminUsers(users, csrfToken) {
+    const box = document.querySelector('#adminUsers');
+    if (!box) return;
+    box.innerHTML = users.map((user) => `
+        <article class="question-item admin-user-row" data-user-id="${Number(user.id)}">
+            <div class="admin-user-identity">
+                <strong>${escapeHtml(user.displayName ?? user.email)}</strong>
+                <p class="admin-user-email">${escapeHtml(user.email)}</p>
+                <p class="muted">${user.emailVerified ? 'Verificado' : 'Pendiente de verificar'}</p>
+            </div>
+            <label>Rol
+                <select data-user-field="role">
+                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>Usuario</option>
+                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                </select>
+            </label>
+            <label>Estado
+                <select data-user-field="status">
+                    <option value="active" ${user.status === 'active' ? 'selected' : ''}>Activo</option>
+                    <option value="disabled" ${user.status === 'disabled' ? 'selected' : ''}>Desactivado</option>
+                </select>
+            </label>
+        </article>
+    `).join('');
+
+    box.querySelectorAll('[data-user-field]').forEach((select) => {
+        select.addEventListener('change', async () => {
+            const row = select.closest('[data-user-id]');
+            const payload = {
+                userId: Number(row.dataset.userId),
+                [select.dataset.userField]: select.value
+            };
+            try {
+                await apiFetch('/admin/users/update', payload, { 'X-CSRF-Token': csrfToken });
+                toast('Usuario actualizado.');
+                await loadAdminUsers(csrfToken);
+            } catch (error) {
+                toast(error.message);
+                await loadAdminUsers(csrfToken);
+            }
+        });
+    });
+}
+
+function apiErrorMessage(json, fallback) {
+    return typeof json?.error === 'string' ? json.error : json?.error?.message ?? fallback;
+}
+
+function persistParticipantToken(response) {
+    if (!response.participantToken || !response.room?.code) return;
+    participantToken = response.participantToken;
+    localStorage.setItem(`room:${response.room.code}:participantToken`, participantToken);
+}
+
+function participantHeaders() {
+    return participantToken ? { 'X-Participant-Token': participantToken } : {};
 }
 
 async function getRoom(code) {
@@ -301,6 +405,7 @@ async function loadRoom(code) {
 }
 
 function setRoom(room) {
+    if (currentRoom?.code !== room.code) currentStatistics = null;
     currentRoom = room;
     pendingAnswerFeedback = null;
     document.querySelector('#homeView')?.classList.add('hidden');
@@ -412,7 +517,6 @@ function renderPreferencesOverlay() {
     const pulseDestinationsEnabled = localStorage.getItem(pulseDestinationsPreferenceKey) === '1';
     const animateTokensEnabled = animateTokensPreferenceEnabled();
     const diceResultDelay = diceResultDelayPreferenceMs();
-    const colorPack = colorPackPreference();
 
     box.classList.toggle('hidden', !preferencesOverlayOpen);
     box.innerHTML = `
@@ -440,13 +544,6 @@ function renderPreferencesOverlay() {
                 <label class="toggle-row">
                     <span>Animar movimiento de fichas</span>
                     <input id="animateTokensToggle" type="checkbox" ${animateTokensEnabled ? 'checked' : ''}>
-                </label>
-                <label class="select-row">
-                    <span>Pack de colores</span>
-                    <select id="colorPackSelect">
-                        <option value="classic" ${colorPack === 'classic' ? 'selected' : ''}>Clasico</option>
-                        <option value="alternative" ${colorPack === 'alternative' ? 'selected' : ''}>Alternativo</option>
-                    </select>
                 </label>
                 <label class="select-row">
                     <span>Duracion resultado dado</span>
@@ -484,12 +581,6 @@ function renderPreferencesOverlay() {
     document.querySelector('#diceResultDelaySelect')?.addEventListener('change', (event) => {
         localStorage.setItem(diceResultDelayPreferenceKey, event.target.value);
     });
-    document.querySelector('#colorPackSelect')?.addEventListener('change', (event) => {
-        localStorage.setItem(colorPackPreferenceKey, event.target.value);
-        renderScoreboard();
-        renderBoard();
-        renderPreferencesOverlay();
-    });
 }
 
 function renderPreferences() {
@@ -505,24 +596,11 @@ function diceResultDelayPreferenceMs() {
     return [500, 1000, 1500, 2000].includes(stored) ? stored : 1000;
 }
 
-function colorPackPreference() {
-    const stored = localStorage.getItem(colorPackPreferenceKey);
-    return Object.prototype.hasOwnProperty.call(categoryColorPacks, stored) ? stored : 'classic';
-}
-
-function categoriesWithColorPack(categories) {
-    const colors = categoryColorPacks[colorPackPreference()] ?? categoryColorPacks.classic;
-    return categories.map((category) => ({
-        ...category,
-        color: colors[category.slug] ?? category.color
-    }));
-}
-
 function renderScoreboard() {
     const box = document.querySelector('#scoreboardBox');
     if (!box || !currentRoom) return;
     const state = currentRoom.state;
-    const categories = categoriesWithColorPack(currentRoom.categories);
+    const categories = currentRoom.categories;
 
     box.innerHTML = `
         <div class="scoreboard-track" role="list" aria-label="Marcador principal">
@@ -596,7 +674,10 @@ function scoreboardWheelPoint(cx, cy, radius, degrees) {
 
 async function sendAction(payload) {
     if (!currentRoom) return;
-    const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, payload);
+    const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, {
+        ...payload,
+        expectedVersion: currentRoom.version
+    }, participantHeaders());
     currentRoom = response.room;
     renderRoom();
 }
@@ -616,8 +697,9 @@ async function submitRollFromOverlay() {
     try {
         const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, {
             action: 'roll',
-            playerId: currentRoom.state.currentPlayer
-        });
+            playerId: currentRoom.state.currentPlayer,
+            expectedVersion: currentRoom.version
+        }, participantHeaders());
         const elapsed = Date.now() - rollStartedAt;
         if (elapsed < minimumDiceRollAnimationMs) {
             await new Promise((resolve) => setTimeout(resolve, minimumDiceRollAnimationMs - elapsed));
@@ -646,7 +728,10 @@ async function submitRollFromOverlay() {
 async function submitAnswerWithFeedback(payload) {
     if (!currentRoom) return;
     const previousState = currentRoom.state;
-    const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, payload);
+    const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, {
+        ...payload,
+        expectedVersion: currentRoom.version
+    }, participantHeaders());
     currentRoom = response.room;
     pendingAnswerFeedback = buildAnswerFeedback(previousState, currentRoom.state, payload);
     renderRoom();
@@ -831,7 +916,10 @@ async function moveWithTokenAnimation(destination) {
     await new Promise((resolve) => setTimeout(resolve, 560));
 
     try {
-        const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, payload);
+        const response = await apiFetch(`/rooms/${currentRoom.code}/actions`, {
+            ...payload,
+            expectedVersion: currentRoom.version
+        }, participantHeaders());
         currentRoom = response.room;
     } catch (error) {
         toast(error.message);
@@ -872,6 +960,7 @@ function bindLobbyOverlayControls(state, canAct) {
 function renderFinishedOverlay(state) {
     if (state.phase !== 'finished') return '';
     const winner = state.players[state.winner];
+    if (!currentStatistics && !statisticsLoading) loadFinishedStatistics();
 
     return `
         <div class="question-overlay finished-overlay" role="dialog" aria-modal="true" aria-labelledby="finishedOverlayTitle">
@@ -879,9 +968,40 @@ function renderFinishedOverlay(state) {
                 <p class="eyebrow">Partida terminada</p>
                 <h2 id="finishedOverlayTitle">${escapeHtml(winner?.name ?? 'Un equipo')} ha ganado</h2>
                 <p class="muted">Todos los quesitos y pregunta final completados.</p>
+                ${renderFinishedStatistics(currentStatistics)}
             </article>
         </div>
     `;
+}
+
+function renderFinishedStatistics(statistics) {
+    if (!statistics) return '<p class="muted">Calculando estad&iacute;sticas...</p>';
+    return `<div class="finished-statistics">
+        ${statistics.teams.map((team) => `
+            <article class="question-item">
+                <strong>${escapeHtml(team.name)}</strong>
+                <p>${team.correct}/${team.answers} aciertos &middot; ${Number(team.accuracy).toFixed(2)}%</p>
+                <p class="muted">Mejor racha: ${team.longestStreak}</p>
+            </article>`).join('')}
+    </div>`;
+}
+
+async function loadFinishedStatistics() {
+    if (!currentRoom || !participantToken) return;
+    statisticsLoading = true;
+    try {
+        const response = await fetch(`${apiBase}/rooms/${currentRoom.code}/statistics`, {
+            headers: participantHeaders()
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(apiErrorMessage(data, 'No se pudieron cargar las estadisticas.'));
+        currentStatistics = data.statistics;
+    } catch (error) {
+        toast(error.message);
+    } finally {
+        statisticsLoading = false;
+        renderRoom();
+    }
 }
 
 function renderDiceRollOverlay(state, canAct) {
@@ -1271,12 +1391,12 @@ function pointOnCircle(cx, cy, radius, degrees) {
 function colorForSpace(space, categories) {
     if (space.type === 'center') return '#ffffff';
     if (space.type === 'roll_again') return '#cbd5e1';
-    const category = categoriesWithColorPack(categories).find((item) => item.slug === space.category);
+    const category = categories.find((item) => item.slug === space.category);
     return category?.color ?? '#e5e7eb';
 }
 
 function categoryMeta(slug) {
-    const categories = currentRoom ? categoriesWithColorPack(currentRoom.categories) : [];
+    const categories = currentRoom ? currentRoom.categories : [];
     const category = categories.find((item) => item.slug === slug);
     return {
         name: category?.name ?? categoryLabels[slug] ?? slug,
@@ -1288,22 +1408,6 @@ function tokenOffset(index, total) {
     if (total === 1) return { x: 0, y: 0 };
     const angle = (index / total) * Math.PI * 2;
     return { x: Math.cos(angle) * 11, y: Math.sin(angle) * 11 };
-}
-
-function renderQuestions(questions) {
-    const box = document.querySelector('#adminQuestions');
-    if (!box) return;
-    if (!questions.length) {
-        box.innerHTML = '<p class="muted">No hay preguntas cargadas.</p>';
-        return;
-    }
-    box.innerHTML = questions.map((question) => `
-        <article class="question-item">
-            <p class="eyebrow">${escapeHtml(categoryLabels[question.category] ?? question.category)}</p>
-            <strong>${escapeHtml(question.question)}</strong>
-            <p class="muted">${question.options.map(escapeHtml).join(' / ')}</p>
-        </article>
-    `).join('');
 }
 
 function toast(message) {

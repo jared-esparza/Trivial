@@ -17,10 +17,9 @@ $config = app_config();
             <span class="brand-mark" aria-hidden="true"></span>
             <span><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></span>
         </a>
-        <a class="admin-link" href="admin.php">
-            <span class="admin-help-icon" aria-hidden="true">?</span>
-            <span>Admin preguntas</span>
-        </a>
+        <nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal">
+            <a class="topbar-link" href="account.php">Login / registro</a>
+        </nav>
     </header>
 
     <main class="shell">
@@ -68,6 +67,17 @@ $config = app_config();
                         Nombre de tu equipo
                         <input name="teamName" value="Equipo Azul" required>
                     </label>
+                    <label>
+                        Pack de preguntas
+                        <select name="packId" data-pack-select><option value="">Cl&aacute;sico</option></select>
+                    </label>
+                    <details class="color-options">
+                        <summary>Personalizar colores de categor&iacute;as</summary>
+                        <label>Esquema de colores
+                            <select name="colorSchemeId" data-color-scheme-select><option value="">Usar colores predeterminados del pack</option></select>
+                        </label>
+                        <div class="color-scheme-preview" data-color-scheme-preview aria-label="Vista previa de colores"></div>
+                    </details>
                     <button class="wide-button purple-button" type="submit">
                         Crear sala
                         <span aria-hidden="true">&rsaquo;</span>
@@ -114,6 +124,17 @@ $config = app_config();
                     </select>
                 </label>
                 <label>
+                    Pack de preguntas
+                    <select name="packId" data-pack-select><option value="">Cl&aacute;sico</option></select>
+                </label>
+                <details class="color-options">
+                    <summary>Personalizar colores de categor&iacute;as</summary>
+                    <label>Esquema de colores
+                        <select name="colorSchemeId" data-color-scheme-select><option value="">Usar colores predeterminados del pack</option></select>
+                    </label>
+                    <div class="color-scheme-preview" data-color-scheme-preview aria-label="Vista previa de colores"></div>
+                </details>
+                <label>
                     Equipos <span class="label-note">(minimo 2 &middot; maximo 6)</span>
                     <textarea name="players" rows="6">Equipo Azul
 Equipo Rojo</textarea>
@@ -157,6 +178,7 @@ Equipo Rojo</textarea>
     </main>
 
     <div id="toast" class="toast hidden"></div>
+    <script src="assets/session-nav.js"></script>
     <script src="assets/app.js"></script>
 </body>
 </html>

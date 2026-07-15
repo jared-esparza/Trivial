@@ -10,7 +10,17 @@ final class RoomRepository
     {
     }
 
-    public function createRoom(string $mode, string $answerMode, string $hostName, string $hostColor): array
+    public function createRoom(
+        string $mode,
+        string $answerMode,
+        string $hostName,
+        string $hostColor,
+        ?int $creatorUserId = null,
+        ?int $packId = null,
+        ?int $packRevisionId = null,
+        ?array $packSnapshot = null,
+        ?string $controllerTokenHash = null,
+    ): array
     {
         if (!in_array($mode, ['local', 'online'], true)) {
             throw new InvalidArgumentException('Modo de sala no valido.');
@@ -35,9 +45,11 @@ final class RoomRepository
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO rooms
-                (code, mode, answer_mode, status, players_json, state_json, version, created_at, updated_at)
+                (code, mode, answer_mode, status, players_json, state_json, version, created_at, updated_at,
+                 creator_user_id, pack_id, pack_revision_id, pack_snapshot_json, controller_token_hash)
              VALUES
-                (:code, :mode, :answer_mode, :status, :players_json, :state_json, :version, :created_at, :updated_at)'
+                (:code, :mode, :answer_mode, :status, :players_json, :state_json, :version, :created_at, :updated_at,
+                 :creator_user_id, :pack_id, :pack_revision_id, :pack_snapshot_json, :controller_token_hash)'
         );
         $stmt->execute([
             ':code' => $code,
@@ -49,19 +61,42 @@ final class RoomRepository
             ':version' => 1,
             ':created_at' => $now,
             ':updated_at' => $now,
+            ':creator_user_id' => $creatorUserId,
+            ':pack_id' => $packId,
+            ':pack_revision_id' => $packRevisionId,
+            ':pack_snapshot_json' => $packSnapshot === null ? null : json_encode($packSnapshot, JSON_THROW_ON_ERROR),
+            ':controller_token_hash' => $controllerTokenHash,
         ]);
 
         return $this->getRoom($code);
     }
 
-    public function createLocalRoom(string $answerMode, array $players): array
+    public function createLocalRoom(
+        string $answerMode,
+        array $players,
+        ?int $creatorUserId = null,
+        ?int $packId = null,
+        ?int $packRevisionId = null,
+        ?array $packSnapshot = null,
+        ?string $controllerTokenHash = null,
+    ): array
     {
         if (count($players) < 2 || count($players) > 6) {
             throw new InvalidArgumentException('El modo local necesita entre 2 y 6 equipos.');
         }
 
         $first = array_shift($players);
-        $room = $this->createRoom('local', $answerMode, $first['name'], $first['color']);
+        $room = $this->createRoom(
+            'local',
+            $answerMode,
+            $first['name'],
+            $first['color'],
+            $creatorUserId,
+            $packId,
+            $packRevisionId,
+            $packSnapshot,
+            $controllerTokenHash
+        );
         foreach ($players as $player) {
             $this->joinRoom($room['code'], $player['name'], $player['color']);
         }
@@ -88,14 +123,17 @@ final class RoomRepository
         $state['players'] = $players;
         $state['version'] = (int) $room['version'] + 1;
 
-        $this->saveRoom($code, 'lobby', $players, $state);
+        $this->saveRoom($code, 'lobby', $players, $state, $room['version']);
 
         return $this->getRoom($code);
     }
 
-    public function startGame(string $code): array
+    public function startGame(string $code, ?int $expectedVersion = null): array
     {
         $room = $this->getRoom($code);
+        if ($expectedVersion !== null && $room['version'] !== $expectedVersion) {
+            throw new RuntimeException('ROOM_VERSION_CONFLICT');
+        }
         if (count($room['players']) < 2) {
             throw new InvalidArgumentException('Hacen falta al menos 2 equipos para empezar.');
         }
@@ -106,17 +144,27 @@ final class RoomRepository
         $state = GameEngine::newGame($room['players'], $room['mode']);
         $state['answerMode'] = $room['answer_mode'];
         $state['version'] = (int) $room['version'] + 1;
-        $this->saveRoom($code, 'playing', $room['players'], $state);
+        $this->saveRoom($code, 'playing', $room['players'], $state, $room['version']);
+        $started = $this->pdo->prepare('UPDATE rooms SET started_at = COALESCE(started_at, :started_at) WHERE code = :code');
+        $started->execute([':started_at' => gmdate('c'), ':code' => strtoupper($code)]);
 
         return $this->getRoom($code);
     }
 
-    public function updateState(string $code, array $state): array
+    public function updateState(string $code, array $state, ?int $expectedVersion = null): array
     {
         $room = $this->getRoom($code);
-        $state['version'] = (int) $room['version'] + 1;
+        $expectedVersion ??= (int) $room['version'];
+        if ((int) $room['version'] !== $expectedVersion) {
+            throw new RuntimeException('ROOM_VERSION_CONFLICT');
+        }
+        $state['version'] = $expectedVersion + 1;
         $status = $state['phase'] === 'finished' ? 'finished' : 'playing';
-        $this->saveRoom($code, $status, $room['players'], $state);
+        $this->saveRoom($code, $status, $room['players'], $state, $expectedVersion);
+        if ($status === 'finished') {
+            $finished = $this->pdo->prepare('UPDATE rooms SET finished_at = COALESCE(finished_at, :finished_at) WHERE code = :code');
+            $finished->execute([':finished_at' => gmdate('c'), ':code' => strtoupper($code)]);
+        }
 
         return $this->getRoom($code);
     }
@@ -138,10 +186,17 @@ final class RoomRepository
             'players' => json_decode($row['players_json'], true, 512, JSON_THROW_ON_ERROR),
             'state' => json_decode($row['state_json'], true, 512, JSON_THROW_ON_ERROR),
             'version' => (int) $row['version'],
+            'creator_user_id' => $row['creator_user_id'] === null ? null : (int) $row['creator_user_id'],
+            'pack_id' => $row['pack_id'] === null ? null : (int) $row['pack_id'],
+            'pack_revision_id' => $row['pack_revision_id'] === null ? null : (int) $row['pack_revision_id'],
+            'pack_snapshot' => $row['pack_snapshot_json'] === null
+                ? null
+                : json_decode($row['pack_snapshot_json'], true, 512, JSON_THROW_ON_ERROR),
+            'controller_token_hash' => $row['controller_token_hash'],
         ];
     }
 
-    private function saveRoom(string $code, string $status, array $players, array $state): void
+    private function saveRoom(string $code, string $status, array $players, array $state, int $expectedVersion): void
     {
         $stmt = $this->pdo->prepare(
             'UPDATE rooms
@@ -150,7 +205,7 @@ final class RoomRepository
                  state_json = :state_json,
                  version = :version,
                  updated_at = :updated_at
-             WHERE code = :code'
+             WHERE code = :code AND version = :expected_version'
         );
         $stmt->execute([
             ':status' => $status,
@@ -159,7 +214,11 @@ final class RoomRepository
             ':version' => (int) $state['version'],
             ':updated_at' => gmdate('c'),
             ':code' => strtoupper($code),
+            ':expected_version' => $expectedVersion,
         ]);
+        if ($stmt->rowCount() !== 1) {
+            throw new RuntimeException('ROOM_VERSION_CONFLICT');
+        }
     }
 
     private function uniqueCode(): string
