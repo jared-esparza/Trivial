@@ -8,6 +8,8 @@
 
 **Tech Stack:** HyperFrames CLI, HTML5, CSS, GSAP 3.14.2, FFmpeg, MP4 H.264.
 
+**User-approved path override:** Execute every plan path written as `promo-video/` under `video/` instead. The generated HyperFrames project and all rendered deliverables must remain inside `video/`.
+
 ## Global Constraints
 
 - Resolución exacta: 1920 × 1080 píxeles, relación 16:9 horizontal.
@@ -92,8 +94,7 @@ Energetic competitive game-show motion design on a deep navy canvas. A gold rim,
 - Category Purple: #7c3aed
 
 ## Typography
-- Headline: Arial Black, Arial, sans-serif
-- Supporting: Segoe UI, Arial, sans-serif
+- Headlines and supporting copy: Oswald, sans-serif, from weight 350 to 900
 
 ## What NOT to Do
 - No generic blue-purple gradients.
