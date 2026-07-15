@@ -69,8 +69,8 @@ final class PackSeeder
         $this->pdo->beginTransaction();
         try {
             $insert = $this->pdo->prepare(
-                'INSERT INTO color_schemes (name, status, created_at, updated_at)
-                 VALUES (:name, :status, :created_at, :updated_at)'
+                "INSERT INTO color_schemes (name, kind, owner_user_id, status, created_at, updated_at)
+                 VALUES (:name, 'system', NULL, :status, :created_at, :updated_at)"
             );
             $insert->execute([':name' => $name, ':status' => 'active', ':created_at' => $now, ':updated_at' => $now]);
             $schemeId = (int) $this->pdo->lastInsertId();

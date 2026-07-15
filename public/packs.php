@@ -34,6 +34,9 @@ try {
             <h1>Mis packs tem&aacute;ticos</h1>
             <form id="createPackForm" class="inline-form">
                 <input name="name" placeholder="Nombre del nuevo pack" maxlength="120" required>
+                <label>Colores iniciales
+                    <select id="createPackColorScheme" name="colorSchemeId" required></select>
+                </label>
                 <label id="adminPackControls" class="hidden">Tipo
                     <select name="kind"><option value="user">Privado</option><option value="system">Sistema</option></select>
                 </label>
@@ -42,10 +45,32 @@ try {
             <div id="packList" class="question-list"></div>
         </section>
 
+        <section id="personalColorSchemeSection" class="panel admin-panel">
+            <p class="eyebrow">Biblioteca personal</p>
+            <h2>Mis esquemas de colores</h2>
+            <p class="muted">Guarda combinaciones para reutilizarlas en tus packs y salas.</p>
+            <form id="personalColorSchemeForm" data-scheme-kind="user">
+                <input name="colorSchemeId" type="hidden">
+                <label>Nombre<input name="name" maxlength="100" required></label>
+                <div class="color-grid">
+                    <?php for ($slot = 0; $slot < 6; $slot++): ?>
+                        <?php $color = '#' . str_repeat(dechex(2 + $slot), 6); ?>
+                        <label class="color-field">Color <?= $slot + 1 ?><input name="colors[]" type="color" value="<?= $color ?>" required><span><?= $color ?></span></label>
+                    <?php endfor; ?>
+                </div>
+                <div class="inline-form">
+                    <button type="submit">Guardar esquema personal</button>
+                    <button class="secondary hidden" type="button" data-cancel-scheme>Cancelar edici&oacute;n</button>
+                </div>
+            </form>
+            <div id="personalColorSchemeList" class="question-list"></div>
+        </section>
+
         <section id="colorSchemeAdmin" class="panel admin-panel hidden">
             <p class="eyebrow">Administraci&oacute;n</p>
-            <h2>Packs de colores p&uacute;blicos</h2>
-            <form id="colorSchemeForm">
+            <h2>Esquemas de colores del sistema</h2>
+            <form id="colorSchemeForm" data-scheme-kind="system">
+                <input name="colorSchemeId" type="hidden">
                 <label>Nombre<input name="name" maxlength="100" required></label>
                 <div id="colorInputs" class="color-grid">
                     <?php for ($slot = 0; $slot < 6; $slot++): ?>
@@ -53,7 +78,10 @@ try {
                         <label class="color-field">Color <?= $slot + 1 ?><input name="colors[]" type="color" value="<?= $color ?>" required><span><?= $color ?></span></label>
                     <?php endfor; ?>
                 </div>
-                <button type="submit">Crear pack de colores</button>
+                <div class="inline-form">
+                    <button type="submit">Guardar esquema del sistema</button>
+                    <button class="secondary hidden" type="button" data-cancel-scheme>Cancelar edici&oacute;n</button>
+                </div>
             </form>
             <div id="colorSchemeList" class="question-list"></div>
         </section>
@@ -69,6 +97,12 @@ try {
 
         <section id="packEditor" class="panel admin-panel hidden">
             <div id="packEditorSummary"></div>
+            <div class="scheme-apply-row">
+                <label>Aplicar esquema de colores
+                    <select id="applyColorSchemeSelect"><option value="">Selecciona un esquema</option></select>
+                </label>
+                <p class="muted">Copia los seis colores al borrador. Podr&aacute;s retocarlos antes de guardar.</p>
+            </div>
             <form id="categoriesForm"><div id="categoryFields" class="account-grid"></div><button type="submit">Guardar categor&iacute;as</button></form>
             <hr>
             <form id="questionForm">

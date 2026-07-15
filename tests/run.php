@@ -137,7 +137,7 @@ $runner->test('migration runner applies each migration exactly once', function (
     $runner->migrate();
 
     $applied = (int) $pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn();
-    assertSameValue(8, $applied);
+    assertSameValue(9, $applied);
 
     $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'table'")->fetchAll(PDO::FETCH_COLUMN);
     foreach (['rooms', 'questions', 'users', 'auth_sessions', 'account_tokens', 'auth_attempts', 'question_packs', 'pack_revisions', 'pack_categories', 'color_schemes', 'color_scheme_slots', 'room_participants', 'answer_events'] as $table) {
@@ -145,6 +145,9 @@ $runner->test('migration runner applies each migration exactly once', function (
     }
     $userColumns = $pdo->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_ASSOC);
     assertContainsValue('display_name', array_column($userColumns, 'name'), 'users should include display_name');
+    $schemeColumns = $pdo->query("PRAGMA table_info(color_schemes)")->fetchAll(PDO::FETCH_ASSOC);
+    assertContainsValue('kind', array_column($schemeColumns, 'name'), 'color schemes should include kind');
+    assertContainsValue('owner_user_id', array_column($schemeColumns, 'name'), 'color schemes should include owner_user_id');
 });
 
 $runner->test('application bootstrap runs versioned migrations instead of inline schema creation', function (): void {
@@ -595,6 +598,14 @@ $runner->test('pack activation freezes revision and editing clones a private dra
     assertSameValue(2, $draft['revisionNumber']);
     assertSameValue(6, count($draft['categories']));
     assertSameValue(6, count($draft['questions']));
+
+    $recolored = $draft['categories'];
+    foreach ($recolored as $slot => &$category) {
+        $category['color'] = sprintf('#%06x', 0x101010 + ($slot * 0x111111));
+    }
+    unset($category);
+    $afterRecolor = $service->replaceCategories($owner['id'], $pack['id'], $recolored);
+    assertSameValue(6, count($afterRecolor['questions']), 'changing only names or colors should preserve questions');
 });
 
 $runner->test('complete pack round trips through versioned json and row-based csv', function (): void {
@@ -640,6 +651,7 @@ $runner->test('default pack seeder creates classic content and color schemes ide
 
     assertSameValue(1, (int) $pdo->query("SELECT COUNT(*) FROM question_packs WHERE kind = 'system' AND name = 'Clasico'")->fetchColumn());
     assertSameValue(2, (int) $pdo->query('SELECT COUNT(*) FROM color_schemes')->fetchColumn());
+    assertSameValue(2, (int) $pdo->query("SELECT COUNT(*) FROM color_schemes WHERE kind = 'system' AND owner_user_id IS NULL")->fetchColumn());
     assertSameValue(12, (int) $pdo->query('SELECT COUNT(*) FROM color_scheme_slots')->fetchColumn());
     $packId = (int) $pdo->query("SELECT id FROM question_packs WHERE kind = 'system' AND name = 'Clasico'")->fetchColumn();
     $classic = (new PackRepository($pdo))->get($packId);
@@ -667,15 +679,23 @@ $runner->test('pack http routes expose public packs and create imports as privat
     $router = new ApiRouter();
     (new PackController(new PackService($repo), $repo, $sessions))->registerRoutes($router);
 
+    $personalScheme = $repo->createColorScheme(
+        'Azules propios',
+        ['#101111', '#202222', '#303333', '#404444', '#505555', '#606666'],
+        'user',
+        $user['id']
+    );
+
     $public = $router->dispatch(new ApiRequest('GET', '/packs'));
     assertSameValue(1, count($public->payload['packs']));
     assertSameValue('Clasico', $public->payload['packs'][0]['name']);
 
     $create = $router->dispatch(new ApiRequest(
-        'POST', '/packs/create', ['name' => 'Propio'], [], ['rq_session' => $session['token']], ['x-csrf-token' => $session['csrfToken']]
+        'POST', '/packs/create', ['name' => 'Propio', 'colorSchemeId' => $personalScheme['id']], [], ['rq_session' => $session['token']], ['x-csrf-token' => $session['csrfToken']]
     ));
     assertSameValue(201, $create->status);
     assertSameValue(6, count($create->payload['pack']['draftRevision']['categories']));
+    assertSameValue($personalScheme['colors'], array_column($create->payload['pack']['draftRevision']['categories'], 'color'));
     $createdPackId = $create->payload['pack']['id'];
     for ($slot = 0; $slot < 6; $slot++) {
         $question = $router->dispatch(new ApiRequest(
@@ -718,8 +738,33 @@ $runner->test('pack http routes expose public packs and create imports as privat
     assertSameValue(3, count($mine->payload['packs']));
 });
 
-$runner->test('admins create system packs and manage public color schemes', function (): void {
+$runner->test('pack creation rejects a private color scheme owned by another user', function (): void {
     $pdo = migratedPdo();
+    (new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv'))->seed();
+    $users = new UserRepository($pdo);
+    $owner = $users->create('scheme-owner@example.com', password_hash('contrasena-owner', PASSWORD_DEFAULT));
+    $creator = $users->create('pack-creator@example.com', password_hash('contrasena-creator', PASSWORD_DEFAULT));
+    $users->markVerified($owner['id']);
+    $users->markVerified($creator['id']);
+    $sessions = new SessionRepository($pdo);
+    $session = $sessions->create($creator['id']);
+    $repo = new PackRepository($pdo);
+    $private = $repo->createColorScheme('Privado', ['#111111', '#222222', '#333333', '#444444', '#555555', '#666666'], 'user', $owner['id']);
+    $router = new ApiRouter();
+    (new PackController(new PackService($repo), $repo, $sessions))->registerRoutes($router);
+
+    $response = $router->dispatch(new ApiRequest(
+        'POST', '/packs/create', ['name' => 'Intento', 'colorSchemeId' => $private['id']], [],
+        ['rq_session' => $session['token']], ['x-csrf-token' => $session['csrfToken']]
+    ));
+
+    assertSameValue(403, $response->status);
+    assertSameValue(0, (int) $pdo->query("SELECT COUNT(*) FROM question_packs WHERE name = 'Intento'")->fetchColumn());
+});
+
+$runner->test('color scheme api scopes system and personal schemes by ownership', function (): void {
+    $pdo = migratedPdo();
+    (new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv'))->seed();
     $users = new UserRepository($pdo);
     $sessions = new SessionRepository($pdo);
     $admin = $users->create('admin@example.com', password_hash('contrasena-admin', PASSWORD_DEFAULT), 'admin');
@@ -746,19 +791,58 @@ $runner->test('admins create system packs and manage public color schemes', func
     assertSameValue('system', $created->payload['pack']['kind']);
     assertSameValue(null, $created->payload['pack']['ownerUserId']);
 
-    $scheme = $router->dispatch(new ApiRequest(
-        'POST', '/packs/colors/create', ['name' => 'Alto contraste', 'colors' => ['#111111', '#222222', '#333333', '#444444', '#555555', '#666666']], [],
+    $personal = $router->dispatch(new ApiRequest(
+        'POST', '/packs/colors/create', ['name' => 'Mis colores', 'colors' => ['#111111', '#222222', '#333333', '#444444', '#555555', '#666666']], [],
+        ['rq_session' => $memberSession['token']], ['x-csrf-token' => $memberSession['csrfToken']]
+    ));
+    assertSameValue(201, $personal->status);
+    assertSameValue('user', $personal->payload['colorScheme']['kind']);
+    assertSameValue(true, $personal->payload['colorScheme']['editable']);
+
+    $system = $router->dispatch(new ApiRequest(
+        'POST', '/packs/colors/create', ['name' => 'Alto contraste', 'kind' => 'system', 'colors' => ['#101010', '#202020', '#303030', '#404040', '#505050', '#606060']], [],
         ['rq_session' => $adminSession['token']], ['x-csrf-token' => $adminSession['csrfToken']]
     ));
-    assertSameValue(201, $scheme->status);
-    assertSameValue(6, count($scheme->payload['colorScheme']['colors']));
+    assertSameValue(201, $system->status);
+    assertSameValue('system', $system->payload['colorScheme']['kind']);
+
+    $anonymousList = $router->dispatch(new ApiRequest('GET', '/packs/colors'));
+    assertSameValue(3, count($anonymousList->payload['colorSchemes']));
+    $memberList = $router->dispatch(new ApiRequest('GET', '/packs/colors', [], [], ['rq_session' => $memberSession['token']]));
+    assertSameValue(4, count($memberList->payload['colorSchemes']));
+    $adminList = $router->dispatch(new ApiRequest('GET', '/packs/colors', [], [], ['rq_session' => $adminSession['token']]));
+    assertSameValue(3, count($adminList->payload['colorSchemes']));
+
+    $forbiddenUpdate = $router->dispatch(new ApiRequest(
+        'POST', '/packs/colors/update', ['colorSchemeId' => $personal->payload['colorScheme']['id'], 'name' => 'Robado', 'colors' => ['#aaaaaa', '#bbbbbb', '#cccccc', '#dddddd', '#eeeeee', '#ffffff']], [],
+        ['rq_session' => $adminSession['token']], ['x-csrf-token' => $adminSession['csrfToken']]
+    ));
+    assertSameValue(403, $forbiddenUpdate->status);
+
+    $updated = $router->dispatch(new ApiRequest(
+        'POST', '/packs/colors/update', ['colorSchemeId' => $personal->payload['colorScheme']['id'], 'name' => 'Mis colores editados', 'colors' => ['#aaaaaa', '#bbbbbb', '#cccccc', '#dddddd', '#eeeeee', '#ffffff']], [],
+        ['rq_session' => $memberSession['token']], ['x-csrf-token' => $memberSession['csrfToken']]
+    ));
+    assertSameValue('Mis colores editados', $updated->payload['colorScheme']['name']);
+
+    $classicId = (int) $pdo->query("SELECT id FROM color_schemes WHERE name = 'Clasico'")->fetchColumn();
+    $renameClassic = $router->dispatch(new ApiRequest(
+        'POST', '/packs/colors/update', ['colorSchemeId' => $classicId, 'name' => 'Otro nombre', 'colors' => ['#f2c94c', '#f2994a', '#2f80ed', '#8b5a2b', '#27ae60', '#d94a9b']], [],
+        ['rq_session' => $adminSession['token']], ['x-csrf-token' => $adminSession['csrfToken']]
+    ));
+    assertSameValue(409, $renameClassic->status);
 
     $deleted = $router->dispatch(new ApiRequest(
-        'POST', '/packs/colors/delete', ['colorSchemeId' => $scheme->payload['colorScheme']['id']], [],
-        ['rq_session' => $adminSession['token']], ['x-csrf-token' => $adminSession['csrfToken']]
+        'POST', '/packs/colors/delete', ['colorSchemeId' => $personal->payload['colorScheme']['id']], [],
+        ['rq_session' => $memberSession['token']], ['x-csrf-token' => $memberSession['csrfToken']]
     ));
     assertSameValue(200, $deleted->status);
-    assertSameValue(0, count($repo->listColorSchemes()));
+
+    $protected = $router->dispatch(new ApiRequest(
+        'POST', '/packs/colors/delete', ['colorSchemeId' => $classicId], [],
+        ['rq_session' => $adminSession['token']], ['x-csrf-token' => $adminSession['csrfToken']]
+    ));
+    assertSameValue(409, $protected->status);
 });
 
 $runner->test('pack management ui exposes admin system and color controls conditionally', function (): void {
@@ -768,9 +852,13 @@ $runner->test('pack management ui exposes admin system and color controls condit
     assertTrueValue(is_string($page) && is_string($script) && is_string($styles));
     assertTrueValue(str_contains($page, 'adminPackControls'));
     assertTrueValue(str_contains($page, 'colorSchemeForm'));
+    assertTrueValue(str_contains($page, 'personalColorSchemeSection'), 'verified users should manage personal color schemes');
+    assertTrueValue(str_contains($page, 'createPackColorScheme'), 'pack creation should select an initial color scheme');
+    assertTrueValue(str_contains($page, 'applyColorSchemeSelect'), 'pack editor should apply a reusable color scheme');
     assertTrueValue(str_contains($page, 'color-grid'), 'color form should use unified color grid');
     assertTrueValue(str_contains($script, "me.user?.role === 'admin'"));
     assertTrueValue(str_contains($script, '/packs/colors/create'));
+    assertTrueValue(str_contains($script, '/packs/colors/update'));
     assertTrueValue(str_contains($script, '/packs/colors/delete'));
     assertTrueValue(str_contains($script, 'withSubmitting'), 'pack forms should prevent duplicate submissions');
     assertTrueValue(str_contains($script, 'const formElement = event.currentTarget'), 'async submit handlers should keep the form reference');
@@ -824,6 +912,24 @@ $runner->test('room service selects pack and question repository scopes question
 
     $question = (new QuestionRepository($pdo))->randomByRevisionSlot($room['pack_revision_id'], 0);
     assertSameValue('history', $question['category']);
+});
+
+$runner->test('room selection rejects private color schemes owned by another creator', function (): void {
+    $pdo = migratedPdo();
+    (new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv'))->seed();
+    $users = new UserRepository($pdo);
+    $owner = $users->create('room-scheme-owner@example.com', password_hash('owner-password', PASSWORD_DEFAULT));
+    $creator = $users->create('room-creator@example.com', password_hash('creator-password', PASSWORD_DEFAULT));
+    $repo = new PackRepository($pdo);
+    $private = $repo->createColorScheme('Solo propietario', ['#111111', '#222222', '#333333', '#444444', '#555555', '#666666'], 'user', $owner['id']);
+
+    try {
+        $repo->roomSelection($creator['id'], null, $private['id']);
+    } catch (RuntimeException $e) {
+        assertSameValue('COLOR_SCHEME_FORBIDDEN', $e->getMessage());
+        $forbidden = true;
+    }
+    assertTrueValue($forbidden ?? false, 'private scheme ids must not cross user boundaries');
 });
 
 $runner->test('room repository rejects stale expected versions', function (): void {
@@ -938,11 +1044,15 @@ $runner->test('account deletion anonymizes shared history and cleanup removes ex
     $room = (new RoomService(new RoomRepository($pdo), new PackRepository($pdo), $tokens))->createOnline(
         $users->findById($user['id']), 'Azul', '#2563eb', null, null
     );
+    $personalScheme = (new PackRepository($pdo))->createColorScheme(
+        'Temporal', ['#111111', '#222222', '#333333', '#444444', '#555555', '#666666'], 'user', $user['id']
+    );
 
     (new AccountDeletionService($pdo, $users, new SessionRepository($pdo)))->delete($user['id']);
     assertSameValue(null, $users->findById($user['id']));
     assertSameValue(0, (int) $pdo->query("SELECT COUNT(*) FROM room_participants WHERE room_code = '{$room['code']}' AND user_id IS NOT NULL")->fetchColumn());
     assertSameValue(1, (int) $pdo->query("SELECT COUNT(*) FROM rooms WHERE code = '{$room['code']}'")->fetchColumn());
+    assertSameValue('disabled', (string) $pdo->query("SELECT status FROM color_schemes WHERE id = {$personalScheme['id']}")->fetchColumn());
 
     $pdo->exec("UPDATE rooms SET status = 'finished', finished_at = '2020-01-01T00:00:00Z' WHERE code = '{$room['code']}'");
     $deleted = (new CleanupService($pdo))->purgeAnonymousFinishedRooms(30, strtotime('2026-07-10T00:00:00Z'));
@@ -995,6 +1105,7 @@ $runner->test('room api and creation forms select packs and expose snapshot cate
     assertTrueValue(str_contains($api, "#^/me/games/([A-Z0-9]{6})$#"), 'history api should expose authenticated game detail');
     assertTrueValue(str_contains($api, "\$body['expectedVersion']"), 'room actions should require expected version');
     assertTrueValue(str_contains($api, "\$room['pack_snapshot'] ?? GameEngine::categories()"), 'room response should expose snapshot categories');
+    assertTrueValue(str_contains($api, "COLOR_SCHEME_FORBIDDEN"), 'room api should return an authorization error for inaccessible schemes');
     assertTrueValue(substr_count($index, 'name="packId"') >= 2, 'local and online creation should select a pack');
     assertTrueValue(substr_count($index, 'name="colorSchemeId"') >= 2, 'local and online creation should select a color scheme');
     assertTrueValue(str_contains($app, 'loadAvailablePacks'), 'frontend should load selectable packs');
@@ -1501,18 +1612,17 @@ $runner->test('preferences overlay includes dice result duration', function (): 
     assertTrueValue(str_contains($styles, '.preferences-content'), 'collapsible preferences content should have dedicated styles');
 });
 
-$runner->test('preferences can switch category color packs without changing board distribution', function (): void {
+$runner->test('room color schemes are chosen before creation and preferences cannot override them', function (): void {
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
+    $index = file_get_contents(__DIR__ . '/../public/index.php');
 
-    assertTrueValue(str_contains($appJs, 'board:colorPack'), 'color pack preference should persist locally');
-    assertTrueValue(str_contains($appJs, 'categoryColorPacks'), 'frontend should define named category color packs');
-    assertTrueValue(str_contains($appJs, 'classic'), 'classic color pack should be available');
-    assertTrueValue(str_contains($appJs, 'alternative'), 'alternative color pack should be available');
-    assertTrueValue(str_contains($appJs, 'Colores de la sala'), 'room snapshot colors should be the default visual option');
-    assertTrueValue(str_contains($appJs, 'colorPackSelect'), 'preferences should render a color pack selector');
-    assertTrueValue(str_contains($appJs, 'categoriesWithColorPack'), 'renderers should derive category colors from the selected pack');
-    assertTrueValue(str_contains($appJs, 'renderScoreboard();'), 'changing color pack should refresh the scoreboard');
-    assertTrueValue(str_contains($appJs, 'renderBoard();'), 'changing color pack should refresh the board');
+    assertTrueValue(!str_contains($appJs, 'board:colorPack'), 'category colors should not persist as a local preference');
+    assertTrueValue(!str_contains($appJs, 'categoryColorPacks'), 'system schemes should come from the API');
+    assertTrueValue(!str_contains($appJs, 'colorPackSelect'), 'preferences should not override room colors');
+    assertTrueValue(!str_contains($appJs, 'categoriesWithColorPack'), 'renderers should use the room snapshot directly');
+    assertTrueValue(str_contains($index, 'color-options'), 'room forms should hide color choices in an advanced section');
+    assertTrueValue(substr_count($index, 'data-color-scheme-preview') >= 2, 'local and online forms should preview six room colors');
+    assertTrueValue(str_contains($appJs, 'resetRoomColorScheme'), 'changing the question pack should reset the color override');
 });
 
 $runner->test('dice roll card shows animated result before movement selection', function (): void {

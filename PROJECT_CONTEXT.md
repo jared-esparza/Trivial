@@ -99,12 +99,14 @@ tests/run.php               Suite PHP sin framework.
 - Solo revisiones completas pueden activarse.
 - Una revision activa es inmutable; editar crea un borrador nuevo.
 - Una sala guarda `pack_id`, `pack_revision_id` y `pack_snapshot_json`; partidas existentes no cambian si se edita el pack.
-- El administrador gestiona packs del sistema y esquemas publicos de seis colores.
+- El administrador gestiona packs y esquemas de colores del sistema; cada usuario verificado puede gestionar esquemas privados propios.
+- Un pack guarda seis colores predeterminados. Aplicar un esquema copia sus colores y no crea una dependencia dinamica.
 - JSON y CSV importados nunca deciden propietario o visibilidad; crean un borrador privado nuevo.
 
 ### Salas y concurrencia
 
-- Crear sala acepta `packId` y `colorSchemeId` opcionales; por defecto usa Clasico.
+- Crear sala acepta `packId` y `colorSchemeId` opcionales; sin esquema usa los colores del pack.
+- Los colores finales se congelan en el snapshot de la sala y son iguales para todos los participantes.
 - Cada participante online recibe una sola vez un token opaco; en base de datos solo se guarda su hash.
 - Las acciones envian `X-Participant-Token` y `expectedVersion`.
 - Una version obsoleta devuelve conflicto y no debe crear evento de respuesta.

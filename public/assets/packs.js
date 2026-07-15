@@ -3,6 +3,7 @@ let packCsrf = null;
 let packs = [];
 let selectedPackId = null;
 let packUser = null;
+let colorSchemes = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     const me = await getJson('/auth/me');
@@ -13,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelector('#colorSchemeAdmin')?.classList.toggle('hidden', !isAdmin);
     renderColorInputs();
     bindPackForms();
-    await Promise.all([loadPacks(), isAdmin ? loadColorSchemes() : Promise.resolve()]);
+    await Promise.all([loadPacks(), loadColorSchemes()]);
 });
 
 function bindPackForms() {
@@ -22,9 +23,14 @@ function bindPackForms() {
         const formElement = event.currentTarget;
         await withSubmitting(formElement, async () => {
             const form = new FormData(formElement);
-            const result = await postJson('/packs/create', { name: form.get('name'), kind: form.get('kind') ?? 'user' });
+            const result = await postJson('/packs/create', {
+                name: form.get('name'),
+                kind: form.get('kind') ?? 'user',
+                colorSchemeId: Number(form.get('colorSchemeId')) || null
+            });
             selectedPackId = result.pack.id;
             formElement.reset();
+            renderColorSchemeSelects();
             notifyPack('Pack creado y seleccionado.');
             await loadPacks();
         });
@@ -48,18 +54,11 @@ function bindPackForms() {
     document.querySelector('#deletePackButton')?.addEventListener('click', () => packAction('/packs/delete', true));
     document.querySelector('#exportJsonButton')?.addEventListener('click', () => exportPack('json'));
     document.querySelector('#exportCsvButton')?.addEventListener('click', () => exportPack('csv'));
-    document.querySelector('#colorSchemeForm')?.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formElement = event.currentTarget;
-        await withSubmitting(formElement, async () => {
-            const form = new FormData(formElement);
-            await postJson('/packs/colors/create', { name: form.get('name'), colors: form.getAll('colors[]') });
-            formElement.reset();
-            renderColorInputs();
-            notifyPack('Pack de colores creado.');
-            await loadColorSchemes();
-        });
+    document.querySelectorAll('[data-scheme-kind]').forEach((form) => {
+        form.addEventListener('submit', saveColorScheme);
+        form.querySelector('[data-cancel-scheme]')?.addEventListener('click', () => resetSchemeForm(form));
     });
+    document.querySelector('#applyColorSchemeSelect')?.addEventListener('change', applyColorSchemeToPack);
 }
 
 async function loadPacks() {
@@ -102,6 +101,11 @@ function renderPackEditor() {
             <label>Nombre<input name="name" value="${escapePack(category.name)}" ${editable ? '' : 'disabled'} required></label>
             <label>Color<input name="color" type="color" value="${escapePack(category.color)}" ${editable ? '' : 'disabled'} required></label>
         </fieldset>`).join('');
+    const applySelect = document.querySelector('#applyColorSchemeSelect');
+    if (applySelect) {
+        applySelect.disabled = !editable;
+        applySelect.value = '';
+    }
     document.querySelector('#questionSlot').innerHTML = (revision?.categories ?? []).map((category) => `<option value="${category.slot}">${escapePack(category.name)}</option>`).join('');
     document.querySelector('#categoriesForm button').disabled = !editable;
     document.querySelector('#questionForm button').disabled = !editable;
@@ -120,7 +124,7 @@ async function saveCategories(event) {
         color: field.querySelector('[name="color"]').value
     }));
     await postJson('/packs/categories', { packId: selectedPackId, categories });
-    notifyPack('Categor&iacute;as guardadas. Al cambiarlas se reinician las preguntas del borrador.');
+    notifyPack('Categorías guardadas. Las preguntas solo se reinician si cambias sus claves.');
     await loadPacks();
 }
 
@@ -153,18 +157,112 @@ async function exportPack(format) {
 
 async function loadColorSchemes() {
     const data = await getJson('/packs/colors');
-    const list = document.querySelector('#colorSchemeList');
+    colorSchemes = data.colorSchemes;
+    renderColorSchemeLists();
+    renderColorSchemeSelects();
+}
+
+function renderColorSchemeLists() {
+    renderColorSchemeList(document.querySelector('#personalColorSchemeList'), colorSchemes.filter((scheme) => scheme.kind === 'user'));
+    renderColorSchemeList(document.querySelector('#colorSchemeList'), colorSchemes.filter((scheme) => scheme.kind === 'system'));
+}
+
+function renderColorSchemeList(list, schemes) {
     if (!list) return;
-    list.innerHTML = data.colorSchemes.map((scheme) => `
-        <article class="question-item">
-            <strong>${escapePack(scheme.name)}</strong>
-            <span>${scheme.colors.map((color) => `<i class="color-swatch" style="background:${escapePack(color)}"></i>`).join('')}</span>
-            <button type="button" data-delete-scheme="${scheme.id}">Eliminar</button>
-        </article>`).join('');
+    list.innerHTML = schemes.length ? schemes.map((scheme) => `
+        <article class="question-item color-scheme-item">
+            <div><strong>${escapePack(scheme.name)}</strong><span class="scheme-kind">${scheme.kind === 'system' ? 'Sistema' : 'Personal'}</span></div>
+            <span class="scheme-swatches">${scheme.colors.map((color) => `<i class="color-swatch" title="${escapePack(color)}" style="background:${escapePack(color)}"></i>`).join('')}</span>
+            ${scheme.editable ? `<div class="inline-form"><button class="secondary" type="button" data-edit-scheme="${scheme.id}">Editar</button>${scheme.kind === 'system' && scheme.name === 'Clasico' ? '' : `<button type="button" data-delete-scheme="${scheme.id}">Eliminar</button>`}</div>` : ''}
+        </article>`).join('') : '<p class="muted">Todav&iacute;a no hay esquemas en esta secci&oacute;n.</p>';
+    list.querySelectorAll('[data-edit-scheme]').forEach((button) => button.addEventListener('click', () => editColorScheme(Number(button.dataset.editScheme))));
     list.querySelectorAll('[data-delete-scheme]').forEach((button) => button.addEventListener('click', async () => {
-        await postJson('/packs/colors/delete', { colorSchemeId: Number(button.dataset.deleteScheme) });
-        await loadColorSchemes();
+        button.disabled = true;
+        try {
+            await postJson('/packs/colors/delete', { colorSchemeId: Number(button.dataset.deleteScheme) });
+            notifyPack('Esquema de colores eliminado.');
+            await loadColorSchemes();
+        } finally {
+            button.disabled = false;
+        }
     }));
+}
+
+function renderColorSchemeSelects() {
+    const grouped = colorSchemeOptions();
+    const createSelect = document.querySelector('#createPackColorScheme');
+    if (createSelect) {
+        createSelect.innerHTML = grouped;
+        const classic = colorSchemes.find((scheme) => scheme.kind === 'system' && scheme.name === 'Clasico');
+        createSelect.value = classic ? String(classic.id) : '';
+    }
+    const applySelect = document.querySelector('#applyColorSchemeSelect');
+    if (applySelect) applySelect.innerHTML = '<option value="">Selecciona un esquema</option>' + grouped;
+}
+
+function colorSchemeOptions() {
+    const system = colorSchemes.filter((scheme) => scheme.kind === 'system');
+    const personal = colorSchemes.filter((scheme) => scheme.kind === 'user');
+    return [
+        system.length ? `<optgroup label="Sistema">${system.map(schemeOption).join('')}</optgroup>` : '',
+        personal.length ? `<optgroup label="Mis esquemas">${personal.map(schemeOption).join('')}</optgroup>` : ''
+    ].join('');
+}
+
+function schemeOption(scheme) {
+    return `<option value="${Number(scheme.id)}">${escapePack(scheme.name)}</option>`;
+}
+
+async function saveColorScheme(event) {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    await withSubmitting(formElement, async () => {
+        const form = new FormData(formElement);
+        const id = Number(form.get('colorSchemeId')) || null;
+        const payload = {
+            colorSchemeId: id,
+            kind: formElement.dataset.schemeKind,
+            name: form.get('name'),
+            colors: form.getAll('colors[]')
+        };
+        await postJson(id ? '/packs/colors/update' : '/packs/colors/create', payload);
+        resetSchemeForm(formElement);
+        notifyPack(id ? 'Esquema de colores actualizado.' : 'Esquema de colores creado.');
+        await loadColorSchemes();
+    });
+}
+
+function editColorScheme(id) {
+    const scheme = colorSchemes.find((item) => item.id === id && item.editable);
+    if (!scheme) return;
+    const form = document.querySelector(`[data-scheme-kind="${scheme.kind}"]`);
+    if (!form) return;
+    form.elements.colorSchemeId.value = scheme.id;
+    form.elements.name.value = scheme.name;
+    form.elements.name.readOnly = scheme.kind === 'system' && scheme.name === 'Clasico';
+    [...form.querySelectorAll('[name="colors[]"]')].forEach((input, index) => { input.value = scheme.colors[index]; });
+    form.querySelector('[data-cancel-scheme]')?.classList.remove('hidden');
+    renderColorInputs();
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetSchemeForm(form) {
+    form.reset();
+    form.elements.colorSchemeId.value = '';
+    form.elements.name.readOnly = false;
+    form.querySelector('[data-cancel-scheme]')?.classList.add('hidden');
+    renderColorInputs();
+}
+
+function applyColorSchemeToPack(event) {
+    const scheme = colorSchemes.find((item) => item.id === Number(event.target.value));
+    if (!scheme) return;
+    document.querySelectorAll('[data-category-slot]').forEach((field) => {
+        const slot = Number(field.dataset.categorySlot);
+        const input = field.querySelector('[name="color"]');
+        if (input) input.value = scheme.colors[slot];
+    });
+    notifyPack(`Colores de ${scheme.name} aplicados. Guarda las categorías para confirmar.`);
 }
 
 function renderColorInputs() {

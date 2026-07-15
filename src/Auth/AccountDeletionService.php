@@ -47,6 +47,17 @@ final class AccountDeletionService
                 ':user_id' => $userId,
             ]);
 
+            $schemes = $this->pdo->prepare(
+                "UPDATE color_schemes
+                 SET status = 'disabled', deleted_at = :deleted_at, updated_at = :updated_at
+                 WHERE owner_user_id = :user_id AND kind = 'user' AND deleted_at IS NULL"
+            );
+            $schemes->execute([
+                ':deleted_at' => $now,
+                ':updated_at' => $now,
+                ':user_id' => $userId,
+            ]);
+
             $deletedEmail = sprintf('deleted-%d-%s@invalid.local', $userId, bin2hex(random_bytes(8)));
             $user = $this->pdo->prepare(
                 "UPDATE users

@@ -39,6 +39,9 @@ final class ApiRouter
             if ($e->getMessage() === 'PACK_FORBIDDEN') {
                 return $this->error(403, 'PACK_FORBIDDEN', 'No tienes acceso a este pack.');
             }
+            if ($e->getMessage() === 'COLOR_SCHEME_FORBIDDEN') {
+                return $this->error(403, 'COLOR_SCHEME_FORBIDDEN', 'No tienes acceso a este esquema de colores.');
+            }
             if ($e->getMessage() === 'PACK_INCOMPLETE') {
                 return $this->error(422, 'PACK_INCOMPLETE', 'El pack necesita preguntas en sus seis categorias.');
             }
@@ -47,6 +50,9 @@ final class ApiRouter
             }
             if ($e->getMessage() === 'DEFAULT_PACK_REQUIRED') {
                 return $this->error(409, 'DEFAULT_PACK_REQUIRED', 'El pack Clasico es necesario como valor por defecto.');
+            }
+            if ($e->getMessage() === 'DEFAULT_COLOR_SCHEME_REQUIRED') {
+                return $this->error(409, 'DEFAULT_COLOR_SCHEME_REQUIRED', 'El esquema Clasico es necesario como valor por defecto.');
             }
             throw $e;
         }

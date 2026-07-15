@@ -24,7 +24,9 @@ El administrador inicia sesion en `account.php` y accede a `admin.php`. Ya no ex
 
 - Jugar como invitado sigue siendo posible.
 - Las cuentas verificadas pueden crear packs privados, importar/exportar CSV o JSON y consultar su historial.
-- Los administradores gestionan usuarios, packs del sistema y esquemas publicos de colores.
+- Los administradores gestionan usuarios, packs y esquemas de colores del sistema.
+- Los usuarios verificados pueden guardar esquemas privados y reutilizarlos en sus packs y salas.
+- El creador fija los colores de la sala; todos los participantes ven el mismo snapshot y las preferencias personales no lo sustituyen.
 - Cada partida conserva la revision y las categorias del pack con las que se creo.
 - Las acciones online requieren un token de participante y una version esperada para evitar actuaciones cruzadas o sobrescrituras.
 - Al eliminar una cuenta se anonimizan sus datos personales sin destruir historiales compartidos.

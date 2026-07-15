@@ -71,10 +71,13 @@ $config = app_config();
                         Pack de preguntas
                         <select name="packId" data-pack-select><option value="">Cl&aacute;sico</option></select>
                     </label>
-                    <label>
-                        Pack de colores
-                        <select name="colorSchemeId" data-color-scheme-select><option value="">Colores del pack</option></select>
-                    </label>
+                    <details class="color-options">
+                        <summary>Personalizar colores de categor&iacute;as</summary>
+                        <label>Esquema de colores
+                            <select name="colorSchemeId" data-color-scheme-select><option value="">Usar colores predeterminados del pack</option></select>
+                        </label>
+                        <div class="color-scheme-preview" data-color-scheme-preview aria-label="Vista previa de colores"></div>
+                    </details>
                     <button class="wide-button purple-button" type="submit">
                         Crear sala
                         <span aria-hidden="true">&rsaquo;</span>
@@ -124,10 +127,13 @@ $config = app_config();
                     Pack de preguntas
                     <select name="packId" data-pack-select><option value="">Cl&aacute;sico</option></select>
                 </label>
-                <label>
-                    Pack de colores
-                    <select name="colorSchemeId" data-color-scheme-select><option value="">Colores del pack</option></select>
-                </label>
+                <details class="color-options">
+                    <summary>Personalizar colores de categor&iacute;as</summary>
+                    <label>Esquema de colores
+                        <select name="colorSchemeId" data-color-scheme-select><option value="">Usar colores predeterminados del pack</option></select>
+                    </label>
+                    <div class="color-scheme-preview" data-color-scheme-preview aria-label="Vista previa de colores"></div>
+                </details>
                 <label>
                     Equipos <span class="label-note">(minimo 2 &middot; maximo 6)</span>
                     <textarea name="players" rows="6">Equipo Azul

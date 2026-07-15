@@ -151,6 +151,12 @@ try {
     if ($e instanceof ApiException) {
         json_response(['error' => ['code' => $e->errorCode, 'message' => $e->getMessage()]], $e->status);
     }
+    if ($e instanceof RuntimeException && in_array($e->getMessage(), ['PACK_FORBIDDEN', 'COLOR_SCHEME_FORBIDDEN'], true)) {
+        $message = $e->getMessage() === 'PACK_FORBIDDEN'
+            ? 'No tienes acceso a este pack.'
+            : 'No tienes acceso a este esquema de colores.';
+        json_response(['error' => ['code' => $e->getMessage(), 'message' => $message]], 403);
+    }
     json_response(['error' => $e->getMessage()], $e instanceof InvalidArgumentException ? 422 : 500);
 }
 

@@ -124,10 +124,13 @@ CREATE TABLE IF NOT EXISTS pack_categories (
 CREATE TABLE IF NOT EXISTS color_schemes (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
+    kind VARCHAR(20) NOT NULL DEFAULT 'system',
+    owner_user_id BIGINT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'active',
     created_at VARCHAR(32) NOT NULL,
     updated_at VARCHAR(32) NOT NULL,
-    deleted_at VARCHAR(32) NULL
+    deleted_at VARCHAR(32) NULL,
+    KEY idx_color_schemes_owner (owner_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS color_scheme_slots (
