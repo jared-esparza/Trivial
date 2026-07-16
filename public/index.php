@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../src/bootstrap.php';
 $config = app_config();
+$navigationUser = NavigationView::currentUser(new SessionRepository(app_pdo()), $_COOKIE);
 ?>
 <!doctype html>
 <html lang="es">
@@ -12,15 +13,7 @@ $config = app_config();
     <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-    <header class="topbar">
-        <a class="brand" href="./" aria-label="<?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?>">
-            <span class="brand-mark" aria-hidden="true"></span>
-            <span><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></span>
-        </a>
-        <nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal">
-            <a class="topbar-link" href="account.php">Login / registro</a>
-        </nav>
-    </header>
+    <?= NavigationView::renderHeader((string) $config['app_name'], $navigationUser, 'game', './') ?>
 
     <main class="shell">
         <section id="homeView" class="home-view">

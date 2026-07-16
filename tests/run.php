@@ -29,6 +29,7 @@ foreach ([
     __DIR__ . '/../src/Http/ApiResponse.php',
     __DIR__ . '/../src/Http/ApiRouter.php',
     __DIR__ . '/../src/Http/AuthController.php',
+    __DIR__ . '/../src/NavigationView.php',
     __DIR__ . '/../src/Http/AdminUserController.php',
     __DIR__ . '/../src/Packs/PackRepository.php',
     __DIR__ . '/../src/Packs/PackService.php',
@@ -372,6 +373,9 @@ $runner->test('auth http routes issue session cookie expose csrf and protect log
     ]));
     assertSameValue(201, $register->status);
     assertSameValue('Persona Azul', $register->payload['user']['displayName']);
+    assertTrueValue(isset($register->cookies['rq_session']['value']), 'registration should start a session');
+    $registeredSessionToken = $register->cookies['rq_session']['value'];
+    assertTrueValue($sessions->findUserByToken($registeredSessionToken) !== null, 'registration session should be persisted');
 
     $login = $router->dispatch(new ApiRequest('POST', '/auth/login', [
         'email' => 'persona@example.com',
@@ -476,7 +480,7 @@ $runner->test('account ui and admin panel use session authentication without sha
     $api = file_get_contents(__DIR__ . '/../public/api.php');
     $bootstrap = file_get_contents(__DIR__ . '/../src/bootstrap.php');
     assertTrueValue(is_string($index) && is_string($admin) && is_string($api) && is_string($bootstrap));
-    assertTrueValue(str_contains($index, 'href="account.php"'), 'home should link to account');
+    assertTrueValue(str_contains($index, 'NavigationView::renderHeader'), 'home should render role-aware account navigation');
     assertTrueValue(str_contains($index, 'assets/session-nav.js'), 'home should load shared navigation');
     assertTrueValue(is_string($accountPage) && str_contains($accountPage, 'Login o registro'), 'account page should identify anonymous login/register state');
     assertTrueValue(str_contains($accountPage, 'name="displayName"'), 'account page should collect display name');
@@ -1452,6 +1456,139 @@ $runner->test('landing keeps compact actions and moves online creation to a sepa
     assertTrueValue(str_contains($onlineMarkup, 'name="packId"'), 'online setup should keep pack selection');
     assertTrueValue(str_contains($onlineMarkup, 'name="colorSchemeId"'), 'online setup should keep color selection');
     assertTrueValue(str_contains($appJs, 'openOnlineSetupButton'), 'frontend should bind online setup navigation');
+});
+
+$runner->test('navigation renderer exposes destinations by role without late session loading', function (): void {
+    assertTrueValue(class_exists('NavigationView'), 'NavigationView should be available');
+
+    $guest = NavigationView::renderHeader('trivial', null, 'game', './');
+    assertTrueValue(str_contains($guest, '>Jugar<'), 'guest should be able to reach the game');
+    assertTrueValue(str_contains($guest, '>Entrar<'), 'guest should see the access call to action');
+    assertTrueValue(!str_contains($guest, '>Packs<'), 'guest should not see protected packs');
+    assertTrueValue(str_contains($guest, 'data-mobile-menu-button'), 'header should expose an accessible mobile menu trigger');
+
+    $pending = NavigationView::renderHeader('trivial', [
+        'display_name' => 'Persona Pendiente',
+        'role' => 'user',
+        'email_verified_at' => null,
+        'csrf_token' => 'csrf-pending',
+    ], 'game', './');
+    assertTrueValue(str_contains($pending, 'Persona Pendiente'), 'pending user should see their identity');
+    assertTrueValue(str_contains($pending, 'Email pendiente'), 'pending user should see verification status in the profile menu');
+    assertTrueValue(!str_contains($pending, '>Packs<'), 'pending user should not see packs');
+
+    $verified = NavigationView::renderHeader('trivial', [
+        'display_name' => 'Persona Verificada',
+        'role' => 'user',
+        'email_verified_at' => '2026-07-16T08:00:00Z',
+        'csrf_token' => 'csrf-user',
+    ], 'history', 'history.php');
+    assertTrueValue(str_contains($verified, '>Packs<'), 'verified user should see packs');
+    assertTrueValue(str_contains($verified, '>Historial<'), 'verified user should see history');
+    assertTrueValue(str_contains($verified, 'aria-current="page"'), 'current destination should be announced');
+
+    $admin = NavigationView::renderHeader('trivial', [
+        'display_name' => '<Admin Local>',
+        'role' => 'admin',
+        'email_verified_at' => '2026-07-16T08:00:00Z',
+        'csrf_token' => 'csrf-admin',
+    ], 'admin', 'admin.php');
+    assertTrueValue(str_contains($admin, 'Administración'), 'administrator should see administration in profile utilities');
+    assertTrueValue(str_contains($admin, '&lt;Admin Local&gt;'), 'display name should be escaped');
+    assertTrueValue(!str_contains($admin, '<Admin Local>'), 'raw display name must never be rendered');
+    assertTrueValue(str_contains($admin, 'data-profile-menu'), 'identified users should receive a profile menu');
+
+    $account = NavigationView::renderHeader('trivial', [
+        'display_name' => 'Persona Verificada',
+        'role' => 'user',
+        'email_verified_at' => '2026-07-16T08:00:00Z',
+        'csrf_token' => 'csrf-user',
+    ], 'account', './');
+    assertTrueValue(str_contains($account, 'class="profile-menu-link" aria-current="page">Mi cuenta</a>'), 'account should be current inside the profile menu');
+});
+
+$runner->test('navigation return targets only allow local application destinations', function (): void {
+    assertSameValue('./', NavigationView::safeReturnTarget(null));
+    assertSameValue('./', NavigationView::safeReturnTarget('https://example.com/steal'));
+    assertSameValue('./', NavigationView::safeReturnTarget('//example.com/steal'));
+    assertSameValue('./', NavigationView::safeReturnTarget('../admin.php'));
+    assertSameValue('./', NavigationView::safeReturnTarget('packs.php\\evil'));
+    assertSameValue('packs.php', NavigationView::safeReturnTarget('packs.php'));
+    assertSameValue('history.php', NavigationView::safeReturnTarget('history.php'));
+    assertSameValue('admin.php', NavigationView::safeReturnTarget('admin.php'));
+    assertSameValue('./?room=ABC123', NavigationView::safeReturnTarget('./?room=ABC123'));
+});
+
+$runner->test('breadcrumb renderer marks the current level and escapes dynamic labels', function (): void {
+    $breadcrumbs = NavigationView::renderBreadcrumbs([
+        ['./', 'Jugar'],
+        ['packs.php', 'Packs'],
+        [null, '<Pack propio>'],
+    ], 'packBreadcrumbs');
+
+    assertTrueValue(str_contains($breadcrumbs, 'id="packBreadcrumbs"'));
+    assertTrueValue(str_contains($breadcrumbs, 'aria-label="Migas de pan"'));
+    assertTrueValue(str_contains($breadcrumbs, 'aria-current="page"'));
+    assertTrueValue(str_contains($breadcrumbs, '&lt;Pack propio&gt;'));
+    assertTrueValue(!str_contains($breadcrumbs, '<Pack propio>'));
+});
+
+$runner->test('public pages use the shared server rendered header and contextual breadcrumbs', function (): void {
+    $pages = [];
+    foreach (['index.php', 'account.php', 'packs.php', 'history.php', 'admin.php'] as $page) {
+        $pages[$page] = file_get_contents(__DIR__ . '/../public/' . $page);
+        assertTrueValue(is_string($pages[$page]));
+        assertTrueValue(str_contains($pages[$page], 'NavigationView::renderHeader'), $page . ' should render the shared header');
+        assertTrueValue(!str_contains($pages[$page], 'data-session-nav'), $page . ' should not ship a late-loading navigation placeholder');
+    }
+
+    assertTrueValue(!str_contains($pages['index.php'], 'NavigationView::renderBreadcrumbs'), 'game landing should not render breadcrumbs');
+    foreach (['account.php', 'packs.php', 'history.php', 'admin.php'] as $page) {
+        assertTrueValue(str_contains($pages[$page], 'NavigationView::renderBreadcrumbs'), $page . ' should render breadcrumbs');
+    }
+    assertTrueValue(str_contains($pages['packs.php'], "account.php?return=packs.php"), 'packs auth redirect should preserve its destination');
+    assertTrueValue(str_contains($pages['history.php'], "account.php?return=history.php"), 'history auth redirect should preserve its destination');
+    assertTrueValue(str_contains($pages['admin.php'], "header('Location: account.php?return=admin.php')"), 'guest admin redirect should preserve its destination');
+
+    $accountJs = file_get_contents(__DIR__ . '/../public/assets/account.js');
+    assertTrueValue(is_string($accountJs) && !str_contains($accountJs, 'class="account-actions"'), 'account should not duplicate global destinations');
+});
+
+$runner->test('shared navigation script controls accessible menus without fetching session state', function (): void {
+    $navigationJs = file_get_contents(__DIR__ . '/../public/assets/session-nav.js');
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+
+    assertTrueValue(is_string($navigationJs) && !str_contains($navigationJs, '/auth/me'), 'server rendered navigation should not fetch session state');
+    assertTrueValue(str_contains($navigationJs, 'bindSessionNavigation'), 'navigation interactions should have one shared entrypoint');
+    assertTrueValue(str_contains($navigationJs, "event.key === 'Escape'"), 'menus should close with Escape');
+    assertTrueValue(str_contains($navigationJs, 'data-session-logout'), 'profile and drawer should share logout handling');
+    assertTrueValue(str_contains($navigationJs, 'navigation-open'), 'mobile drawer should control background scroll');
+    assertTrueValue(is_string($styles) && str_contains($styles, '.profile-menu-panel'), 'profile dropdown should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.mobile-menu-drawer'), 'mobile drawer should have dedicated styles');
+    assertTrueValue(str_contains($styles, '.breadcrumbs'), 'breadcrumbs should have dedicated styles');
+});
+
+$runner->test('internal detail views update breadcrumbs and pending accounts explain verification', function (): void {
+    $packsJs = file_get_contents(__DIR__ . '/../public/assets/packs.js');
+    $historyJs = file_get_contents(__DIR__ . '/../public/assets/history.js');
+    $accountJs = file_get_contents(__DIR__ . '/../public/assets/account.js');
+
+    assertTrueValue(is_string($packsJs) && str_contains($packsJs, 'updatePackBreadcrumb'), 'pack editor should update its breadcrumb');
+    assertTrueValue(str_contains($packsJs, 'packBreadcrumbs'), 'pack breadcrumb should use the shared container');
+    assertTrueValue(is_string($historyJs) && str_contains($historyJs, 'updateHistoryBreadcrumb'), 'history detail should update its breadcrumb');
+    assertTrueValue(str_contains($historyJs, 'historyBreadcrumbs'), 'history breadcrumb should use the shared container');
+    assertTrueValue(is_string($accountJs) && str_contains($accountJs, 'pending-verification-note'), 'pending account should explain how to verify email');
+});
+
+$runner->test('internal page grid keeps breadcrumbs next to the first content panel', function (): void {
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+    assertTrueValue(is_string($styles));
+
+    $adminShellStart = strpos($styles, '.admin-shell {');
+    $adminShellEnd = strpos($styles, '}', $adminShellStart);
+    $adminShellRule = substr($styles, $adminShellStart, $adminShellEnd - $adminShellStart);
+    assertTrueValue(str_contains($adminShellRule, 'align-content: start'), 'internal grid should not distribute spare height between rows');
+    assertTrueValue(str_contains($adminShellRule, 'grid-auto-rows: max-content'), 'breadcrumb row should keep its content height');
 });
 
 $runner->test('preferences are rendered in a floating overlay opened from a gear button', function (): void {

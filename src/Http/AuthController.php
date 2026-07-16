@@ -33,8 +33,13 @@ final class AuthController
             (string) ($request->body['password'] ?? ''),
             (string) ($request->body['displayName'] ?? '')
         );
+        $session = $this->sessions->create((int) $user['id']);
 
-        return new ApiResponse(['user' => $this->publicUser($user)], 201);
+        return new ApiResponse(
+            ['user' => $this->publicUser($user)],
+            201,
+            [self::COOKIE_NAME => $this->sessionCookie($session['token'], $session['expiresAt'])]
+        );
     }
 
     private function login(ApiRequest $request): ApiResponse

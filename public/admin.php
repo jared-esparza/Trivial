@@ -4,11 +4,15 @@ require_once __DIR__ . '/../src/bootstrap.php';
 $config = app_config();
 $sessionToken = (string) ($_COOKIE['rq_session'] ?? '');
 $adminUser = $sessionToken === '' ? null : (new SessionRepository(app_pdo()))->findUserByToken($sessionToken);
+if ($adminUser === null) {
+    header('Location: account.php?return=admin.php');
+    exit;
+}
 try {
     Authorization::requireAdmin($adminUser);
 } catch (Throwable) {
     http_response_code(403);
-    ?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acceso restringido</title><link rel="stylesheet" href="assets/styles.css"></head><body><header class="topbar"><a class="brand" href="./"><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></a><nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal"><a class="topbar-link" href="account.php">Login / registro</a></nav></header><main class="shell admin-shell"><section class="panel admin-panel"><h1>Acceso restringido</h1><p>Inicia sesi&oacute;n con una cuenta administradora.</p><a href="account.php">Ir a Mi cuenta</a></section></main><script src="assets/session-nav.js"></script></body></html><?php
+    ?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acceso restringido</title><link rel="stylesheet" href="assets/styles.css"></head><body><?= NavigationView::renderHeader((string) $config['app_name'], $adminUser, 'account', 'admin.php') ?><main class="shell admin-shell"><?= NavigationView::renderBreadcrumbs([['./', 'Jugar'], [null, 'Acceso restringido']]) ?><section class="panel admin-panel"><h1>Acceso restringido</h1><p>Inicia sesi&oacute;n con una cuenta administradora.</p><a href="account.php?return=admin.php">Ir a Mi cuenta</a></section></main><script src="assets/session-nav.js"></script></body></html><?php
     exit;
 }
 ?>
@@ -21,16 +25,10 @@ try {
     <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-    <header class="topbar">
-        <a class="brand" href="./"><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></a>
-        <nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal">
-            <a class="topbar-link" href="./">Juego</a>
-            <a class="topbar-link" href="account.php">Cuenta</a>
-            <a class="topbar-link active" href="admin.php">Admin</a>
-        </nav>
-    </header>
+    <?= NavigationView::renderHeader((string) $config['app_name'], $adminUser, 'admin', 'admin.php') ?>
 
     <main class="shell admin-shell">
+        <?= NavigationView::renderBreadcrumbs([['./', 'Jugar'], [null, 'Administración']]) ?>
         <section class="panel admin-panel">
             <p class="eyebrow">Administraci&oacute;n</p>
             <h1>Usuarios</h1>

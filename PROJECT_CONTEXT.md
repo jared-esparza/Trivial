@@ -1,6 +1,6 @@
 # Rueda Quiz - Contexto del proyecto
 
-Ultima actualizacion: 2026-07-15
+Ultima actualizacion: 2026-07-16
 
 ## Objetivo y stack
 
@@ -56,10 +56,11 @@ public/
   assets/account.js         Cliente de cuenta.
   assets/packs.js           Cliente de packs y colores.
   assets/history.js         Cliente de historial.
-  assets/session-nav.js     Navegacion compartida segun sesion, verificacion y rol.
+  assets/session-nav.js     Dropdown de perfil, drawer movil y cierre de sesion.
 
 src/
   bootstrap.php             Config, dependencias, migraciones, seed y router modular.
+  NavigationView.php        Cabecera PHP por rol, retornos seguros y migas de pan.
   Database.php              Conexion PDO.
   Database/MigrationRunner.php
   GameEngine.php            Grafo, movimiento, preguntas, turnos y victoria.
@@ -91,12 +92,18 @@ tests/run.php               Suite PHP sin framework.
 
 ### Cuentas y administracion
 
-- Invitados pueden jugar sin cuenta.
+- Invitados pueden configurar partida local, crear sala online y unirse a una sala sin cuenta.
 - Registro y login usan sesiones en cookie `HttpOnly`, CSRF en mutaciones y limitacion persistente de intentos.
+- Registrar una cuenta inicia automaticamente una sesion pendiente de verificacion.
 - `display_name` es obligatorio en registro, editable desde la cuenta y visible en la cabecera compartida.
 - Verificacion y recuperacion usan tokens de un solo uso con caducidad.
 - Las funciones de packs e historial requieren cuenta verificada.
-- La cabecera muestra `Login / registro` al invitado, el display name al usuario y enlaces contextuales a Packs, Historial y Admin.
+- La cabecera se renderiza en PHP antes de enviar la pagina; `session-nav.js` no consulta `/auth/me` ni sustituye enlaces al cargar.
+- Invitado: `Jugar` y CTA `Entrar`. Usuario pendiente: `Jugar` y perfil con aviso. Usuario verificado: `Jugar`, `Packs`, `Historial` y perfil. Administracion vive dentro del perfil del rol `admin`.
+- En movil la cabecera mide 66 px y abre un drawer accesible; Escape, clic exterior y cierre explicito restauran el foco y desbloquean el scroll.
+- Login y registro vuelven a un destino local validado (`./`, Packs, Historial, Admin o sala); URLs externas, rutas ascendentes y barras invertidas caen en `./`.
+- Packs, Historial, Cuenta y Administracion muestran migas de pan. Los detalles de pack e historial actualizan el ultimo nivel dinamicamente.
+- `.admin-shell` usa filas `max-content` y `align-content: start`: las migas miden 19 px y quedan a 16 px de la primera caja tanto en escritorio como en movil.
 - Administracion usa rol `admin`; no existe `admin_key` compartida.
 - El ultimo administrador activo no se puede degradar o desactivar.
 - Borrar cuenta revoca sesiones, desactiva packs y esquemas privados, elimina datos personales y desasocia el usuario, pero conserva historial compartido anonimizado.
@@ -174,11 +181,13 @@ node --check public/assets/session-nav.js
 
 Antes de tocar UI de partida, preservar las regresiones de geometria, fullscreen, overlays y marcador. Antes de tocar persistencia, probar migracion nueva sobre base vacia y segunda ejecucion idempotente.
 
-Referencia verificada el 2026-07-15: `78 passed, 0 failed`, lint PHP de 54 archivos, checks Node y `git diff --check` limpio.
+Referencia verificada el 2026-07-16: `85 passed, 0 failed`, lint PHP completo, checks Node y `git diff --check` limpio. Navegacion comprobada visualmente a 1280 px y 390 px como invitado y administrador; la matriz pendiente/verificado/admin esta cubierta por pruebas.
 
 ## Estado reciente
 
-- Rama de trabajo: `codex/implement-roadmap`.
+- Rama de trabajo actual: `codex/navigation-ux-redesign`.
+- Cambios locales pendientes de revision: cabecera PHP compartida por rol, perfil desplegable, drawer movil, retorno seguro tras acceso, registro con sesion, migas dinamicas y correccion del espaciado de `.admin-shell`.
+- El tablero, `public/assets/app.js`, su geometria, overlays, marcador y fullscreen no forman parte del cambio de navegacion.
 - `dc102d2`: jerarquia unica de esquemas, biblioteca personal, colores de sala congelados y preferencias sin overrides locales.
 - `e4a291c`: display name, cuenta, navegacion compartida y mejoras de packs/admin.
 - `TODO_LIST.md` y `video/` son archivos locales no versionados y no forman parte de estos commits.

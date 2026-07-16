@@ -19,6 +19,7 @@ require_once __DIR__ . '/Auth/AuthService.php';
 require_once __DIR__ . '/Auth/AuthRateLimiter.php';
 require_once __DIR__ . '/Auth/Authorization.php';
 require_once __DIR__ . '/Auth/UserAdminService.php';
+require_once __DIR__ . '/NavigationView.php';
 require_once __DIR__ . '/Http/ApiException.php';
 require_once __DIR__ . '/Http/ApiRequest.php';
 require_once __DIR__ . '/Http/ApiResponse.php';

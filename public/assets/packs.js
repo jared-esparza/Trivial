@@ -66,7 +66,10 @@ async function loadPacks() {
     packs = data.packs;
     renderPackList();
     if (selectedPackId && packs.some((pack) => pack.id === selectedPackId)) renderPackEditor();
-    else document.querySelector('#packEditor')?.classList.add('hidden');
+    else {
+        document.querySelector('#packEditor')?.classList.add('hidden');
+        updatePackBreadcrumb();
+    }
 }
 
 function renderPackList() {
@@ -92,6 +95,7 @@ function renderPackEditor() {
     if (!pack) return;
     const revision = pack.draftRevision ?? pack.currentRevision;
     const editable = Boolean(pack.draftRevision);
+    updatePackBreadcrumb(pack.name);
     document.querySelector('#packEditor')?.classList.remove('hidden');
     document.querySelector('#packEditorSummary').innerHTML = `<p class="eyebrow">${escapePack(pack.status)}</p><h1>${escapePack(pack.name)}</h1><p>Revisi&oacute;n ${revision?.revisionNumber ?? '-'} &middot; ${revision?.questions.length ?? 0} preguntas</p>`;
     document.querySelector('#categoryFields').innerHTML = (revision?.categories ?? []).map((category) => `
@@ -113,6 +117,15 @@ function renderPackEditor() {
     document.querySelector('#activatePackButton').disabled = !editable;
     document.querySelector('#deletePackButton').disabled = pack.kind === 'system' && (packUser?.role !== 'admin' || pack.name === 'Clasico');
     document.querySelector('#packQuestions').innerHTML = (revision?.questions ?? []).map((question) => `<article class="question-item"><strong>${escapePack(question.question)}</strong><p class="muted">Categor&iacute;a ${question.slot + 1} &middot; ${question.options.map(escapePack).join(' / ')}</p></article>`).join('');
+}
+
+function updatePackBreadcrumb(packName = null) {
+    const breadcrumbs = document.querySelector('#packBreadcrumbs ol');
+    if (!breadcrumbs) return;
+    breadcrumbs.innerHTML = `<li><a href="./">Jugar</a></li>`
+        + (packName
+            ? `<li><a href="packs.php">Packs</a></li><li><span aria-current="page">${escapePack(packName)}</span></li>`
+            : '<li><span aria-current="page">Packs</span></li>');
 }
 
 async function saveCategories(event) {

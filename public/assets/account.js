@@ -8,13 +8,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function bindAccountForms() {
-    bindJsonForm('#registerForm', '/auth/register', () => {
-        showAccountMessage('Cuenta creada. Revisa tu correo para verificarla.');
-    });
-    bindJsonForm('#loginForm', '/auth/login', async () => {
-        await refreshAccount();
-        await refreshSharedNav();
-    });
+    bindJsonForm('#registerForm', '/auth/register', redirectAfterAccess);
+    bindJsonForm('#loginForm', '/auth/login', redirectAfterAccess);
     bindJsonForm('#forgotForm', '/auth/password/forgot', () => {
         showAccountMessage('Si la cuenta existe, recibir&aacute;s un enlace de recuperaci&oacute;n.');
     });
@@ -82,12 +77,10 @@ async function refreshAccount() {
                 <span>${data.user.emailVerified ? 'Email verificado' : 'Email pendiente de verificaci&oacute;n'}</span>
                 <span>${escapeAccount(data.user.role)}</span>
             </div>
-            <nav class="account-actions" aria-label="Accesos de cuenta">
-                <a href="./">Juego</a>
-                ${data.user.emailVerified ? '<a href="packs.php">Gestionar packs</a>' : ''}
-                ${data.user.emailVerified ? '<a href="history.php">Historial</a>' : ''}
-                ${data.user.role === 'admin' ? '<a href="admin.php">Administraci&oacute;n</a>' : ''}
-            </nav>
+            ${data.user.emailVerified ? '' : `<div class="pending-verification-note" role="status">
+                <strong>Verifica tu email para desbloquear Packs e Historial.</strong>
+                <span>Revisa el mensaje que te enviamos y abre el enlace de verificaci&oacute;n.</span>
+            </div>`}
             <form id="profileForm" class="inline-form account-profile-form">
                 <label>Nombre visible<input name="displayName" value="${escapeAccount(data.user.displayName)}" minlength="2" maxlength="40" required></label>
                 <button type="submit">Guardar nombre</button>
@@ -104,9 +97,7 @@ async function refreshAccount() {
             </details>`;
         status.querySelector('#logoutButton')?.addEventListener('click', async () => {
             await request('/auth/logout', {}, currentCsrfToken);
-            currentCsrfToken = null;
-            await refreshAccount();
-            await refreshSharedNav();
+            location.href = './';
         });
         status.querySelector('#deleteAccountForm')?.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -114,10 +105,7 @@ async function refreshAccount() {
             const password = new FormData(event.currentTarget).get('password');
             try {
                 await request('/auth/delete', { password }, currentCsrfToken);
-                currentCsrfToken = null;
-                showAccountMessage('Cuenta eliminada y datos personales anonimizados.');
-                await refreshAccount();
-                await refreshSharedNav();
+                location.href = './';
             } catch (error) {
                 showAccountMessage(error.message, true);
             }
@@ -128,8 +116,7 @@ async function refreshAccount() {
             try {
                 await request('/auth/profile', { displayName }, currentCsrfToken);
                 showAccountMessage('Nombre visible actualizado.');
-                await refreshAccount();
-                await refreshSharedNav();
+                setTimeout(() => location.reload(), 350);
             } catch (error) {
                 showAccountMessage(error.message, true);
             }
@@ -150,10 +137,9 @@ async function request(path, payload, csrfToken = null) {
     return data;
 }
 
-async function refreshSharedNav() {
-    if (typeof refreshSessionNav === 'function') {
-        await refreshSessionNav();
-    }
+function redirectAfterAccess() {
+    const target = document.querySelector('main[data-return-target]')?.dataset.returnTarget || './';
+    location.href = target;
 }
 
 function showAccountMessage(message, error = false) {
