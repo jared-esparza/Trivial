@@ -7,7 +7,7 @@ $user = $token === '' ? null : (new SessionRepository(app_pdo()))->findUserByTok
 try {
     Authorization::requireVerifiedUser($user);
 } catch (Throwable) {
-    header('Location: account.php');
+    header('Location: account.php?return=packs.php');
     exit;
 }
 ?>
@@ -20,15 +20,9 @@ try {
     <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-    <header class="topbar">
-        <a class="brand" href="./"><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></a>
-        <nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal">
-            <a class="topbar-link" href="./">Juego</a>
-            <a class="topbar-link" href="account.php">Cuenta</a>
-            <a class="topbar-link active" href="packs.php">Packs</a>
-        </nav>
-    </header>
+    <?= NavigationView::renderHeader((string) $config['app_name'], $user, 'packs', 'packs.php') ?>
     <main class="shell admin-shell">
+        <?= NavigationView::renderBreadcrumbs([['./', 'Jugar'], [null, 'Packs']], 'packBreadcrumbs') ?>
         <section class="panel admin-panel">
             <p class="eyebrow">Contenido personal</p>
             <h1>Mis packs tem&aacute;ticos</h1>

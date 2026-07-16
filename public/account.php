@@ -2,6 +2,8 @@
 
 require_once __DIR__ . '/../src/bootstrap.php';
 $config = app_config();
+$navigationUser = NavigationView::currentUser(new SessionRepository(app_pdo()), $_COOKIE);
+$returnTarget = NavigationView::safeReturnTarget(isset($_GET['return']) ? (string) $_GET['return'] : null);
 ?>
 <!doctype html>
 <html lang="es">
@@ -12,15 +14,10 @@ $config = app_config();
     <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-    <header class="topbar">
-        <a class="brand" href="./"><?= htmlspecialchars($config['app_name'], ENT_QUOTES, 'UTF-8') ?></a>
-        <nav class="topbar-nav" data-session-nav aria-label="Navegaci&oacute;n principal">
-            <a class="topbar-link" href="./">Juego</a>
-            <a class="topbar-link active" href="account.php">Login / registro</a>
-        </nav>
-    </header>
+    <?= NavigationView::renderHeader((string) $config['app_name'], $navigationUser, 'account', $returnTarget) ?>
 
-    <main class="shell admin-shell">
+    <main class="shell admin-shell" data-return-target="<?= htmlspecialchars($returnTarget, ENT_QUOTES, 'UTF-8') ?>">
+        <?= NavigationView::renderBreadcrumbs([['./', 'Jugar'], [null, 'Cuenta']]) ?>
         <section id="accountStatus" class="panel admin-panel" aria-live="polite">
             <p class="eyebrow">Acceso</p>
             <h1>Login o registro</h1>
