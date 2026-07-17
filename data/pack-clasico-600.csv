@@ -1,0 +1,601 @@
+pack_name,category_slot,category_key,category_name,category_color,question,option_a,option_b,option_c,option_d,correct
+Clasico,0,history,Historia,#f2c94c,"¿Qué tratado puso fin oficialmente a la Primera Guerra Mundial entre Alemania y los Aliados?","Tratado de Utrecht","Tratado de Tordesillas","Tratado de Versalles","Tratado de París",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué ciudad quedó sepultada por la erupción del Vesubio del año 79?",Pompeya,Siracusa,Cartago,Rávena,0
+Clasico,0,history,Historia,#f2c94c,"¿Qué reina de Castilla patrocinó junto a Fernando de Aragón el viaje de Colón de 1492?","Isabel I","Juana I","Urraca I","Isabel II",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué civilización construyó Machu Picchu?",Maya,Azteca,Inca,Olmeca,2
+Clasico,0,history,Historia,#f2c94c,"¿Qué imperio tuvo Constantinopla como capital hasta 1453?","Imperio carolingio","Imperio sasánida","Imperio bizantino","Imperio austrohúngaro",2
+Clasico,0,history,Historia,#f2c94c,"¿Quién fue el primer emperador romano?",Nerón,Trajano,Augusto,"Julio César",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué acontecimiento comenzó con la toma de la Bastilla?","La Revolución francesa","La Guerra de los Cien Años","La Comuna de París","La Revolución de 1848",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué pueblo antiguo desarrolló la escritura cuneiforme en Mesopotamia?","Los fenicios","Los hititas","Los minoicos","Los sumerios",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué navegante culminó la primera vuelta al mundo tras la muerte de Magallanes?","Vasco da Gama","Bartolomé Díaz","Juan Sebastián Elcano","Álvar Núñez Cabeza de Vaca",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué monarca español ordenó construir el monasterio de El Escorial?","Carlos III","Felipe V","Felipe II","Alfonso X",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué conflicto enfrentó en Estados Unidos a la Unión y la Confederación?","La guerra de 1812","La guerra de Independencia","La guerra de Secesión","La guerra hispano-estadounidense",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué faraón egipcio tuvo una tumba hallada casi intacta por Howard Carter?",Akenatón,"Ramsés II",Tutankamón,Keops,2
+Clasico,0,history,Historia,#f2c94c,"¿Qué ciudad japonesa fue la primera en sufrir un bombardeo atómico?",Hiroshima,Nagasaki,Kioto,Osaka,0
+Clasico,0,history,Historia,#f2c94c,"¿Qué rey inglés firmó la Carta Magna en 1215?","Ricardo Corazón de León","Juan Sin Tierra","Enrique VIII","Eduardo I",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué dinastía gobernaba China cuando Marco Polo afirmó haber llegado a la corte de Kublai Kan?","Dinastía Ming","Dinastía Han","Dinastía Qing","Dinastía Yuan",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué batalla de 1815 supuso la derrota definitiva de Napoleón Bonaparte?",Austerlitz,Trafalgar,Waterloo,Leipzig,2
+Clasico,0,history,Historia,#f2c94c,"¿Qué cultura de la Antigüedad fundó la ciudad de Cartago?","La etrusca","La micénica","La persa","La fenicia",3
+Clasico,0,history,Historia,#f2c94c,"¿Quién pronunció el discurso «I have a dream» en Washington?","Malcolm X","Nelson Mandela","Martin Luther King Jr.","Rosa Parks",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué expedición realizó la primera circunnavegación de la Tierra?","La de Magallanes y Elcano","La de Colón y los Pinzón","La de Cook y Banks","La de Amundsen y Nobile",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué califa mandó construir la ampliación más célebre de la mezquita de Córdoba en el siglo X?","Abderramán I","Alhakén II","Hisham II",Almanzor,1
+Clasico,0,history,Historia,#f2c94c,"¿Qué documento inglés de 1689 limitó el poder de la Corona y reforzó el del Parlamento?","Bill of Rights","Habeas Corpus Act","Acta de Supremacía","Petición de Derechos",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué potencia europea colonizó Brasil?",Portugal,España,Francia,"Países Bajos",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué líder soviético impulsó la perestroika y la glásnost?","Mijaíl Gorbachov","Leonid Brézhnev","Nikita Jrushchov","Borís Yeltsin",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué ciudad fue capital del reino visigodo de Hispania?",Mérida,Sevilla,Tarragona,Toledo,3
+Clasico,0,history,Historia,#f2c94c,"¿Qué pueblo germánico saqueó Roma en el año 410 bajo Alarico?","Los ostrogodos","Los francos","Los lombardos","Los visigodos",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué guerra concluyó en España con los Decretos de Nueva Planta?","La guerra de la Independencia","La guerra de los Treinta Años","La guerra de los Segadores","La guerra de Sucesión española",3
+Clasico,0,history,Historia,#f2c94c,"¿Quién encabezó la independencia de la India mediante la resistencia no violenta?","Mahatma Gandhi","Jawaharlal Nehru","Muhammad Ali Jinnah","Subhas Chandra Bose",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué reina egipcia se alió sucesivamente con Julio César y Marco Antonio?",Nefertiti,Hatshepsut,"Arsínoe II","Cleopatra VII",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué ciudad fue el centro político del califato abasí?",Damasco,Bagdad,"El Cairo",Medina,1
+Clasico,0,history,Historia,#f2c94c,"¿Qué hecho desencadenó de forma inmediata la Primera Guerra Mundial?","La invasión de Polonia","El hundimiento del Lusitania","El asesinato del archiduque Francisco Fernando","La crisis de los Sudetes",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué general cartaginés cruzó los Alpes con elefantes durante la segunda guerra púnica?","Aníbal Barca","Asdrúbal Giscón","Amílcar Barca","Escipión el Africano",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué rey francés fue conocido como el Rey Sol?","Luis XIII","Luis XIV","Luis XV","Francisco I",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué imperio africano gobernó Mansa Musa?","Imperio songhai","Reino de Aksum","Imperio de Ghana","Imperio de Malí",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué revolución derrocó al zar Nicolás II?","La Revolución de los Jóvenes Turcos","La Revolución rusa","La Revolución de 1905 en Persia","La Revolución húngara",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué alianza militar liderada por Estados Unidos se fundó en 1949?","Pacto de Varsovia",OTAN,SEATO,"Triple Entente",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué monarca unificó los reinos anglosajones y es llamado tradicionalmente primer rey de Inglaterra?","Alfredo el Grande","Guillermo el Conquistador","Canuto el Grande",Athelstan,3
+Clasico,0,history,Historia,#f2c94c,"¿En qué ciudad se celebraron los juicios principales contra dirigentes nazis tras la Segunda Guerra Mundial?",Berlín,Núremberg,Múnich,"La Haya",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué civilización precolombina utilizó quipus para registrar información?","La inca","La maya","La mexica","La muisca",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué rey macedonio creó un imperio que llegó hasta el valle del Indo?","Filipo V",Perseo,"Alejandro Magno","Antígono II",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué batalla naval de 1571 enfrentó a la Liga Santa con el Imperio otomano?",Salamina,Accio,Lepanto,Preveza,2
+Clasico,0,history,Historia,#f2c94c,"¿Qué presidente estadounidense proclamó la emancipación de los esclavos en los estados rebeldes?","Abraham Lincoln","Ulysses S. Grant","Andrew Johnson","Thomas Jefferson",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué movimiento religioso inició Martín Lutero con sus críticas a las indulgencias?","La Contrarreforma","La Reforma protestante","El Gran Cisma de Oriente","El jansenismo",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué reina británica dio nombre a una era del siglo XIX?",Ana,Victoria,"Isabel I","María II",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué tratado de 1494 repartió áreas de expansión atlántica entre Castilla y Portugal?","Tratado de Tordesillas","Tratado de Alcáçovas","Tratado de Utrecht","Tratado de Zaragoza",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué ciudad fue dividida por un muro entre 1961 y 1989?",Viena,Praga,Berlín,Budapest,2
+Clasico,0,history,Historia,#f2c94c,"¿Quién fue el principal autor de la Declaración de Independencia de Estados Unidos?","George Washington","Thomas Jefferson","Benjamin Franklin","James Madison",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué rebelión del siglo XVI enfrentó a comunidades castellanas contra Carlos I?","La rebelión de las Alpujarras","La revuelta de los Irmandiños","El motín de Esquilache","La revuelta de las Comunidades",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué dinastía francesa comenzó con Hugo Capeto?","Los Valois","Los Capetos","Los Borbones","Los Merovingios",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué emperador romano legalizó el cristianismo mediante el Edicto de Milán?","Teodosio I",Diocleciano,"Constantino I","Justiniano I",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué nación derrotó a Rusia en la guerra de 1904-1905?",China,"Imperio otomano",Japón,Alemania,2
+Clasico,0,history,Historia,#f2c94c,"¿Qué batalla de 732 frenó una incursión omeya en territorio franco?",Hastings,Muret,Bouvines,Poitiers,3
+Clasico,0,history,Historia,#f2c94c,"¿Qué soberano ruso fundó San Petersburgo?","Iván el Terrible","Pedro el Grande","Alejandro II","Nicolás I",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué organización internacional precedió a las Naciones Unidas?","Consejo de Europa","Comunidad Europea del Carbón y del Acero","Unión Interparlamentaria","Sociedad de Naciones",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué tratado constituyó formalmente la Unión Europea en 1993?","Tratado de Roma","Tratado de Maastricht","Tratado de Lisboa","Tratado de Niza",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué expedición ateniense terminó en desastre durante la guerra del Peloponeso?","La expedición a Troya","La expedición a Sicilia","La campaña de Maratón","La campaña del Helesponto",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué rey castellano conquistó Sevilla en 1248?","Alfonso VIII","Sancho IV","Fernando III","Juan II",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué país sufrió la Revolución de los Claveles?",Grecia,Italia,Rumanía,Portugal,3
+Clasico,0,history,Historia,#f2c94c,"¿Qué emperador mogol ordenó construir el Taj Mahal?","Shah Jahan",Akbar,Aurangzeb,Babur,0
+Clasico,0,history,Historia,#f2c94c,"¿Qué pueblo estableció un reino con capital en Tenochtitlan?","Los incas","Los taínos","Los chibchas","Los mexicas",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué acuerdo de 1978 estableció el marco de paz entre Egipto e Israel?","Acuerdos de Oslo","Acuerdos de Dayton","Acuerdos de Camp David","Conferencia de Bandung",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué rey de Aragón conquistó Valencia y Mallorca en el siglo XIII?","Pedro III","Jaime I","Alfonso V","Fernando I",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué conflicto medieval enfrentó a las casas de Lancaster y York?","La guerra de los Cien Años","La guerra de las Investiduras","La guerra de los Barones","La guerra de las Dos Rosas",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué líder sudafricano fue elegido presidente tras el fin del apartheid?","Desmond Tutu","F. W. de Klerk","Thabo Mbeki","Nelson Mandela",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué general romano derrotó a Aníbal en Zama?",Mario,"Escipión el Africano",Sila,Pompeyo,1
+Clasico,0,history,Historia,#f2c94c,"¿Qué dinastía reinaba en España cuando comenzó la guerra de la Independencia en 1808?","Los Borbones","Los Austrias","Los Trastámara","Los Saboya",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué emperatriz fue la última soberana de Rusia?","Alejandra Fiódorovna","Catalina la Grande","María Fiódorovna","Isabel de Rusia",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué ciudad albergó la Escuela de Traductores impulsada en época de Alfonso X?",Salamanca,Toledo,Burgos,León,1
+Clasico,0,history,Historia,#f2c94c,"¿Qué país fue gobernado por los jemeres rojos de Pol Pot?",Camboya,Laos,Vietnam,Myanmar,0
+Clasico,0,history,Historia,#f2c94c,"¿Qué guerra europea terminó con la Paz de Westfalia?","La guerra de los Treinta Años","La guerra de los Siete Años","La guerra de Crimea","La guerra de Sucesión austríaca",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué líder independentista dio nombre a Bolivia?","José de San Martín","Simón Bolívar","Antonio José de Sucre","Bernardo O’Higgins",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué polis griega venció a Atenas en la guerra del Peloponeso?",Tebas,Corinto,Argos,Esparta,3
+Clasico,0,history,Historia,#f2c94c,"¿Qué monarca inglesa rompió con Roma y estableció la supremacía real sobre la Iglesia de Inglaterra?","Eduardo VI","María I","Isabel I","Enrique VIII",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué dinastía gobernó al-Ándalus durante el emirato y califato de Córdoba?","Los abasíes","Los omeyas","Los fatimíes","Los almorávides",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué conferencia de 1884-1885 reguló el reparto colonial de África entre potencias europeas?","Conferencia de Yalta","Congreso de Viena","Conferencia de Berlín","Conferencia de Algeciras",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué faraón impulsó el culto monoteísta a Atón?","Tutmosis III","Seti I",Akenatón,"Pepi II",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué emperador del Sacro Imperio acudió a Canossa para obtener el perdón papal?","Enrique IV","Federico Barbarroja","Carlos V","Otón I",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué batalla de 1066 permitió a Guillermo el Conquistador tomar la corona inglesa?",Agincourt,Hastings,Bosworth,"Stamford Bridge",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué acuerdo puso fin a la guerra de Independencia de Estados Unidos?","Tratado de Gante","Tratado de Versalles de 1919","Paz de Augsburgo","Tratado de París de 1783",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué reina gobernó Castilla inmediatamente antes de Carlos I?","Isabel I","Juana I","Catalina de Aragón","María de Aragón",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué pueblo fundó colonias como Gadir en la península ibérica?","Los celtas","Los cartagineses","Los romanos","Los fenicios",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué líder chino proclamó la República Popular China en 1949?","Mao Zedong","Sun Yat-sen","Deng Xiaoping","Chiang Kai-shek",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué movimiento político lideraron las sufragistas?","El derecho al voto femenino","La abolición de los gremios","La independencia sindical","La educación laica obligatoria",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué rey persa fue derrotado por Alejandro Magno en Gaugamela?","Jerjes I","Ciro el Grande","Darío III","Artajerjes II",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué ciudad fue capital del Imperio romano de Occidente en sus últimas décadas?",Milán,Roma,Aquilea,Rávena,3
+Clasico,0,history,Historia,#f2c94c,"¿Qué rey nazarí entregó Granada a los Reyes Católicos?",Boabdil,"Muley Hacén","Muhammad I","Yusuf I",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué emperador francés vendió Luisiana a Estados Unidos?","Napoleón Bonaparte","Napoleón III","Luis XVIII","Carlos X",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué pueblo liderado por Espartaco protagonizó una gran rebelión contra Roma?","Legionarios auxiliares","Senadores plebeyos","Mercaderes provinciales","Esclavos y gladiadores",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué acuerdo de 1938 permitió a Alemania anexionarse los Sudetes?","Pacto Ribbentrop-Mólotov","Tratado de Brest-Litovsk","Acuerdo de Múnich","Pacto de Locarno",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué guerra libraron Atenas y Esparta en el siglo V a. C.?","Guerras médicas","Guerra de Corinto","Guerra del Peloponeso","Guerra lamiaca",2
+Clasico,0,history,Historia,#f2c94c,"¿Qué monarca promulgó la Pragmática Sanción que permitió reinar a Isabel II?","Carlos IV","Fernando VII","Alfonso XII","Amadeo I",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué emperador japonés dio nombre al periodo de modernización iniciado en 1868?",Taishō,Meiji,Shōwa,Edo,1
+Clasico,0,history,Historia,#f2c94c,"¿Qué ciudad cayó ante los otomanos en 1453?",Jerusalén,Alejandría,Constantinopla,Antioquía,2
+Clasico,0,history,Historia,#f2c94c,"¿Qué tratado firmado en 1713 fue clave para poner fin a la guerra de Sucesión española?","Tratado de Fontainebleau","Tratado de Utrecht","Tratado de Cateau-Cambrésis","Tratado de los Pirineos",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué república marítima italiana tuvo a los dogos como jefes de Estado?",Florencia,Milán,Nápoles,Venecia,3
+Clasico,0,history,Historia,#f2c94c,"¿Qué líder cartaginés fue padre de Aníbal?","Asdrúbal Barca","Magón Barca","Amílcar Barca",Bomílcar,2
+Clasico,0,history,Historia,#f2c94c,"¿Qué ley romana escrita fue expuesta en doce tablas?","La Lex Hortensia","La Ley de las Doce Tablas","El Edicto Perpetuo","El Código Teodosiano",1
+Clasico,0,history,Historia,#f2c94c,"¿Qué dinastía sucedió a los Tudor en el trono inglés?","Los Plantagenet","Los Hannover","Los Windsor","Los Estuardo",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué reino cristiano trasladó su corte a Oviedo durante el reinado de Alfonso II?","Reino de Navarra","Reino de León","Condado de Castilla","Reino de Asturias",3
+Clasico,0,history,Historia,#f2c94c,"¿Qué guerra enfrentó a Rusia con una alianza que incluía al Imperio otomano, Francia y Reino Unido?","Guerra de Crimea","Guerra ruso-japonesa","Guerra del Cáucaso","Guerra de Livonia",0
+Clasico,0,history,Historia,#f2c94c,"¿Qué presidente checoslovaco y dramaturgo simbolizó la Revolución de Terciopelo?","Václav Havel","Alexander Dubček","Gustáv Husák","Lech Wałęsa",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cuántos jugadores de cada equipo comienzan un partido de fútbol sobre el terreno de juego?",11,9,10,12,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué país ganó el primer Mundial masculino de fútbol?",Brasil,Italia,Argentina,Uruguay,3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte se disputa el torneo de Wimbledon?",Bádminton,Squash,Tenis,"Tenis de mesa",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cuántos puntos vale un triple en baloncesto?",1,2,4,3,3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué pieza de ajedrez puede saltar sobre otras piezas?","El alfil","La torre","La dama","El caballo",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué color de cinturón identifica tradicionalmente los primeros grados dan en judo?",Rojo,Azul,Marrón,Negro,3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte compiten los equipos por la Copa Davis?",Tenis,Golf,Rugby,Vela,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué prueba atlética tiene una distancia oficial de 42,195 kilómetros?",Maratón,"Media maratón","50 kilómetros marcha",Ultramaratón,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué selección ganó el Mundial masculino de fútbol de Sudáfrica 2010?","Países Bajos",Alemania,España,Brasil,2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué palo de la baraja española tiene espadas dibujadas?",Espadas,Bastos,Copas,Oros,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cuántos aros componen el símbolo olímpico?",4,6,7,5,3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte se utiliza un puck o disco?",Lacrosse,Curling,Polo,"Hockey sobre hielo",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué gran vuelta ciclista se disputa principalmente en Francia?","Giro de Italia","Vuelta a España","Tour de Francia","Tour de Flandes",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué valor tiene el as en el blackjack cuando conviene contarlo como la carta más alta?",10,12,13,11,3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cómo se llama el golpe que inicia cada punto en tenis?",Volea,Saque,Remate,Dejada,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué deporte combina natación, ciclismo y carrera a pie?","Pentatlón moderno",Duatlón,Triatlón,Decatlón,2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué país está asociado tradicionalmente con el origen del sumo?",Japón,China,Mongolia,"Corea del Sur",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cuántos hoyos tiene una vuelta estándar de golf?",9,12,21,18,3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué ficha del dominó doble-seis tiene doce puntos en total?","El seis-cinco","El doble cinco","El doble seis","El seis-cuatro",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué piloto español ganó dos campeonatos mundiales de Fórmula 1 con Renault?","Fernando Alonso","Carlos Sainz Jr.","Pedro de la Rosa","Marc Gené",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué nadador estadounidense ganó ocho oros en los Juegos Olímpicos de Pekín 2008?","Mark Spitz","Ryan Lochte","Michael Phelps","Ian Thorpe",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte se ejecuta un lanzamiento llamado alley-oop?",Balonmano,Baloncesto,Voleibol,Waterpolo,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué selección ha utilizado históricamente el apodo All Blacks?","Australia de cricket","Nueva Zelanda de rugby","Sudáfrica de rugby","Canadá de hockey",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué pieza vale habitualmente nueve puntos en la valoración ajedrecística?","La torre","El alfil","El caballo","La dama",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte se concede un ippon?",Judo,Karate,Taekwondo,Esgrima,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué club de fútbol juega sus partidos como local en Anfield?","Manchester United","Liverpool FC","Arsenal FC","Chelsea FC",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cuántos sets debe ganar un tenista para imponerse en un partido masculino al mejor de cinco?",2,4,3,5,2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué carrera de motor se disputa tradicionalmente durante 24 horas en el circuito de La Sarthe?","24 Horas de Le Mans","500 Millas de Indianápolis","Gran Premio de Mónaco","Rally de Montecarlo",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué figura se logra en bolos al derribar los diez bolos con el primer lanzamiento?",Strike,Spare,Split,Turkey,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué deporte practicaba profesionalmente Severiano Ballesteros?",Tenis,Golf,Ciclismo,Automovilismo,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué modalidad de billar utiliza quince bolas numeradas y una blanca?","Carambola a tres bandas",Snooker,Pool,"Billar artístico",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué selección ganó la Eurocopa masculina de fútbol de 1964?",España,"Unión Soviética",Italia,"Alemania Federal",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué atleta jamaicano posee los títulos olímpicos de 100 y 200 metros de tres Juegos consecutivos?","Usain Bolt","Yohan Blake","Asafa Powell","Donovan Bailey",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte un equipo anota un try?",Cricket,"Fútbol australiano",Lacrosse,Rugby,3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué juego de mesa enfrenta a dos jugadores con fichas blancas y negras sobre 64 casillas y permite coronar?",Damas,Go,Reversi,Backgammon,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué tenista español ganó catorce títulos individuales de Roland Garros?","Carlos Moyá","Juan Carlos Ferrero","Manuel Orantes","Rafael Nadal",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué país es la cuna del taekwondo moderno?",Japón,Tailandia,Vietnam,"Corea del Sur",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cuántos minutos dura un partido reglamentario de balonmano sénior, sin prórroga?",60,40,50,70,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué color de maillot distingue al líder del Tour de Francia?",Rosa,Amarillo,Rojo,Verde,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué apertura de ajedrez comienza con 1.e4 e5 2.Cf3 Cc6 3.Ab5?","Defensa siciliana","Gambito de dama","Defensa francesa","Apertura española",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué selección venció a España en la final olímpica de baloncesto masculino de Londres 2012?",Argentina,Francia,"Estados Unidos",Serbia,2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué aparato de gimnasia artística masculina se realizan círculos con las piernas alrededor de dos asas?",Anillas,"Caballo con arcos","Barras paralelas","Barra fija",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué número máximo de descansos técnicos puede pedir un equipo por set en voleibol bajo las reglas habituales de la FIVB sin contar los automáticos?",1,2,3,4,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué corredor finlandés fue apodado el Finlandés Volador y ganó nueve oros olímpicos?","Paavo Nurmi","Lasse Virén","Hannes Kolehmainen","Kimi Räikkönen",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué juego utiliza las categorías de armas, habitaciones y sospechosos para resolver un asesinato?",Risk,Monopoly,Cluedo,Stratego,2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte se celebra el torneo The Ashes entre Inglaterra y Australia?",Rugby,Cricket,Tenis,"Hockey sobre hierba",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué equipo ganó la primera Copa de Europa de fútbol en 1956?","Real Madrid",Benfica,"AC Milan","Stade de Reims",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué prueba de atletismo incluye diez disciplinas?",Heptatlón,Decatlón,Pentatlón,Triatlón,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cómo se llama en golf un resultado de un golpe bajo par en un hoyo?",Bogey,Birdie,"Eagle doble",Par,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué ficha del ajedrez comienza en las esquinas del tablero?","La torre","El caballo","El alfil","La dama",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué deportista española ganó el oro olímpico de bádminton individual en Río 2016?","Lydia Valentín","Carolina Marín","Mireia Belmonte","Maialen Chourraut",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué competición de vela ganó el Australia II en 1983, terminando 132 años de dominio estadounidense?","Copa América","Volvo Ocean Race","Vendée Globe",Sydney-Hobart,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué país ganó el primer Mundial de rugby en 1987?",Australia,Sudáfrica,"Nueva Zelanda",Inglaterra,2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué mano supera a una escalera en la clasificación estándar del póquer?",Trío,"Doble pareja",Pareja,Color,3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte destacó la española Blanca Fernández Ochoa?","Patinaje artístico",Snowboard,"Esquí alpino","Esquí de fondo",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué equipo de la NBA juega en el Madison Square Garden?","Brooklyn Nets","New York Knicks","Boston Celtics","Chicago Bulls",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cuántos puntos vale un ensayo en rugby union antes de la transformación?",3,6,5,7,2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué prueba ciclista italiana identifica a su líder con la maglia rosa?","Milán-San Remo","Giro de Italia",Tirreno-Adriático,"Strade Bianche",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué juego abstracto se disputa tradicionalmente sobre una cuadrícula de 19 por 19 líneas?",Go,Xiangqi,Shogi,Mancala,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué boxeador fue conocido como «The Greatest» y nació con el nombre Cassius Clay?","Joe Frazier","George Foreman","Muhammad Ali","Sonny Liston",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué país organizó los primeros Juegos Olímpicos modernos?",Francia,Grecia,"Reino Unido",Italia,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué única pieza de ajedrez puede realizar el enroque junto al rey?","La dama","El alfil","La torre","El caballo",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte se usa una piedra de granito y escobas sobre hielo?",Curling,Bandy,Skeleton,"Hockey sobre hielo",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué piloto brasileño ganó tres campeonatos mundiales de Fórmula 1 y murió en Imola en 1994?","Nelson Piquet","Emerson Fittipaldi","Ayrton Senna","Rubens Barrichello",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué futbolista marcó el gol conocido como «la Mano de Dios»?",Pelé,"Mario Kempes","Jorge Valdano","Diego Maradona",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cuántas casillas tiene un tablero de ajedrez?",49,64,81,100,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué competición enfrenta a selecciones europeas de rugby en un torneo anual de seis participantes?","Seis Naciones","Rugby Championship","Copa de Campeones","United Rugby Championship",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué atleta checo ganó las pruebas de 5.000 metros, 10.000 metros y maratón en Helsinki 1952?","Ron Clarke","Abebe Bikila","Kipchoge Keino","Emil Zátopek",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué juego de cartas español se disputa habitualmente por parejas y tiene lances de grande, chica, pares y juego?",Mus,Tute,Brisca,"Siete y media",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué país ganó la primera Copa Mundial femenina de fútbol en 1991?",Noruega,"Estados Unidos",Alemania,China,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte se utiliza el término scrum?","Fútbol americano",Hockey,Rugby,Cricket,2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué ciclista español ganó cinco Tours de Francia consecutivos?","Pedro Delgado","Luis Ocaña","Alberto Contador","Miguel Induráin",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué juego de mesa tiene territorios como Kamchatka, Siam y Madagascar?",Risk,Diplomacy,Catán,Hotel,0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué prueba ganó Mireia Belmonte el oro olímpico en Río 2016?","400 metros estilos","800 metros libre","200 metros mariposa","200 metros espalda",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué competición de tenis se juega sobre tierra batida en París?","Roland Garros","Abierto de Australia",Wimbledon,"Abierto de Estados Unidos",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué pieza de shogi puede volver al juego después de ser capturada?","Solo los peones","Solo las piezas promovidas","Ninguna pieza","Cualquier pieza capturada salvo el rey",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué futbolista español marcó el gol de la final del Mundial de 2010?","David Villa","Xavi Hernández","Fernando Torres","Andrés Iniesta",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cuál es la puntuación máxima posible con tres dardos en una ronda estándar?",150,180,170,200,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué caballo ganó la Triple Corona estadounidense de 1973?",Secretariat,Seabiscuit,"Man o’ War","American Pharoah",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué juego de tablero creado por Klaus Teuber gira en torno a construir poblados y comerciar recursos?",Carcassonne,Agrícola,Catán,"Puerto Rico",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte fue campeón mundial el español Javier Fernández?","Patinaje de velocidad","Patinaje artístico","Gimnasia artística","Esquí acrobático",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué carrera ciclista de un día es conocida como «El Infierno del Norte»?",Lieja-Bastoña-Lieja,"Tour de Flandes",París-Roubaix,"Giro de Lombardía",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué selección masculina de baloncesto ganó el Mundial de 2006?","Estados Unidos",Grecia,Argentina,España,3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Cuántos números contiene un cartón estándar del bingo de 90 bolas?",9,18,15,27,2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué modalidad de esquí se combinan salto y esquí de fondo?",Biatlón,"Esquí alpino","Combinada nórdica","Esquí acrobático",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué tenista completó en 1969 el último Grand Slam masculino en un año natural?","Björn Borg","Pete Sampras","Roy Emerson","Rod Laver",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué juego de naipes tiene bazas, triunfos y una pareja llamada las cuarenta cuando es rey y caballo del triunfo?",Brisca,Mus,Escoba,Tute,3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué selección ganó el primer Campeonato Mundial de baloncesto masculino en 1950?","Estados Unidos",Argentina,Brasil,Yugoslavia,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué deportista rumana obtuvo el primer 10 perfecto de la gimnasia olímpica?","Nadia Comăneci","Ecaterina Szabo","Simona Amânar","Daniela Silivaș",0
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué modalidad de escalada olímpica consiste en resolver vías cortas sin cuerda sobre colchonetas?",Velocidad,Búlder,Dificultad,"Escalada alpina",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué torneo de golf se celebra en Augusta National?","Abierto de Estados Unidos","Open Championship","PGA Championship","Masters de Augusta",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué juego se emplea un cubilete con cinco dados y combinaciones como full y póquer?",Backgammon,Dominó,Cribbage,"Póquer de dados",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué piloto español popularizó la expresión «12+1» para referirse a sus trece títulos mundiales?","Jorge Lorenzo","Ángel Nieto","Dani Pedrosa","Álex Crivillé",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué selección ganó la primera Eurocopa masculina, disputada en 1960?",Yugoslavia,"Unión Soviética",España,Francia,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿En qué deporte se disputa el trofeo Vince Lombardi?",Béisbol,Baloncesto,"Hockey sobre hielo","Fútbol americano",3
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué juego de estrategia tiene como objetivo dar jaque mate al rey rival?",Go,Damas,Ajedrez,"Xiangqi sin rey",2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué español ganó el Tour de Francia de 1973?","Federico Martín Bahamontes","Luis Ocaña","Pedro Delgado","Miguel Induráin",1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué prueba de hípica combina doma, campo a través y salto de obstáculos?","Doma clásica","Concurso completo",Raid,Volteo,1
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué plato valenciano se cocina tradicionalmente en una paella ancha y poco profunda?","Fabada asturiana","Cocido madrileño","Paella valenciana",Marmitako,2
+Clasico,1,sports,"Deportes y ocio",#f2994a,"¿Qué juego consiste en retirar bloques de una torre y colocarlos arriba sin derribarla?",Mikado,Dobble,Jenga,Twister,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Australia?",Sídney,Canberra,Melbourne,Perth,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río atraviesa la ciudad de París?",Loira,Sena,Ródano,Garona,1
+Clasico,2,geography,Geografia,#2f80ed,"¿En qué continente se encuentra el desierto del Kalahari?",Asia,"América del Sur",África,Oceanía,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué cordillera separa España de Francia?",Pirineos,Alpes,Cárpatos,Apeninos,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la isla más grande del archipiélago canario?","Gran Canaria",Fuerteventura,Tenerife,Lanzarote,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país tiene forma aproximada de bota en los mapas de Europa?",Grecia,Italia,Croacia,Portugal,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué océano baña la costa occidental de América del Sur?",Atlántico,Pacífico,Índico,Ártico,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Canadá?",Toronto,Montreal,Vancouver,Ottawa,3
+Clasico,2,geography,Geografia,#2f80ed,"¿En qué país se encuentra la ciudad de Marrakech?",Túnez,Argelia,Egipto,Marruecos,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué mar separa Europa de África?",Mediterráneo,Negro,Rojo,Caspio,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Galicia?","Santiago de Compostela","A Coruña",Vigo,Lugo,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río pasa por Zaragoza?",Ebro,Tajo,Duero,Guadalquivir,0
+Clasico,2,geography,Geografia,#2f80ed,"¿En qué país se encuentran las ruinas de Petra?",Líbano,Siria,Jordania,Israel,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Argentina?",Córdoba,Rosario,Mendoza,"Buenos Aires",3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué estrecho separa España de Marruecos?",Bósforo,Dardanelos,Gibraltar,Mesina,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la montaña más alta de África?",Kilimanjaro,"Monte Kenia",Toubkal,"Ras Dashen",0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país europeo tiene a Reikiavik como capital?",Noruega,Islandia,Finlandia,Dinamarca,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río atraviesa Londres?",Támesis,Severn,Mersey,Tyne,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Japón?",Kioto,Tokio,Osaka,Nagoya,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué comunidad autónoma española tiene a Mérida como capital?",Andalucía,Extremadura,"Castilla-La Mancha","Región de Murcia",1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país ocupa la franja occidental de la península ibérica y comparte con España su frontera terrestre más larga?",Francia,Italia,Portugal,Marruecos,2
+Clasico,2,geography,Geografia,#2f80ed,"¿En qué cordillera se encuentra el Everest?",Himalaya,Karakórum,"Hindu Kush",Pamir,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río forma gran parte de la frontera entre México y Estados Unidos?",Colorado,Misisipi,"Río Bravo",Yukón,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Nueva Zelanda?",Auckland,Christchurch,Wellington,Hamilton,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país africano está completamente rodeado por Sudáfrica?",Esuatini,Lesoto,Botsuana,Namibia,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué mar baña la costa oriental de la península ibérica?",Mediterráneo,Cantábrico,"Mar del Norte",Adriático,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Turquía?",Estambul,Ankara,Esmirna,Bursa,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río desemboca en el mar Negro formando un gran delta entre Rumanía y Ucrania?",Danubio,Dniéper,Don,Dniéster,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué isla mediterránea pertenece a Francia?",Cerdeña,Sicilia,Córcega,Creta,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de la provincia española de Guipúzcoa?",Bilbao,Vitoria-Gasteiz,Pamplona,"San Sebastián",3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país tiene a Addis Abeba como capital?",Etiopía,Eritrea,Somalia,Sudán,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué lago comparten Perú y Bolivia?",Titicaca,Poopó,Maracaibo,Atitlán,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es el río más largo de la península ibérica?",Ebro,Duero,Guadiana,Tajo,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué archipiélago ecuatoriano inspiró estudios de Charles Darwin?",Galápagos,"Juan Fernández",Malvinas,Aleutianas,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Eslovenia?",Bratislava,Zagreb,Liubliana,Sarajevo,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país asiático tiene una costa en el Mediterráneo y otra en el mar Rojo?",Israel,Líbano,Siria,Jordania,0
+Clasico,2,geography,Geografia,#2f80ed,"¿En qué provincia española se encuentra la Alhambra?",Córdoba,Granada,Jaén,Almería,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué canal une el mar Mediterráneo con el mar Rojo?","Canal de Panamá","Canal de Suez","Canal de Corinto","Canal de Kiel",1
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Brasil?",Brasilia,"Río de Janeiro","São Paulo",Salvador,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país tiene la mayor parte del desierto de Atacama?",Perú,Bolivia,Argentina,Chile,3
+Clasico,2,geography,Geografia,#2f80ed,"¿En qué país se encuentra el cosmódromo de Baikonur?",Kazajistán,Uzbekistán,Turkmenistán,Kirguistán,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río europeo atraviesa Viena, Bratislava, Budapest y Belgrado?",Rin,Elba,Vístula,Danubio,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país ocupa la mayor parte de la península de Jutlandia?",Suecia,Dinamarca,Noruega,Alemania,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de la Región de Murcia?",Cartagena,Lorca,Caravaca,Murcia,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué mar interior limita con Kazajistán, Rusia, Azerbaiyán, Irán y Turkmenistán?","Mar de Aral","Mar Caspio","Mar Negro","Mar Muerto",1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país africano tiene por capital Nairobi?",Kenia,Tanzania,Uganda,Ruanda,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué cabo marca el punto más meridional de África?","Cabo de Buena Esperanza","Cabo Verde","Cabo de las Agujas","Cabo Guardafui",2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Lituania?",Riga,Tallin,Kaunas,Vilna,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río atraviesa Roma?",Arno,Po,Adigio,Tíber,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué isla española contiene la sierra de Tramontana?",Menorca,Ibiza,Mallorca,Formentera,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital administrativa de Sudáfrica?","Ciudad del Cabo",Bloemfontein,Pretoria,Johannesburgo,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país sudamericano no tiene salida al mar y limita con Brasil, Argentina y Bolivia?",Uruguay,Paraguay,Ecuador,Guyana,1
+Clasico,2,geography,Geografia,#2f80ed,"¿En qué país se encuentra la región histórica de Transilvania?",Hungría,Rumanía,Bulgaria,Serbia,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Mongolia?",Astaná,Dusambé,"Ulán Bator",Ereván,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río español desemboca en Oporto?",Duero,Miño,Tajo,Guadiana,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué estrecho comunica el mar Negro con el mar de Mármara?",Dardanelos,Ormuz,Kerch,Bósforo,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Costa Rica?","San Salvador",Managua,"San José",Tegucigalpa,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país tiene una hoja de arce en su bandera?",Austria,Canadá,Líbano,Japón,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la cumbre más alta de la península ibérica?",Aneto,Veleta,Teide,Mulhacén,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país insular tiene a Antananarivo como capital?",Mauricio,Seychelles,Comoras,Madagascar,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué mar se encuentra entre la península arábiga y el nordeste de África?","Mar Arábigo","Golfo Pérsico","Mar Rojo","Mar Caspio",2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Navarra?",Tudela,Pamplona,Estella,Olite,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río atraviesa Praga?",Moldava,Elba,Oder,Morava,0
+Clasico,2,geography,Geografia,#2f80ed,"¿En qué país se encuentra el monte Fuji?",China,"Corea del Sur",Japón,Nepal,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Vietnam?","Ciudad Ho Chi Minh","Da Nang",Hanói,Hué,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país europeo tiene frontera terrestre con España en los Pirineos y no pertenece a la Unión Europea?",Portugal,Francia,Mónaco,Andorra,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué desierto se extiende por Mongolia y China?",Taklamakán,Karakum,Gobi,Thar,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Croacia?",Split,Dubrovnik,Zagreb,Rijeka,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río pasa por Sevilla?",Guadalquivir,Guadiana,Genil,Segura,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país posee la isla de Zanzíbar?",Tanzania,Kenia,Mozambique,Madagascar,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Suiza?",Berna,Zúrich,Ginebra,Basilea,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué línea imaginaria atraviesa Ecuador y da nombre al país?","El trópico de Capricornio","El ecuador terrestre","El meridiano de Greenwich","El trópico de Cáncer",1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué isla está dividida políticamente entre Haití y República Dominicana?","Puerto Rico","La Española",Jamaica,Cuba,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Bután?",Katmandú,Daca,Paro,Timbu,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río forma las cataratas Victoria en la frontera de Zambia y Zimbabue?",Congo,Zambeze,Limpopo,"Nilo Azul",1
+Clasico,2,geography,Geografia,#2f80ed,"¿En qué comunidad autónoma española se encuentran las Bardenas Reales?",Aragón,"La Rioja","Castilla y León",Navarra,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país tiene como capital Puerto Moresby?",Fiyi,Samoa,"Islas Salomón","Papúa Nueva Guinea",3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué cordillera recorre la costa occidental de América del Sur?",Rocosas,Andes,Apalaches,"Sierra Madre",1
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Estonia?",Riga,Vilna,Tallin,Tartu,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué golfo separa Irán de la península arábiga?","Golfo de Adén","Golfo de Omán","Golfo de Aqaba","Golfo Pérsico",3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué provincia española contiene el parque nacional de las Tablas de Daimiel?",Toledo,"Ciudad Real",Cuenca,Albacete,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Senegal?",Dakar,Bamako,Conakri,Banjul,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué estrecho separa la isla de Tierra del Fuego del continente sudamericano?","Paso de Drake","Canal de Beagle","Estrecho de Le Maire","Estrecho de Magallanes",3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país balcánico tiene a Skopie como capital?",Albania,Montenegro,"Macedonia del Norte",Kosovo,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la isla más extensa del mar Mediterráneo?",Sicilia,Cerdeña,Chipre,Córcega,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río constituye parte de la frontera entre Alemania y Polonia?",Óder,Elba,Rin,Vístula,0
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Kirguistán?",Dusambé,Biskek,Taskent,Asjabad,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país contiene la región de Capadocia?",Grecia,Georgia,Armenia,Turquía,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es el pico más alto de los Pirineos?","Monte Perdido",Posets,Aneto,Vignemale,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué ciudad se asienta en dos continentes a ambos lados del Bósforo?",Atenas,Estambul,Esmirna,Salónica,1
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Belice?","Ciudad de Belice",Guatemala,Belmopán,"San Pedro Sula",2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué corriente oceánica contribuye a suavizar el clima de Europa occidental?","Corriente de Humboldt","Corriente de Benguela","Corriente de Canarias","Corriente del Golfo",3
+Clasico,2,geography,Geografia,#2f80ed,"¿En qué país se encuentra el salar de Uyuni?",Chile,Argentina,Perú,Bolivia,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Burkina Faso?",Yamusukro,Lomé,Uagadugú,Niamey,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué río nace en la Selva Negra y desemboca en el mar Negro?",Rin,Ródano,Danubio,Elba,2
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué isla del archipiélago balear es la más septentrional?",Mallorca,Ibiza,Formentera,Menorca,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Myanmar?",Rangún,Mandalay,Bagán,Naipyidó,3
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué país africano está atravesado por el ecuador y tiene Libreville como capital?",Gabón,Camerún,"Guinea Ecuatorial","República del Congo",0
+Clasico,2,geography,Geografia,#2f80ed,"¿Qué sistema montañoso español separa la Meseta Norte de la Meseta Sur?","Sistema Ibérico","Cordillera Cantábrica","Sierra Morena","Sistema Central",3
+Clasico,2,geography,Geografia,#2f80ed,"¿Cuál es la capital de Laos?","Luang Prabang",Vientián,"Nom Pen",Hanói,1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «Don Quijote de la Mancha»?","Lope de Vega","Miguel de Cervantes","Francisco de Quevedo","Benito Pérez Galdós",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién pintó «Las meninas»?","Diego Velázquez","Francisco de Goya","El Greco","Bartolomé Esteban Murillo",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué poeta escribió «Romancero gitano»?","Antonio Machado","Rafael Alberti","Federico García Lorca","Miguel Hernández",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién esculpió el «David» de mármol conservado en Florencia?",Donatello,Bernini,Rodin,"Miguel Ángel",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué novela comienza con la familia Buendía en Macondo?","La casa de los espíritus","Pedro Páramo","Cien años de soledad",Rayuela,2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién compuso la Novena Sinfonía conocida por incluir la «Oda a la alegría»?","Ludwig van Beethoven","Wolfgang Amadeus Mozart","Johannes Brahms","Franz Schubert",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor malagueño fue coautor de «Las señoritas de Aviñón»?","Pablo Picasso","Juan Gris","Joan Miró","Salvador Dalí",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió la tragedia «Hamlet»?","Christopher Marlowe","Ben Jonson","John Webster","William Shakespeare",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué arquitecto diseñó la Casa Milà de Barcelona?","Lluís Domènech i Montaner","Josep Puig i Cadafalch","Antoni Gaudí","Rafael Moneo",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor neerlandés realizó «La noche estrellada»?","Vincent van Gogh",Rembrandt,"Johannes Vermeer","Piet Mondrian",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «La Regenta»?","Leopoldo Alas «Clarín»","Emilia Pardo Bazán","José María de Pereda","Juan Valera",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué escultor creó «El pensador»?","Auguste Rodin","Constantin Brâncuși","Alberto Giacometti","Henry Moore",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién compuso la ópera «La flauta mágica»?","Wolfgang Amadeus Mozart","Gioachino Rossini","Giuseppe Verdi","Richard Wagner",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué movimiento artístico asociamos con Claude Monet?",Cubismo,Surrealismo,Impresionismo,Fauvismo,2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «La metamorfosis»?","Thomas Mann","Franz Kafka","Hermann Hesse","Robert Musil",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintora mexicana realizó numerosos autorretratos y la obra «Las dos Fridas»?","Remedios Varo","Leonora Carrington","María Izquierdo","Frida Kahlo",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué escritor creó al detective Sherlock Holmes?","Agatha Christie","Edgar Allan Poe","Arthur Conan Doyle","G. K. Chesterton",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién pintó «El nacimiento de Venus»?","Rafael Sanzio","Sandro Botticelli",Tiziano,Caravaggio,1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué autor escribió «Fortunata y Jacinta»?","Benito Pérez Galdós","Pío Baroja","Miguel de Unamuno","Ramón del Valle-Inclán",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué instrumento tocaba principalmente Frédéric Chopin?",Violín,Violonchelo,Órgano,Piano,3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «1984»?","George Orwell","Aldous Huxley","Ray Bradbury","H. G. Wells",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor realizó «La rendición de Breda»?","José de Ribera","Francisco de Zurbarán","Alonso Cano","Diego Velázquez",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién es el autor de «La Odisea» según la tradición clásica?",Hesíodo,Homero,Sófocles,Virgilio,1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué estilo arquitectónico caracteriza a la catedral de León?",Románico,Gótico,Barroco,Neoclásico,1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién compuso «El amor brujo»?","Isaac Albéniz","Manuel de Falla","Enrique Granados","Joaquín Rodrigo",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué novela de Jane Austen tiene como protagonistas a Elizabeth Bennet y Fitzwilliam Darcy?",Emma,"Sentido y sensibilidad","Orgullo y prejuicio",Persuasión,2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién pintó «El jardín de las delicias»?","Pieter Brueghel el Viejo","Jan van Eyck","El Bosco","Alberto Durero",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué dramaturgo escribió «La vida es sueño»?","Tirso de Molina","Lope de Vega","Pedro Calderón de la Barca","Juan Ruiz de Alarcón",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué artista convirtió un urinario firmado como «R. Mutt» en la obra «Fuente»?","Man Ray","Francis Picabia","Tristan Tzara","Marcel Duchamp",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «El nombre de la rosa»?","Italo Calvino","Primo Levi","Umberto Eco","Alberto Moravia",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué compositor escribió el ciclo operístico «El anillo del nibelungo»?","Richard Strauss","Gustav Mahler","Richard Wagner","Anton Bruckner",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor aragonés realizó «Los fusilamientos del 3 de mayo»?","Joaquín Sorolla","Eduardo Rosales","Mariano Fortuny","Francisco de Goya",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «Crimen y castigo»?","León Tolstói","Iván Turguénev","Fiódor Dostoyevski","Antón Chéjov",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué escultor barroco creó «El éxtasis de Santa Teresa»?","Alessandro Algardi","Gian Lorenzo Bernini","Antonio Canova","Lorenzo Ghiberti",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué poeta chileno escribió «Veinte poemas de amor y una canción desesperada»?","Vicente Huidobro","Pablo Neruda","Nicanor Parra","Gabriela Mistral",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué arquitecto diseñó el Museo Guggenheim de Bilbao?","Norman Foster","Renzo Piano","Frank Gehry","Santiago Calatrava",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «El extranjero»?","Jean-Paul Sartre","André Gide","Louis-Ferdinand Céline","Albert Camus",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué técnica pictórica aplica pigmentos sobre yeso húmedo?",Fresco,Temple,Encáustica,Acuarela,0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor creó la serie de nenúfares de Giverny?","Pierre-Auguste Renoir","Edgar Degas","Claude Monet","Camille Pissarro",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «Luces de bohemia»?","Jacinto Benavente","Ramón del Valle-Inclán","Alejandro Casona","Antonio Buero Vallejo",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué compositora y pianista fue esposa de Robert Schumann?","Fanny Mendelssohn","Alma Mahler","Louise Farrenc","Clara Schumann",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué autor argentino escribió «Ficciones»?","Julio Cortázar","Adolfo Bioy Casares","Ernesto Sabato","Jorge Luis Borges",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién pintó «La joven de la perla»?","Johannes Vermeer","Frans Hals",Rembrandt,"Jan Steen",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué orden clásico emplea capiteles decorados con hojas de acanto?",Dórico,Jónico,Corintio,Toscano,2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «Los pazos de Ulloa»?","Rosalía de Castro","Carmen de Burgos","Emilia Pardo Bazán","Concepción Arenal",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué compositor escribió «Las cuatro estaciones»?","Arcangelo Corelli","Tomaso Albinoni","Georg Philipp Telemann","Antonio Vivaldi",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor surrealista realizó «La persistencia de la memoria»?","René Magritte","Salvador Dalí","Max Ernst","Yves Tanguy",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «Madame Bovary»?","Gustave Flaubert","Émile Zola","Honoré de Balzac",Stendhal,0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué arquitecto renacentista proyectó la cúpula de Santa María del Fiore en Florencia?","Leon Battista Alberti","Donato Bramante","Andrea Palladio","Filippo Brunelleschi",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién compuso el ballet «El lago de los cisnes»?","Ígor Stravinski","Piotr Ilich Chaikovski","Serguéi Prokófiev","Nikolái Rimski-Kórsakov",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué novela de Mary Shelley presenta al científico Victor Frankenstein?","El último hombre",Mathilda,Valperga,"Frankenstein o el moderno Prometeo",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién pintó «Guernica»?","Joan Miró","Juan Gris","Pablo Picasso","Antoni Tàpies",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué poeta escribió «Campos de Castilla»?","Juan Ramón Jiménez","Antonio Machado","Jorge Guillén","Luis Cernuda",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué escultor renacentista realizó un «David» de bronce para los Médici?",Verrocchio,Ghiberti,Cellini,Donatello,3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «El gran Gatsby»?","Ernest Hemingway","F. Scott Fitzgerald","John Steinbeck","William Faulkner",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor ruso fue pionero de la abstracción y autor de «De lo espiritual en el arte»?","Kazimir Malévich","Vasili Kandinski","Marc Chagall","El Lissitzky",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién compuso «El Mesías»?","Georg Friedrich Händel","Johann Sebastian Bach","Joseph Haydn","Henry Purcell",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué escritora creó al personaje de Pippi Calzaslargas?","Tove Jansson","Selma Lagerlöf","Karen Blixen","Astrid Lindgren",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué edificio granadino contiene el Patio de los Leones?","La Alhambra","El Generalife","La catedral de Granada","El monasterio de la Cartuja",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «Pedro Páramo»?","Carlos Fuentes","Octavio Paz","Juan Rulfo","Juan José Arreola",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué artista pop realizó serigrafías de latas de sopa Campbell?","Andy Warhol","Roy Lichtenstein","Jasper Johns","Robert Rauschenberg",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué compositor quedó sordo durante su madurez y aun así terminó su Novena Sinfonía?","Ludwig van Beethoven","Franz Schubert","Robert Schumann","Hector Berlioz",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «Nada»?","Ana María Matute","Carmen Martín Gaite","Rosa Chacel","Carmen Laforet",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor cretense desarrolló la mayor parte de su carrera española en Toledo?","Jusepe de Ribera","Luis de Morales","El Greco","Juan de Juanes",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué estrofa de catorce versos popularizó Garcilaso de la Vega en castellano?",Lira,Romance,Soneto,Silva,2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién compuso «Rhapsody in Blue»?","Leonard Bernstein","Aaron Copland","Duke Ellington","George Gershwin",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué novela de Miguel Delibes narra la vida rural de Azarías y la familia de Paco el Bajo?","El camino","Cinco horas con Mario","Las ratas","Los santos inocentes",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintora barroca italiana representó «Judit decapitando a Holofernes»?","Sofonisba Anguissola","Lavinia Fontana","Elisabetta Sirani","Artemisia Gentileschi",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué autor escribió «Esperando a Godot»?","Eugène Ionesco","Harold Pinter","Samuel Beckett","Jean Genet",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué arquitecto diseñó la Villa Rotonda cerca de Vicenza?","Giacomo Vignola","Andrea Palladio","Giulio Romano","Baldassare Peruzzi",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién compuso la ópera «Carmen»?","Georges Bizet","Jules Massenet","Charles Gounod","Jacques Offenbach",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué escritor portugués escribió «Ensayo sobre la ceguera»?","Fernando Pessoa","António Lobo Antunes","Eça de Queirós","José Saramago",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué cuadro de Edvard Munch muestra una figura angustiada sobre un puente?","El grito",Madonna,Ansiedad,Melancolía,0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «El Lazarillo de Tormes»?","Fernando de Rojas","Mateo Alemán","Un autor anónimo","Alfonso de Valdés",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué movimiento literario español reunió a autores marcados por la pérdida colonial de 1898?","Generación del 27","Generación del 98",Novecentismo,Romanticismo,1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién compuso el «Concierto de Aranjuez»?","Manuel de Falla","Joaquín Rodrigo","Federico Mompou","Pablo Sarasate",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor flamenco fue autor de «El descendimiento» conservado en el Museo del Prado?","Jan van Eyck","Rogier van der Weyden","Hans Memling","Hugo van der Goes",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «La montaña mágica»?","Hermann Broch","Thomas Mann","Stefan Zweig","Joseph Roth",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué escultor creó la figura ecuestre del «Pequeño jinete» y numerosas figuras alargadas?","Alexander Calder","Jean Arp","Antoine Bourdelle","Alberto Giacometti",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué novela de Virginia Woolf transcurre durante un día en la vida de Clarissa Dalloway?","Al faro","La señora Dalloway","Las olas",Orlando,1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién pintó «La libertad guiando al pueblo»?","Théodore Géricault","Eugène Delacroix","Jean-Auguste-Dominique Ingres","Jacques-Louis David",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué dramaturgo español escribió «Historia de una escalera»?","Antonio Buero Vallejo","Alfonso Sastre","Fernando Fernán Gómez","Miguel Mihura",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué compositor creó el poema sinfónico «Así habló Zaratustra»?","Gustav Mahler","Anton Bruckner","Richard Wagner","Richard Strauss",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué arquitecto proyectó la iglesia de San Carlo alle Quattro Fontane en Roma?","Francesco Borromini","Gian Lorenzo Bernini","Carlo Maderno","Giacomo della Porta",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió la novela «Beloved»?","Toni Morrison","Alice Walker","Maya Angelou","Zora Neale Hurston",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor francés desarrolló el puntillismo en obras como «Tarde de domingo en la isla de la Grande Jatte»?","Paul Signac","Henri de Toulouse-Lautrec","Georges Seurat","Édouard Manet",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué autor creó al comisario Maigret?","Maurice Leblanc","Gaston Leroux","Pierre Boileau","Georges Simenon",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién compuso la suite «Los planetas»?","Edward Elgar","Ralph Vaughan Williams","Gustav Holst","Benjamin Britten",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué novela de Camilo José Cela retrata el Madrid de posguerra mediante numerosos personajes?","La familia de Pascual Duarte","La colmena","San Camilo 1936","Mazurca para dos muertos",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué artista neerlandés pintó «Composición con rojo, amarillo y azul»?","Piet Mondrian","Theo van Doesburg","Gerrit Rietveld","Bart van der Leck",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué escritor irlandés publicó «Ulises»?","James Joyce","Oscar Wilde","Samuel Beckett","W. B. Yeats",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué técnica gráfica consiste en grabar una plancha metálica con ácido?",Xilografía,Aguafuerte,Litografía,Serigrafía,1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién compuso las «Variaciones Goldberg»?","Domenico Scarlatti","Georg Friedrich Händel","Jean-Philippe Rameau","Johann Sebastian Bach",3
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué poeta griego antiguo escribió la «Teogonía»?",Homero,Hesíodo,Píndaro,Safo,1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué artista diseñó el edificio de la Secesión de Viena?","Otto Wagner","Joseph Maria Olbrich","Josef Hoffmann","Adolf Loos",1
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «El ruido y la furia»?","John Dos Passos","Sinclair Lewis","William Faulkner","Saul Bellow",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué pintor español fue conocido por sus escenas luminosas de playa valenciana?","Darío de Regoyos","Santiago Rusiñol","Joaquín Sorolla","Ignacio Zuloaga",2
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué compositora escribió la ópera «L’amour de loin»?","Kaija Saariaho","Sofia Gubaidulina","Unsuk Chin","Jennifer Higdon",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Quién escribió «Si una noche de invierno un viajero»?","Italo Calvino","Umberto Eco","Cesare Pavese","Dino Buzzati",0
+Clasico,3,art,"Arte y literatura",#8b5a2b,"¿Qué escultor vasco creó la obra pública «Elogio del horizonte» en Gijón?","Jorge Oteiza","Agustín Ibarrola","Néstor Basterretxea","Eduardo Chillida",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué planeta es el más cercano al Sol?",Venus,Tierra,Marte,Mercurio,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué gas absorben las plantas durante la fotosíntesis?",Oxígeno,Nitrógeno,"Dióxido de carbono",Hidrógeno,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Cuál es el órgano más grande del cuerpo humano?","El hígado","La piel","El pulmón","El intestino delgado",1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué fuerza mantiene a los planetas en órbita alrededor del Sol?",Magnetismo,Gravedad,Fricción,"Fuerza nuclear",1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué elemento químico tiene el símbolo Au?",Oro,Plata,Cobre,Aluminio,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Cuántos cromosomas tiene normalmente una célula somática humana?",23,44,46,48,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué mamífero pone huevos y tiene un hocico ancho semejante al pico de un pato?",Equidna,Castor,Ornitorrinco,Nutria,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué parte de la célula eucariota contiene la mayor parte del ADN?",Ribosoma,Lisosoma,"Aparato de Golgi",Núcleo,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Cuál es el satélite natural de la Tierra?",Fobos,"La Luna",Titán,Europa,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué vitamina sintetiza la piel principalmente por acción de la radiación ultravioleta B?","Vitamina D","Vitamina C","Vitamina A","Vitamina K",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué científico formuló las leyes del movimiento y la gravitación universal?","Galileo Galilei","Johannes Kepler","Isaac Newton","Michael Faraday",2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Cuál es la unidad del Sistema Internacional para la intensidad de corriente eléctrica?",Voltio,Amperio,Ohmio,Vatio,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué tipo de animal es una ballena?",Pez,Reptil,Mamífero,Anfibio,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué sustancia tiene la fórmula química H2O?","Peróxido de hidrógeno",Ozono,Amoniaco,Agua,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué capa de la atmósfera contiene la mayor concentración de ozono?",Estratosfera,Troposfera,Mesosfera,Termosfera,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Cuál es el hueso más largo del cuerpo humano?",Tibia,Húmero,Fémur,Peroné,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué planeta posee un sistema de anillos especialmente visible desde la Tierra?",Saturno,Marte,Venus,Mercurio,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué grupo sanguíneo carece de antígenos A y B en los glóbulos rojos?","Grupo AB","Grupo A","Grupo O","Grupo B",2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué instrumento mide la presión atmosférica?",Higrómetro,Anemómetro,Calorímetro,Barómetro,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué vertebrados experimentan normalmente metamorfosis de renacuajo a adulto?",Reptiles,Aves,Anfibios,Mamíferos,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué científico propuso la teoría de la evolución por selección natural junto con Alfred Russel Wallace?","Gregor Mendel","Louis Pasteur","Carl Linnaeus","Charles Darwin",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué partícula subatómica tiene carga eléctrica negativa?",Protón,Electrón,Neutrón,Positrón,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué órgano produce insulina?",Hígado,Páncreas,Bazo,Tiroides,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Cuál es el elemento más abundante del universo?",Helio,Oxígeno,Carbono,Hidrógeno,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué roca se forma al enfriarse y solidificarse el magma?",Ígnea,Sedimentaria,Metamórfica,"Caliza exclusivamente",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué escala mineralógica ordena la dureza del talco al diamante?","Escala de Richter","Escala de Beaufort","Escala de Mohs","Escala de pH",2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué planeta tarda más en girar sobre sí mismo que en completar su órbita solar?",Venus,Mercurio,Marte,Júpiter,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué molécula transporta la información genética en la mayoría de los seres vivos?",ATP,Glucosa,Colágeno,ADN,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué metal es líquido a temperatura ambiente alrededor de 20 °C?",Galio,Cesio,Bromo,Mercurio,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué científico descubrió la penicilina al observar el efecto de un moho?","Robert Koch","Alexander Fleming","Joseph Lister","Edward Jenner",1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Cuál es la unidad del Sistema Internacional para la frecuencia?",Hercio,Julio,Pascal,Tesla,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué estructura del oído interno participa principalmente en el equilibrio?","Canales semicirculares",Cóclea,Tímpano,Martillo,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué proceso convierte un líquido en gas desde su superficie?",Condensación,Sublimación,Evaporación,Fusión,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué planeta tiene la Gran Mancha Roja?",Saturno,Neptuno,Júpiter,Urano,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué naturalista estableció la nomenclatura binomial moderna?","Georges Cuvier","Carlos Linneo","Jean-Baptiste Lamarck","Alexander von Humboldt",1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué tipo de enlace químico implica compartir pares de electrones?",Iónico,Metálico,Covalente,"Puente de hidrógeno",2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Cuál es la principal proteína que transporta oxígeno en los glóbulos rojos?",Insulina,Queratina,Hemoglobina,Fibrina,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué fenómeno óptico separa la luz blanca en colores al atravesar un prisma?",Dispersión,Difracción,Polarización,"Reflexión total",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué parte de una flor produce el polen?",Estigma,Ovario,Sépalo,Antera,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué científico desarrolló la teoría especial de la relatividad?","Albert Einstein","Max Planck","Niels Bohr","Erwin Schrödinger",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué gas noble tiene el número atómico 2?",Neón,Argón,Helio,Kriptón,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué enfermedad infecciosa fue erradicada mundialmente mediante vacunación?",Poliomielitis,Viruela,Sarampión,Malaria,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué estructura celular sintetiza proteínas siguiendo el ARN mensajero?",Centriolo,Vacuola,Ribosoma,Peroxisoma,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Cuál es la unidad básica de clasificación biológica situada debajo del género?",Familia,Orden,Variedad,Especie,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué propiedad mide el pH?",Densidad,Viscosidad,"Conductividad térmica","Acidez o alcalinidad",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué órgano filtra la sangre para formar orina?",Vejiga,Riñón,Uréter,Próstata,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué tipo de radiación electromagnética tiene una longitud de onda menor que la luz visible y mayor que los rayos X?",Infrarroja,Microondas,Ultravioleta,"Ondas de radio",2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué animal vivo es el más próximo evolutivamente a los seres humanos junto con el bonobo?",Gorila,Orangután,Gibón,Chimpancé,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué ley relaciona la presión y el volumen de un gas a temperatura constante?","Ley de Charles","Ley de Boyle","Ley de Ohm","Ley de Hooke",1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué planeta enano se encuentra en el cinturón de asteroides?",Plutón,Eris,Ceres,Haumea,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué científico descubrió la radiactividad natural en sales de uranio?","Pierre Curie","Ernest Rutherford","Henri Becquerel","Wilhelm Röntgen",2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué tejido vegetal transporta agua y sales minerales desde las raíces?",Floema,Xilema,Epidermis,Meristemo,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Cuál es el nombre de la división celular que produce dos células hijas genéticamente equivalentes?",Mitosis,Meiosis,"Fisión múltiple",Gemación,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿La carencia de qué elemento químico puede causar bocio endémico?",Yodo,Hierro,Calcio,Sodio,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué componente sanguíneo interviene principalmente en la coagulación?","Glóbulos rojos",Linfocitos,"Plasma sin proteínas",Plaquetas,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué fenómeno explica el cambio aparente de frecuencia de una onda cuando emisor y observador se mueven?","Efecto fotoeléctrico","Efecto invernadero","Efecto Coriolis","Efecto Doppler",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué orgánulo produce la mayor parte del ATP en células eucariotas?",Mitocondria,Núcleo,Lisosoma,"Retículo endoplasmático",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué número atómico tiene el carbono?",4,6,8,12,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué huesecillo del oído medio está unido al tímpano?",Martillo,Yunque,Estribo,Cóclea,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué astrónomo formuló las tres leyes del movimiento planetario?","Nicolás Copérnico","Tycho Brahe","Johannes Kepler","Edmond Halley",2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué ácido está presente de forma principal en el jugo gástrico?","Ácido clorhídrico","Ácido sulfúrico","Ácido nítrico","Ácido acético",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué nube se asocia habitualmente con tormentas eléctricas intensas?",Cirro,Estrato,Cumulonimbo,Altocúmulo,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué unidad del Sistema Internacional mide la resistencia eléctrica?",Amperio,Ohmio,Culombio,Weber,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué hormona ayuda a disminuir la concentración de glucosa en sangre?",Glucagón,Adrenalina,Insulina,Cortisol,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué tipo de simetría corporal presenta una estrella de mar adulta?",Bilateral,"Radial pentámera",Esférica,Asimétrica,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué químico organizó una tabla periódica predictiva de los elementos en 1869?","Antoine Lavoisier","Dmitri Mendeléyev","John Dalton","Jöns Berzelius",1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué estructura encefálica coordina el equilibrio y los movimientos finos?",Hipotálamo,Cerebelo,"Bulbo raquídeo",Hipocampo,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué partícula media la interacción electromagnética en el modelo estándar?",Gluón,Fotón,"Bosón W",Neutrino,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué proceso geológico transforma roca por presión y temperatura sin fundirla?",Metamorfismo,Sedimentación,Erosión,"Cristalización fraccionada",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué científico enunció el principio de incertidumbre?","Wolfgang Pauli","Paul Dirac","Max Born","Werner Heisenberg",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué molécula acepta electrones al final de la cadena respiratoria aerobia?","Dióxido de carbono",Nitrógeno,Glucosa,Oxígeno,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué planeta tiene el eje de rotación inclinado casi en el plano de su órbita?",Neptuno,Urano,Saturno,Marte,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué grupo de animales incluye medusas, corales y anémonas?",Cnidarios,Moluscos,Equinodermos,Poríferos,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué físico midió la carga del electrón mediante el experimento de la gota de aceite?","J. J. Thomson","Ernest Rutherford","James Chadwick","Robert Millikan",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué base nitrogenada aparece en el ARN en lugar de la timina?",Citosina,Uracilo,Guanina,Adenina,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué capa terrestre líquida de hierro y níquel genera gran parte del campo magnético?","Núcleo interno","Manto inferior",Astenosfera,"Núcleo externo",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué científico demostró la circulación mayor de la sangre en el siglo XVII?","Andreas Vesalio","William Harvey","Marcello Malpighi",Paracelso,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué valor aproximado tiene la aceleración de la gravedad en la superficie terrestre?","9,8 m/s²","3,7 m/s²","1,6 m/s²","24,8 m/s²",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué enzima de la saliva inicia la digestión del almidón?",Amilasa,Pepsina,"Lipasa pancreática",Tripsina,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué principio afirma que un cuerpo sumergido recibe un empuje igual al peso del fluido desalojado?","Principio de Pascal","Principio de Bernoulli","Principio de Fermat","Principio de Arquímedes",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué taxón agrupa a organismos procariotas que no son bacterias?",Arqueas,Protozoos,Hongos,Cromistas,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué isótopo del carbono se utiliza habitualmente para datar materia orgánica antigua?",Carbono-12,Carbono-13,Carbono-14,Carbono-11,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué estructura impide normalmente que el alimento entre en la tráquea al tragar?",Laringe,Úvula,Epiglotis,Amígdala,2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué fenómeno se produce cuando la Luna oculta totalmente el disco solar visto desde una zona terrestre?","Eclipse lunar total","Tránsito planetario","Eclipse solar total","Ocultación estelar",2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué científico acuñó el término «célula» tras observar corcho con un microscopio?","Antonie van Leeuwenhoek","Matthias Schleiden","Theodor Schwann","Robert Hooke",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué ley de la termodinámica establece que la entropía de un sistema aislado no disminuye?","Segunda ley","Primera ley","Tercera ley","Ley cero",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué metal constituye el centro de la molécula de clorofila?",Hierro,Calcio,Cobre,Magnesio,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué número cuántico determina principalmente la forma de un orbital atómico?",Azimutal,Principal,Magnético,Espín,0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué orden de mamíferos incluye murciélagos?",Roedores,Quirópteros,Primates,Lagomorfos,1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué estructura geológica se forma cuando una placa oceánica se hunde bajo otra placa?","Zona de subducción","Dorsal oceánica","Rift continental","Punto caliente",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué físico predijo la existencia del positrón a partir de una ecuación relativista?","Enrico Fermi","Richard Feynman","Louis de Broglie","Paul Dirac",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué compuesto es el principal responsable de la dureza temporal del agua?","Cloruro de sodio","Bicarbonato de calcio","Sulfato de bario","Nitrato de potasio",1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué nervio craneal transmite la información visual desde la retina?","Nervio oculomotor","Nervio óptico","Nervio trigémino","Nervio vago",1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué ciclo metabólico oxida acetil-CoA en la matriz mitocondrial?","Ciclo de Calvin","Ciclo de Krebs","Ciclo de Cori","Ciclo de la urea",1
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué tipo de onda sísmica no puede atravesar líquidos?","Onda S","Onda P","Onda de Rayleigh","Onda sonora",0
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué botánico descubrió el núcleo celular en células vegetales?","Joseph Priestley","Jan Ingenhousz","Hugo de Vries","Robert Brown",3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué constante relaciona la energía de un fotón con su frecuencia?","Constante de Boltzmann","Constante de Avogadro","Constante de Planck","Constante de Faraday",2
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué animal posee tres corazones y sangre basada en hemocianina?",Delfín,Tiburón,Medusa,Pulpo,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué capa embrionaria origina principalmente el sistema nervioso?",Mesodermo,Endodermo,Trofoectodermo,Ectodermo,3
+Clasico,4,science,"Ciencia y naturaleza",#27ae60,"¿Qué proceso nuclear alimenta principalmente al Sol?","Fusión de hidrógeno","Fisión de uranio","Desintegración beta","Combustión química",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor interpretó a Antonio Alcántara en «Cuéntame cómo pasó»?","Imanol Arias","José Coronado","Antonio Resines","Juan Echanove",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantautor grabó la canción «Mediterráneo»?","Luis Eduardo Aute","Joan Manuel Serrat","Víctor Manuel","Joaquín Sabina",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué concurso televisivo español tiene una prueba final llamada «El Rosco»?","Saber y ganar",Pasapalabra,Boom,"Ahora caigo",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué director español rodó «Todo sobre mi madre»?","Alejandro Amenábar","Fernando Trueba","Pedro Almodóvar","Álex de la Iglesia",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante española popularizó «Como una ola»?","Rocío Jurado","Isabel Pantoja","Lola Flores",Massiel,0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué personaje interpretó Emilio Aragón en «Médico de familia»?","Antonio Alcántara","Nacho Martín","Manolo Costas","Diego Serrano",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película de Alejandro Amenábar está protagonizada por Nicole Kidman?","Los otros",Tesis,"Abre los ojos","Mar adentro",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué grupo español publicó el álbum «Descanso dominical»?","Hombres G","El Último de la Fila",Mecano,"Nacha Pop",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actriz interpretó a Pepa Marcos en la serie «Los Serrano»?","Lydia Bosch","Ana Duato","Carmen Machi","Belén Rueda",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué humorista creó al personaje de Chiquito de la Calzada?","Gregorio Sánchez","Andreu Buenafuente","José Mota","Florentino Fernández",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película española narra la relación entre Ramón Sampedro y quienes le rodean?","El bola","Los lunes al sol","Mar adentro",Campeones,2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué grupo representó a España en Eurovisión con «Eres tú»?","Fórmula V","Los Brincos",Mocedades,"La Década Prodigiosa",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie española transcurre principalmente en la comunidad de vecinos de Desengaño 21?","La que se avecina","Aquí no hay quien viva","Farmacia de guardia","7 vidas",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor protagonizó «El día de la bestia» como el padre Ángel Berriatúa?","Santiago Segura","Álex Angulo","Antonio de la Torre","Karra Elejalde",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué dúo español cantó «Resistiré»?","Los del Río","Azúcar Moreno","Dúo Dinámico","Ella Baila Sola",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué presentador estuvo al frente de «Un, dos, tres... responda otra vez» en su primera etapa?","Mayra Gómez Kemp","Jordi Estadella","Luis Larrodera","Kiko Ledgard",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actriz interpretó a Soledad «Sole» Huete en la serie «7 vidas»?","Carmen Machi","Anabel Alonso","Blanca Portillo","Amparo Baró",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué banda española grabó «La chica de ayer»?","Los Secretos","Duncan Dhu","Nacha Pop",Tequila,2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué director español ganó el Óscar a mejor película de habla no inglesa por «Belle Époque»?","José Luis Garci","Pedro Almodóvar","Fernando Trueba","Luis García Berlanga",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué personaje del «Barrio Sésamo» español era un erizo rosa de tamaño humano?","Don Pimpón",Chema,Epi,Espinete,3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actriz dio vida a Merche en «Cuéntame cómo pasó»?","Aitana Sánchez-Gijón","Ana Duato","Adriana Ozores","Maribel Verdú",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué grupo español lanzó «A quién le importa» con Alaska como vocalista?",Fangoria,"Kaka de Luxe","Alaska y Dinarama","Parálisis Permanente",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cineasta dirigió «Ocho apellidos vascos»?","Daniel Sánchez Arévalo","Emilio Martínez-Lázaro","Javier Fesser","Borja Cobeaga",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante compuso e interpretó «19 días y 500 noches»?","Miguel Ríos","Víctor Manuel","Joaquín Sabina","Luis Eduardo Aute",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie española tiene como protagonistas a los policías Paco Miranda y Mariano Moreno?","Los hombres de Paco","El comisario","Policías, en el corazón de la calle","Servir y proteger",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actriz ganó el Óscar por interpretar a María Elena en «Vicky Cristina Barcelona»?","Penélope Cruz","Paz Vega","Maribel Verdú","Carmen Maura",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué veterano concurso cultural de televisión está asociado al presentador Jordi Hurtado?",Pasapalabra,"Cifras y letras","Saber y ganar","El cazador",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué grupo originario de Zaragoza grabó «Entre dos tierras»?",Amaral,"Héroes del Silencio","Más Birras","Las Novias",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor interpretó a Torrente en la saga cinematográfica homónima?","Santiago Segura","Javier Cámara","Gabino Diego","José Mota",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película de Luis García Berlanga gira en torno a una campaña navideña llamada «Siente un pobre a su mesa»?","Bienvenido, Mister Marshall",Plácido,"El verdugo","La escopeta nacional",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante española fue vocalista del grupo Mecano?",Alaska,"Ana Torroja","Christina Rosenvinge","Amaia Montero",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie española se ambienta en el colegio privado Zurbarán?",Compañeros,"El internado",Merlí,"Física o química",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué director realizó la película española «Tesis»?","Jaume Balagueró","Paco Plaza","Juan Antonio Bayona","Alejandro Amenábar",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué artista español cantó «Libre» y «Un beso y una flor»?","Camilo Sesto","Nino Bravo",Raphael,Peret,1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actriz interpretó a Aída García en «7 vidas» y en la serie «Aída»?","Amparo Baró","Anabel Alonso","Paz Padilla","Carmen Machi",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película ganó el primer Óscar a mejor película de la historia?",Amanecer,Wings,"El cantor de jazz",Metrópolis,1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor interpretó a Indiana Jones en el cine?","Harrison Ford","Tom Selleck","Kurt Russell","Dennis Quaid",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué banda grabó el álbum «The Dark Side of the Moon»?","Led Zeppelin","Pink Floyd","The Who",Genesis,1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué director realizó «El padrino»?","Martin Scorsese","Brian De Palma","Francis Ford Coppola","William Friedkin",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué personaje de «Friends» trabajaba como paleontólogo?","Ross Geller","Chandler Bing","Joey Tribbiani",Gunther,0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante es conocido como el Rey del Pop?",Prince,"Elvis Presley","Stevie Wonder","Michael Jackson",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película presenta a un tiburón que aterroriza la isla de Amity?",Orca,"Mar abierto","Deep Blue Sea",Tiburón,3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actriz interpretó a Hermione Granger en las películas de Harry Potter?","Emma Stone","Keira Knightley","Natalie Portman","Emma Watson",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué grupo lanzó «Bohemian Rhapsody»?",Queen,"The Beatles","Electric Light Orchestra",Supertramp,0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie comienza con un accidente aéreo del vuelo Oceanic 815?",Manifest,Perdidos,Fringe,"The Leftovers",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cineasta dirigió «Pulp Fiction»?","Robert Rodriguez","David Fincher","Guy Ritchie","Quentin Tarantino",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué personaje de ficción vive en el número 221B de Baker Street?","Hercule Poirot","Sherlock Holmes","Philip Marlowe","Nero Wolfe",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante grabó el álbum «Back to Black»?",Adele,Duffy,"Amy Winehouse","Lily Allen",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película de animación tiene como protagonista a un ogro verde y parlante?",Brave,Enredados,Shrek,"Monstruos, S.A.",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor interpretó a Neo en «Matrix»?","Laurence Fishburne","Keanu Reeves","Hugo Weaving","Carrie-Anne Moss",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué grupo estaba formado por John Lennon, Paul McCartney, George Harrison y Ringo Starr?","The Beatles","The Rolling Stones","The Kinks","The Who",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie sigue al profesor de química Walter White tras convertirse en fabricante de metanfetamina?",Ozark,"The Wire","Better Call Saul","Breaking Bad",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué director japonés realizó «Los siete samuráis»?","Yasujirō Ozu","Kenji Mizoguchi","Hayao Miyazaki","Akira Kurosawa",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué artista publicó el álbum «Purple Rain»?","David Bowie","George Michael","Lionel Richie",Prince,3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película contiene la frase asociada «Que la Fuerza te acompañe»?","Star Trek",Dune,"Blade Runner","Star Wars",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actriz protagonizó «Desayuno con diamantes» como Holly Golightly?","Grace Kelly","Elizabeth Taylor","Audrey Hepburn","Natalie Wood",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué grupo irlandés tiene a Bono como cantante?","The Cranberries","Thin Lizzy","The Corrs",U2,3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie de animación tiene como padre de familia a Homer?","Padre de familia","South Park","Los Simpson",Futurama,2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué director filmó «2001: Una odisea del espacio»?","Stanley Kubrick","Ridley Scott","Steven Spielberg","George Lucas",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante interpretó «Like a Prayer»?","Cyndi Lauper",Cher,Madonna,"Tina Turner",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor encarnó al Joker en «El caballero oscuro»?","Joaquin Phoenix","Heath Ledger","Jack Nicholson","Jared Leto",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie está ambientada en el continente ficticio de Poniente?","Juego de tronos","The Witcher","La rueda del tiempo",Vikingos,0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película italiana de Federico Fellini da nombre a un concepto de vida despreocupada y placentera?",Amarcord,"Ocho y medio","La dolce vita","Las noches de Cabiria",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué banda lideró Kurt Cobain?",Nirvana,"Pearl Jam",Soundgarden,"Alice in Chains",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor protagonizó «Forrest Gump»?","Robin Williams","Tom Hanks","Kevin Costner","John Travolta",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie incluye a los personajes Don Draper y Peggy Olson?","The Newsroom","Mad Men",Succession,"Boardwalk Empire",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué compositor escribió la banda sonora principal de «Star Wars»?","Hans Zimmer","John Williams","Ennio Morricone","Jerry Goldsmith",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película surcoreana de Bong Joon-ho ganó el Óscar a mejor película?",Oldboy,Burning,"La doncella",Parásitos,3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante fue vocalista de The Police?",Sting,"Phil Collins","Peter Gabriel","Bryan Ferry",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor interpretó a Tony Soprano?","James Gandolfini","Edie Falco","Michael Imperioli","Steve Buscemi",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película de Pixar tiene como protagonista a un robot compactador abandonado en la Tierra?",Robots,"Big Hero 6",WALL-E,"El gigante de hierro",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué banda grabó «Hotel California»?",Eagles,"Fleetwood Mac",America,Boston,0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué director creó la trilogía cinematográfica de «El señor de los anillos» estrenada entre 2001 y 2003?","Peter Jackson","George Miller","Sam Raimi","Guillermo del Toro",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante protagonizó la película «El guardaespaldas» junto a Kevin Costner?","Diana Ross","Whitney Houston","Janet Jackson","Toni Braxton",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie de ciencia ficción presenta la nave USS Enterprise?","Battlestar Galactica","Babylon 5","The Expanse","Star Trek",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película de Alfred Hitchcock transcurre en gran parte en el motel Bates?",Vértigo,"La ventana indiscreta","Los pájaros",Psicosis,3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué grupo publicó el álbum «Rumours»?","Fleetwood Mac",ABBA,"Bee Gees","Dire Straits",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actriz interpretó a Ellen Ripley en la saga «Alien»?","Sigourney Weaver","Linda Hamilton","Jamie Lee Curtis","Geena Davis",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie presenta una oficina de la empresa papelera Dunder Mifflin?","Parks and Recreation","30 Rock","The Office",Superstore,2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué director italiano rodó «Cinema Paradiso»?","Giuseppe Tornatore","Roberto Benigni","Bernardo Bertolucci","Nanni Moretti",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante publicó «Born to Run»?","Bob Dylan","Billy Joel","Bruce Springsteen","Neil Young",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película tiene como protagonistas a Thelma Dickinson y Louise Sawyer?","Tomates verdes fritos","Magnolias de acero","Thelma & Louise","Erin Brockovich",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor interpretó a Hannibal Lecter en «El silencio de los corderos»?","Brian Cox","Anthony Hopkins","Mads Mikkelsen","Gary Oldman",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué grupo sueco ganó Eurovisión con «Waterloo»?",Roxette,"Ace of Base",ABBA,Europe,2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie tiene como escenario principal el hospital Seattle Grace?",Urgencias,House,"The Good Doctor","Anatomía de Grey",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué director realizó «La princesa Mononoke»?","Isao Takahata","Satoshi Kon","Mamoru Oshii","Hayao Miyazaki",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante interpretó «Respect» en su versión más célebre de 1967?","Aretha Franklin","Diana Ross","Etta James","Nina Simone",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película presenta al ordenador HAL 9000?","Blade Runner",Solaris,Alien,"2001: Una odisea del espacio",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor interpretó a Rocky Balboa?","Robert De Niro","Arnold Schwarzenegger","Sylvester Stallone","Bruce Willis",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué banda británica grabó «Stairway to Heaven»?","Deep Purple","Black Sabbath","The Who","Led Zeppelin",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie sigue a la reina Isabel II a lo largo de varias décadas?",Victoria,"Downton Abbey","The Crown","The Tudors",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué directora rodó «En tierra hostil»?","Kathryn Bigelow","Sofia Coppola","Jane Campion","Greta Gerwig",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué cantante publicó el álbum «Blue» en 1971?","Joni Mitchell","Carole King","Joan Baez","Patti Smith",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película de animación japonesa tiene a Chihiro como protagonista?","Mi vecino Totoro",Ponyo,"El castillo ambulante","El viaje de Chihiro",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué actor interpretó a Vito Corleone en la primera película de «El padrino»?","Marlon Brando","Al Pacino","Robert Duvall","James Caan",0
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué grupo creó la ópera rock «Tommy»?",Queen,"The Who",Genesis,"Pink Floyd",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué serie incluye a los detectives Rust Cohle y Marty Hart en su primera temporada?",Fargo,"True Detective",Mindhunter,"The Killing",1
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué director alemán realizó «Metrópolis»?","F. W. Murnau","G. W. Pabst","Ernst Lubitsch","Fritz Lang",3
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué artista interpretó «What’s Going On»?","Stevie Wonder","Otis Redding","Marvin Gaye","Sam Cooke",2
+Clasico,5,entertainment,Entretenimiento,#d94a9b,"¿Qué película presenta a Charles Foster Kane como magnate de la prensa?","El cuarto poder","Ciudadano Kane","Todos los hombres del presidente",Network,1
