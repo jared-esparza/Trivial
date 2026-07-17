@@ -456,15 +456,7 @@ final class PackRepository
     {
         $this->assertDraft($revisionId);
         $category = $this->categoryBySlot($revisionId, $slot);
-        $text = trim((string) ($question['question'] ?? ''));
-        $options = array_values($question['options'] ?? []);
-        $correct = filter_var($question['correct'] ?? null, FILTER_VALIDATE_INT);
-        if ($text === '' || count($options) !== 4 || in_array('', array_map(fn ($value): string => trim((string) $value), $options), true)) {
-            throw new InvalidArgumentException('Cada pregunta necesita enunciado y cuatro opciones.');
-        }
-        if ($correct === false || $correct < 0 || $correct > 3) {
-            throw new InvalidArgumentException('Respuesta correcta no valida.');
-        }
+        $normalized = $this->normalizeQuestion($question);
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO questions
@@ -474,18 +466,62 @@ final class PackRepository
         );
         $stmt->execute([
             ':category' => $category['category_key'],
-            ':question' => $text,
-            ':option_a' => trim((string) $options[0]),
-            ':option_b' => trim((string) $options[1]),
-            ':option_c' => trim((string) $options[2]),
-            ':option_d' => trim((string) $options[3]),
-            ':correct' => $correct,
+            ':question' => $normalized['question'],
+            ':option_a' => $normalized['options'][0],
+            ':option_b' => $normalized['options'][1],
+            ':option_c' => $normalized['options'][2],
+            ':option_d' => $normalized['options'][3],
+            ':correct' => $normalized['correct'],
             ':created_at' => gmdate('c'),
             ':pack_revision_id' => $revisionId,
             ':pack_category_id' => $category['id'],
         ]);
 
-        return ['id' => (int) $this->pdo->lastInsertId(), 'question' => $text];
+        return ['id' => (int) $this->pdo->lastInsertId(), 'slot' => $slot] + $normalized;
+    }
+
+    public function updateQuestion(int $revisionId, int $questionId, int $slot, array $question): array
+    {
+        $this->assertDraft($revisionId);
+        $category = $this->categoryBySlot($revisionId, $slot);
+        $normalized = $this->normalizeQuestion($question);
+        $stmt = $this->pdo->prepare(
+            'UPDATE questions
+             SET category = :category, question = :question, option_a = :option_a, option_b = :option_b,
+                 option_c = :option_c, option_d = :option_d, correct = :correct, pack_category_id = :pack_category_id
+             WHERE id = :id AND pack_revision_id = :revision_id'
+        );
+        $stmt->execute([
+            ':category' => $category['category_key'],
+            ':question' => $normalized['question'],
+            ':option_a' => $normalized['options'][0],
+            ':option_b' => $normalized['options'][1],
+            ':option_c' => $normalized['options'][2],
+            ':option_d' => $normalized['options'][3],
+            ':correct' => $normalized['correct'],
+            ':pack_category_id' => $category['id'],
+            ':id' => $questionId,
+            ':revision_id' => $revisionId,
+        ]);
+        if ($stmt->rowCount() === 0) {
+            $exists = $this->pdo->prepare('SELECT 1 FROM questions WHERE id = :id AND pack_revision_id = :revision_id');
+            $exists->execute([':id' => $questionId, ':revision_id' => $revisionId]);
+            if ($exists->fetchColumn() === false) {
+                throw new RuntimeException('QUESTION_NOT_FOUND');
+            }
+        }
+
+        return ['id' => $questionId, 'slot' => $slot] + $normalized;
+    }
+
+    public function deleteQuestion(int $revisionId, int $questionId): void
+    {
+        $this->assertDraft($revisionId);
+        $stmt = $this->pdo->prepare('DELETE FROM questions WHERE id = :id AND pack_revision_id = :revision_id');
+        $stmt->execute([':id' => $questionId, ':revision_id' => $revisionId]);
+        if ($stmt->rowCount() === 0) {
+            throw new RuntimeException('QUESTION_NOT_FOUND');
+        }
     }
 
     public function activate(int $packId, int $revisionId): array
@@ -595,6 +631,21 @@ final class PackRepository
             ':pack_revision_id' => $revisionId,
             ':pack_category_id' => $category['id'],
         ]);
+    }
+
+    private function normalizeQuestion(array $question): array
+    {
+        $text = trim((string) ($question['question'] ?? ''));
+        $options = array_map(static fn ($value): string => trim((string) $value), array_values($question['options'] ?? []));
+        $correct = filter_var($question['correct'] ?? null, FILTER_VALIDATE_INT);
+        if ($text === '' || count($options) !== 4 || in_array('', $options, true)) {
+            throw new InvalidArgumentException('Cada pregunta necesita enunciado y cuatro opciones.');
+        }
+        if ($correct === false || $correct < 0 || $correct > 3) {
+            throw new InvalidArgumentException('Respuesta correcta no valida.');
+        }
+
+        return ['question' => $text, 'options' => $options, 'correct' => $correct];
     }
 
     private function revisionDetails(int $revisionId): array

@@ -45,6 +45,12 @@ final class ApiRouter
             if ($e->getMessage() === 'PACK_INCOMPLETE') {
                 return $this->error(422, 'PACK_INCOMPLETE', 'El pack necesita preguntas en sus seis categorias.');
             }
+            if ($e->getMessage() === 'PACK_NOT_EDITABLE') {
+                return $this->error(409, 'PACK_NOT_EDITABLE', 'Crea una revision de edicion antes de modificar este pack.');
+            }
+            if ($e->getMessage() === 'QUESTION_NOT_FOUND') {
+                return $this->error(404, 'QUESTION_NOT_FOUND', 'La pregunta no existe en este borrador.');
+            }
             if ($e->getMessage() === 'LAST_ADMIN') {
                 return $this->error(409, 'LAST_ADMIN', 'No puedes eliminar al ultimo administrador activo.');
             }

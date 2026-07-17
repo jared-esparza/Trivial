@@ -1,6 +1,6 @@
 # Rueda Quiz - Contexto del proyecto
 
-Ultima actualizacion: 2026-07-16
+Ultima actualizacion: 2026-07-17
 
 ## Objetivo y stack
 
@@ -50,11 +50,11 @@ public/
   api.php                   API de salas, acciones, estadisticas e historial.
   account.php               Registro, login, verificacion, reset y borrado.
   admin.php                 Administracion de usuarios y acceso a packs/esquemas.
-  packs.php                 Gestion de packs, revisiones e import/export.
+  packs.php                 Espacio de trabajo de packs, esquemas e importacion.
   history.php               Historial e informes de la cuenta.
   assets/app.js             Cliente principal, tablero SVG y partida.
   assets/account.js         Cliente de cuenta.
-  assets/packs.js           Cliente de packs y colores.
+  assets/packs.js           Workspace responsive, editor, colores e import/export.
   assets/history.js         Cliente de historial.
   assets/session-nav.js     Dropdown de perfil, drawer movil y cierre de sesion.
 
@@ -116,6 +116,11 @@ tests/run.php               Suite PHP sin framework.
 - Una revision activa es inmutable; editar crea un borrador nuevo.
 - Una sala guarda `pack_id`, `pack_revision_id` y `pack_snapshot_json`; partidas existentes no cambian si se edita el pack.
 - El administrador gestiona packs y esquemas de colores del sistema; cada usuario verificado puede gestionar esquemas privados propios.
+- `packs.php` separa Packs, Esquemas de color e Importar. En escritorio mantiene lista y editor conectados; en movil usa navegacion lista-detalle con retorno explicito.
+- El usuario normal solo ve en el workspace sus packs gestionables. El administrador alterna entre sus packs privados y los packs del sistema; no se listan packs privados de otros usuarios.
+- El editor divide Resumen, Categorias y Preguntas. Las claves internas de categoria no se exponen, el guardado de categorias es explicito y avisa sobre cambios pendientes.
+- Las preguntas de un borrador se pueden crear, editar y eliminar individualmente. Las revisiones activas permanecen inmutables y requieren crear un borrador de edicion.
+- Activar una revision exige seis categorias y al menos una pregunta en cada una; la interfaz muestra el progreso antes de habilitar la accion.
 - Un pack guarda seis colores predeterminados. Aplicar un esquema copia sus colores y no crea una dependencia dinamica.
 - `Clasico` es el esquema inicial de packs nuevos y no se puede renombrar ni eliminar.
 - Cambiar solo nombres o colores conserva las preguntas; cambiar claves de categoria reinicia las preguntas del borrador.
@@ -156,6 +161,8 @@ POST /api.php/admin/users/update
 GET  /api.php/packs
 GET  /api.php/packs/colors
 POST /api.php/packs/create|import|categories|questions|edit|activate|delete
+POST /api.php/packs/import/preview
+POST /api.php/packs/questions/update|delete
 POST /api.php/packs/colors/create|update|delete
 
 POST /api.php/rooms
@@ -181,13 +188,13 @@ node --check public/assets/session-nav.js
 
 Antes de tocar UI de partida, preservar las regresiones de geometria, fullscreen, overlays y marcador. Antes de tocar persistencia, probar migracion nueva sobre base vacia y segunda ejecucion idempotente.
 
-Referencia verificada el 2026-07-16: `85 passed, 0 failed`, lint PHP completo, checks Node y `git diff --check` limpio. Navegacion comprobada visualmente a 1280 px y 390 px como invitado y administrador; la matriz pendiente/verificado/admin esta cubierta por pruebas.
+Referencia previa verificada el 2026-07-16: `85 passed, 0 failed`, lint PHP completo, checks Node y `git diff --check` limpio. La nueva UX de packs eleva la suite a 88 pruebas; ejecutar de nuevo toda la matriz antes de cerrar sus cambios locales.
 
 ## Estado reciente
 
-- Rama de trabajo actual: `codex/navigation-ux-redesign`.
-- Cambios locales pendientes de revision: cabecera PHP compartida por rol, perfil desplegable, drawer movil, retorno seguro tras acceso, registro con sesion, migas dinamicas y correccion del espaciado de `.admin-shell`.
-- El tablero, `public/assets/app.js`, su geometria, overlays, marcador y fullscreen no forman parte del cambio de navegacion.
+- Rama de trabajo actual: `main`.
+- Cambios locales pendientes de revision: rediseño completo de `packs.php` como workspace responsive, CRUD de preguntas, previsualizacion de importaciones y biblioteca compacta de esquemas.
+- El tablero, `public/assets/app.js`, su geometria, overlays, marcador y fullscreen no forman parte del cambio de packs.
 - `dc102d2`: jerarquia unica de esquemas, biblioteca personal, colores de sala congelados y preferencias sin overrides locales.
 - `e4a291c`: display name, cuenta, navegacion compartida y mejoras de packs/admin.
 - `TODO_LIST.md` y `video/` son archivos locales no versionados y no forman parte de estos commits.

@@ -19,8 +19,11 @@ final class PackController
         $router->add('GET', '/packs/colors', fn (ApiRequest $request): ApiResponse => $this->colorSchemes($request));
         $router->add('POST', '/packs/create', fn (ApiRequest $request): ApiResponse => $this->create($request));
         $router->add('POST', '/packs/import', fn (ApiRequest $request): ApiResponse => $this->import($request));
+        $router->add('POST', '/packs/import/preview', fn (ApiRequest $request): ApiResponse => $this->previewImport($request));
         $router->add('POST', '/packs/categories', fn (ApiRequest $request): ApiResponse => $this->categories($request));
         $router->add('POST', '/packs/questions', fn (ApiRequest $request): ApiResponse => $this->question($request));
+        $router->add('POST', '/packs/questions/update', fn (ApiRequest $request): ApiResponse => $this->updateQuestion($request));
+        $router->add('POST', '/packs/questions/delete', fn (ApiRequest $request): ApiResponse => $this->deleteQuestion($request));
         $router->add('POST', '/packs/activate', fn (ApiRequest $request): ApiResponse => $this->activate($request));
         $router->add('POST', '/packs/edit', fn (ApiRequest $request): ApiResponse => $this->edit($request));
         $router->add('GET', '/packs/export', fn (ApiRequest $request): ApiResponse => $this->export($request));
@@ -79,6 +82,15 @@ final class PackController
         return new ApiResponse(['pack' => $pack], 201);
     }
 
+    private function previewImport(ApiRequest $request): ApiResponse
+    {
+        $this->requireVerifiedUser($request);
+        return new ApiResponse(['preview' => $this->service->previewImport(
+            (string) ($request->body['format'] ?? ''),
+            (string) ($request->body['content'] ?? '')
+        )]);
+    }
+
     private function categories(ApiRequest $request): ApiResponse
     {
         $user = $this->requireVerifiedUser($request);
@@ -106,6 +118,36 @@ final class PackController
             $user['role'] === 'admin'
         );
         return new ApiResponse(['question' => $question], 201);
+    }
+
+    private function updateQuestion(ApiRequest $request): ApiResponse
+    {
+        $user = $this->requireVerifiedUser($request);
+        $question = $this->service->updateQuestion(
+            (int) $user['id'],
+            (int) ($request->body['packId'] ?? 0),
+            (int) ($request->body['questionId'] ?? 0),
+            (int) ($request->body['slot'] ?? -1),
+            [
+                'question' => (string) ($request->body['question'] ?? ''),
+                'options' => is_array($request->body['options'] ?? null) ? $request->body['options'] : [],
+                'correct' => $request->body['correct'] ?? null,
+            ],
+            $user['role'] === 'admin'
+        );
+        return new ApiResponse(['question' => $question]);
+    }
+
+    private function deleteQuestion(ApiRequest $request): ApiResponse
+    {
+        $user = $this->requireVerifiedUser($request);
+        $this->service->deleteQuestion(
+            (int) $user['id'],
+            (int) ($request->body['packId'] ?? 0),
+            (int) ($request->body['questionId'] ?? 0),
+            $user['role'] === 'admin'
+        );
+        return new ApiResponse(['ok' => true]);
     }
 
     private function activate(ApiRequest $request): ApiResponse

@@ -742,6 +742,126 @@ $runner->test('pack http routes expose public packs and create imports as privat
     assertSameValue(3, count($mine->payload['packs']));
 });
 
+$runner->test('draft pack questions can be updated and deleted through protected routes', function (): void {
+    $pdo = migratedPdo();
+    $users = new UserRepository($pdo);
+    $owner = $users->create('question-owner@example.com', password_hash('question-owner-password', PASSWORD_DEFAULT));
+    $users->markVerified($owner['id']);
+    $sessions = new SessionRepository($pdo);
+    $session = $sessions->create($owner['id']);
+    $repo = new PackRepository($pdo);
+    $service = new PackService($repo);
+    $pack = $service->createDraft($owner['id'], 'Preguntas editables');
+    $categories = [];
+    foreach (GameEngine::categories() as $slot => $category) {
+        $categories[] = ['slot' => $slot, 'key' => $category['slug'], 'name' => $category['name'], 'color' => $category['color']];
+    }
+    $service->replaceCategories($owner['id'], $pack['id'], $categories);
+    $created = $service->addQuestion($owner['id'], $pack['id'], 0, [
+        'question' => 'Pregunta original',
+        'options' => ['A', 'B', 'C', 'D'],
+        'correct' => 0,
+    ]);
+    $router = new ApiRouter();
+    (new PackController($service, $repo, $sessions))->registerRoutes($router);
+
+    $updated = $router->dispatch(new ApiRequest(
+        'POST',
+        '/packs/questions/update',
+        ['packId' => $pack['id'], 'questionId' => $created['id'], 'slot' => 1, 'question' => 'Pregunta corregida', 'options' => ['Uno', 'Dos', 'Tres', 'Cuatro'], 'correct' => 2],
+        [],
+        ['rq_session' => $session['token']],
+        ['x-csrf-token' => $session['csrfToken']]
+    ));
+    assertSameValue(200, $updated->status);
+    assertSameValue('Pregunta corregida', $updated->payload['question']['question']);
+    assertSameValue(1, $updated->payload['question']['slot']);
+    assertSameValue(2, $updated->payload['question']['correct']);
+
+    $deleted = $router->dispatch(new ApiRequest(
+        'POST',
+        '/packs/questions/delete',
+        ['packId' => $pack['id'], 'questionId' => $created['id']],
+        [],
+        ['rq_session' => $session['token']],
+        ['x-csrf-token' => $session['csrfToken']]
+    ));
+    assertSameValue(200, $deleted->status);
+    assertSameValue([], $repo->get($pack['id'])['draftRevision']['questions']);
+});
+
+$runner->test('question mutations enforce ownership and active revision immutability', function (): void {
+    $pdo = migratedPdo();
+    $users = new UserRepository($pdo);
+    $owner = $users->create('pack-owner@example.com', password_hash('pack-owner-password', PASSWORD_DEFAULT));
+    $other = $users->create('other-owner@example.com', password_hash('other-owner-password', PASSWORD_DEFAULT));
+    $repo = new PackRepository($pdo);
+    $service = new PackService($repo);
+    $pack = $service->createDraft($owner['id'], 'Protegido');
+    $categories = [];
+    foreach (GameEngine::categories() as $slot => $category) {
+        $categories[] = ['slot' => $slot, 'key' => $category['slug'], 'name' => $category['name'], 'color' => $category['color']];
+    }
+    $service->replaceCategories($owner['id'], $pack['id'], $categories);
+    $questionIds = [];
+    foreach (range(0, 5) as $slot) {
+        $question = $service->addQuestion($owner['id'], $pack['id'], $slot, [
+            'question' => 'Pregunta ' . $slot,
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct' => 0,
+        ]);
+        $questionIds[] = $question['id'];
+    }
+
+    try {
+        $service->updateQuestion($other['id'], $pack['id'], $questionIds[0], 0, ['question' => 'Ajena', 'options' => ['A', 'B', 'C', 'D'], 'correct' => 0]);
+    } catch (RuntimeException $e) {
+        assertSameValue('PACK_FORBIDDEN', $e->getMessage());
+        $ownershipRejected = true;
+    }
+    assertTrueValue($ownershipRejected ?? false, 'another owner must not update the question');
+
+    $service->activate($owner['id'], $pack['id']);
+    try {
+        $service->deleteQuestion($owner['id'], $pack['id'], $questionIds[0]);
+    } catch (RuntimeException $e) {
+        assertSameValue('PACK_NOT_EDITABLE', $e->getMessage());
+        $activeRejected = true;
+    }
+    assertTrueValue($activeRejected ?? false, 'an active revision must remain immutable');
+});
+
+$runner->test('pack import preview summarizes json and csv without persisting a draft', function (): void {
+    $pdo = migratedPdo();
+    $users = new UserRepository($pdo);
+    $user = $users->create('preview-owner@example.com', password_hash('preview-owner-password', PASSWORD_DEFAULT));
+    $users->markVerified($user['id']);
+    $sessions = new SessionRepository($pdo);
+    $session = $sessions->create($user['id']);
+    $repo = new PackRepository($pdo);
+    $router = new ApiRouter();
+    (new PackController(new PackService($repo), $repo, $sessions))->registerRoutes($router);
+    $definition = ['name' => 'Vista previa', 'categories' => [], 'questions' => []];
+    foreach (GameEngine::categories() as $slot => $category) {
+        $definition['categories'][] = ['slot' => $slot, 'key' => $category['slug'], 'name' => $category['name'], 'color' => $category['color']];
+        $definition['questions'][] = ['slot' => $slot, 'question' => 'Pregunta ' . $slot, 'options' => ['A', 'B', 'C', 'D'], 'correct' => 0];
+    }
+    $before = (int) $pdo->query('SELECT COUNT(*) FROM question_packs')->fetchColumn();
+
+    foreach (['json' => PackExporter::toJson($definition), 'csv' => PackExporter::toCsv($definition)] as $format => $content) {
+        $response = $router->dispatch(new ApiRequest(
+            'POST', '/packs/import/preview', ['format' => $format, 'content' => $content], [],
+            ['rq_session' => $session['token']], ['x-csrf-token' => $session['csrfToken']]
+        ));
+        assertSameValue(200, $response->status);
+        assertSameValue('Vista previa', $response->payload['preview']['name']);
+        assertSameValue(6, $response->payload['preview']['questionCount']);
+        assertSameValue([1, 1, 1, 1, 1, 1], $response->payload['preview']['questionsPerCategory']);
+        assertSameValue(6, count($response->payload['preview']['categories']));
+    }
+    assertSameValue($before, (int) $pdo->query('SELECT COUNT(*) FROM question_packs')->fetchColumn());
+});
+
 $runner->test('pack creation rejects a private color scheme owned by another user', function (): void {
     $pdo = migratedPdo();
     (new PackSeeder($pdo, __DIR__ . '/../data/questions-demo.csv'))->seed();
@@ -849,28 +969,27 @@ $runner->test('color scheme api scopes system and personal schemes by ownership'
     assertSameValue(409, $protected->status);
 });
 
-$runner->test('pack management ui exposes admin system and color controls conditionally', function (): void {
+$runner->test('pack management ui exposes a role aware responsive workspace', function (): void {
     $page = file_get_contents(__DIR__ . '/../public/packs.php');
     $script = file_get_contents(__DIR__ . '/../public/assets/packs.js');
     $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
     assertTrueValue(is_string($page) && is_string($script) && is_string($styles));
-    assertTrueValue(str_contains($page, 'adminPackControls'));
-    assertTrueValue(str_contains($page, 'colorSchemeForm'));
-    assertTrueValue(str_contains($page, 'personalColorSchemeSection'), 'verified users should manage personal color schemes');
-    assertTrueValue(str_contains($page, 'createPackColorScheme'), 'pack creation should select an initial color scheme');
-    assertTrueValue(str_contains($page, 'applyColorSchemeSelect'), 'pack editor should apply a reusable color scheme');
-    assertTrueValue(str_contains($page, 'color-grid'), 'color form should use unified color grid');
-    assertTrueValue(str_contains($script, "me.user?.role === 'admin'"));
-    assertTrueValue(str_contains($script, '/packs/colors/create'));
-    assertTrueValue(str_contains($script, '/packs/colors/update'));
-    assertTrueValue(str_contains($script, '/packs/colors/delete'));
-    assertTrueValue(str_contains($script, 'withSubmitting'), 'pack forms should prevent duplicate submissions');
-    assertTrueValue(str_contains($script, 'const formElement = event.currentTarget'), 'async submit handlers should keep the form reference');
-    assertTrueValue(str_contains($script, 'selectedPackId === pack.id'), 'pack list should expose selected state');
-    assertTrueValue(str_contains($script, 'renderColorInputs'), 'color inputs should show visible values');
-    assertTrueValue(str_contains($styles, '.pack-list-item'), 'pack list styles should exist');
-    assertTrueValue(str_contains($styles, 'color: var(--ink);'), 'pack list buttons should not inherit white button text');
-    assertTrueValue(str_contains($styles, '.admin-user-email'), 'admin email should have overflow-safe styling');
+    foreach (['packsSectionTabs', 'packsWorkspace', 'packIndex', 'packEditor', 'newPackDialog', 'questionDialog', 'schemeDialog', 'importDropzone'] as $id) {
+        assertTrueValue(str_contains($page, 'id="' . $id . '"'), "pack workspace should expose {$id}");
+    }
+    assertTrueValue(!str_contains($page, 'packExportOutput'), 'exports should not occupy a permanent textarea');
+    assertTrueValue(!str_contains($page, 'name="key"'), 'category keys should stay out of the ordinary form');
+    foreach (['/packs/questions/update', '/packs/questions/delete', '/packs/import/preview', 'beforeunload', 'downloadPack', 'confirmDestructive', 'renderWorkspace'] as $contract) {
+        assertTrueValue(str_contains($script, $contract), "pack client should implement {$contract}");
+    }
+    assertTrueValue(str_contains($script, "packUser?.role !== 'admin'"), 'regular users should only see manageable personal packs');
+    assertTrueValue(str_contains($script, "pack.kind === adminPackFilter"), 'administrators should filter their own and system packs');
+    foreach (['.packs-shell', '.packs-workspace', '.packs-mobile-back', '.packs-category-grid', '.packs-question-row'] as $selector) {
+        assertTrueValue(str_contains($styles, $selector), "pack styles should include {$selector}");
+    }
+    assertTrueValue(str_contains($script, "classList.add('is-pack-detail')"), 'mobile detail should enter a focused page state');
+    assertTrueValue(str_contains($script, "classList.remove('is-pack-detail')"), 'mobile back should restore the pack index state');
+    assertTrueValue(str_contains($styles, '.packs-shell.is-pack-detail'), 'mobile detail should hide list-level chrome');
 });
 
 $runner->test('room stores active pack revision and immutable category snapshot', function (): void {

@@ -32,6 +32,20 @@ final class PackService
         return $this->packs->addQuestion($revision['id'], $slot, $question);
     }
 
+    public function updateQuestion(int $actorUserId, int $packId, int $questionId, int $slot, array $question, bool $admin = false): array
+    {
+        $this->authorize($actorUserId, $packId, $admin);
+        $revision = $this->packs->editableRevisionForPack($packId);
+        return $this->packs->updateQuestion($revision['id'], $questionId, $slot, $question);
+    }
+
+    public function deleteQuestion(int $actorUserId, int $packId, int $questionId, bool $admin = false): void
+    {
+        $this->authorize($actorUserId, $packId, $admin);
+        $revision = $this->packs->editableRevisionForPack($packId);
+        $this->packs->deleteQuestion($revision['id'], $questionId);
+    }
+
     public function activate(int $actorUserId, int $packId, bool $admin = false): array
     {
         $this->authorize($actorUserId, $packId, $admin);
@@ -47,11 +61,7 @@ final class PackService
 
     public function importDraft(int $ownerUserId, string $format, string $content): array
     {
-        $definition = match (strtolower($format)) {
-            'json' => PackImporter::fromJson($content),
-            'csv' => PackImporter::fromCsv($content),
-            default => throw new InvalidArgumentException('Formato de importacion no valido.'),
-        };
+        $definition = $this->importDefinition($format, $content);
         $pack = $this->createDraft($ownerUserId, $definition['name']);
         $this->replaceCategories($ownerUserId, $pack['id'], $definition['categories']);
         foreach ($definition['questions'] as $question) {
@@ -59,6 +69,22 @@ final class PackService
         }
 
         return $this->packs->get($pack['id']);
+    }
+
+    public function previewImport(string $format, string $content): array
+    {
+        $definition = $this->importDefinition($format, $content);
+        $counts = array_fill(0, 6, 0);
+        foreach ($definition['questions'] as $question) {
+            $counts[$question['slot']]++;
+        }
+
+        return [
+            'name' => $definition['name'],
+            'categories' => $definition['categories'],
+            'questionCount' => count($definition['questions']),
+            'questionsPerCategory' => $counts,
+        ];
     }
 
     public function export(int $actorUserId, int $packId, string $format, bool $admin = false): string
@@ -93,5 +119,14 @@ final class PackService
             throw new RuntimeException('PACK_FORBIDDEN');
         }
         return $pack;
+    }
+
+    private function importDefinition(string $format, string $content): array
+    {
+        return match (strtolower($format)) {
+            'json' => PackImporter::fromJson($content),
+            'csv' => PackImporter::fromCsv($content),
+            default => throw new InvalidArgumentException('Formato de importacion no valido.'),
+        };
     }
 }
