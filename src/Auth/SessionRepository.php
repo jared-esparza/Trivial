@@ -73,6 +73,17 @@ final class SessionRepository
         $stmt->execute([':user_id' => $userId]);
     }
 
+    public function deleteAllForUserExcept(int $userId, int $sessionId): void
+    {
+        $stmt = $this->pdo->prepare(
+            'DELETE FROM auth_sessions WHERE user_id = :user_id AND id <> :session_id'
+        );
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':session_id' => $sessionId,
+        ]);
+    }
+
     private static function randomToken(): string
     {
         return rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');

@@ -92,6 +92,20 @@ final class AuthService
         $this->sessions->deleteAllForUser($userId);
     }
 
+    public function changePassword(int $userId, int $sessionId, string $currentPassword, string $newPassword): void
+    {
+        $user = $this->users->findById($userId) ?? throw new RuntimeException('USER_NOT_FOUND');
+        if (!password_verify($currentPassword, (string) $user['password_hash'])) {
+            throw new InvalidArgumentException('La contrasena actual no es correcta.');
+        }
+        if (strlen($newPassword) < 10) {
+            throw new InvalidArgumentException('La contrasena debe tener al menos 10 caracteres.');
+        }
+
+        $this->users->updatePassword($userId, password_hash($newPassword, PASSWORD_DEFAULT));
+        $this->sessions->deleteAllForUserExcept($userId, $sessionId);
+    }
+
     public function updateDisplayName(int $userId, string $displayName): array
     {
         return $this->users->updateDisplayName($userId, $displayName);

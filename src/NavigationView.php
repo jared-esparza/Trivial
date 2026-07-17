@@ -20,8 +20,20 @@ final class NavigationView
         if (preg_match('~^(?:https?:)?//~i', $target) === 1) {
             return './';
         }
-        if (in_array($target, ['./', 'index.php', 'packs.php', 'history.php', 'admin.php'], true)) {
+        if (in_array($target, ['./', 'index.php', 'account.php', 'packs.php', 'history.php', 'admin.php'], true)) {
             return $target === 'index.php' ? './' : $target;
+        }
+        $knownTargets = [
+            'admin.php?section=users',
+            'admin.php?section=content',
+            'packs.php?section=packs&scope=user',
+            'packs.php?section=packs&scope=system',
+            'packs.php?section=schemes&scope=user',
+            'packs.php?section=schemes&scope=system',
+            'packs.php?section=import',
+        ];
+        if (in_array($target, $knownTargets, true)) {
+            return $target;
         }
         if (preg_match('/^\.\/\?room=[A-Z0-9]{6}$/', $target) === 1) {
             return $target;
@@ -40,6 +52,9 @@ final class NavigationView
             $primaryLinks[] = self::navLink('packs.php', 'Packs', $activePage === 'packs');
             $primaryLinks[] = self::navLink('history.php', 'Historial', $activePage === 'history');
         }
+        if ($isAdmin) {
+            $primaryLinks[] = self::navLink('admin.php', 'Administración', $activePage === 'admin');
+        }
         $primary = implode('', $primaryLinks);
         $brand = self::escape($appName);
         $accessHref = 'account.php?return=' . rawurlencode($returnTarget);
@@ -54,9 +69,6 @@ final class NavigationView
             $initial = self::escape(self::initial((string) ($user['display_name'] ?? 'U')));
             $status = $verified ? 'Email verificado' : 'Email pendiente';
             $csrf = self::escape((string) ($user['csrf_token'] ?? ''));
-            $adminLink = $isAdmin
-                ? self::menuLink('admin.php', 'Administración', $activePage === 'admin')
-                : '';
             $accountLink = self::menuLink('account.php', 'Mi cuenta', $activePage === 'account');
             $desktopIdentity = <<<HTML
                 <div class="profile-menu" data-profile-menu>
@@ -68,7 +80,6 @@ final class NavigationView
                     <div id="profileMenuPanel" class="profile-menu-panel hidden" data-profile-menu-panel>
                         <div class="profile-menu-identity"><strong>{$displayName}</strong><span>{$status}</span></div>
                         <div class="profile-menu-links">
-                            {$adminLink}
                             {$accountLink}
                         </div>
                         <button class="profile-menu-logout" type="button" data-session-logout data-csrf="{$csrf}">Cerrar sesi&oacute;n</button>
@@ -78,7 +89,6 @@ final class NavigationView
             $mobileIdentity = <<<HTML
                 <div class="mobile-menu-account">
                     <div class="mobile-menu-identity"><span class="profile-avatar" aria-hidden="true">{$initial}</span><span><strong>{$displayName}</strong><small>{$status}</small></span></div>
-                    {$adminLink}
                     {$accountLink}
                     <button class="mobile-menu-logout" type="button" data-session-logout data-csrf="{$csrf}">Cerrar sesi&oacute;n</button>
                 </div>

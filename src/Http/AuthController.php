@@ -23,6 +23,7 @@ final class AuthController
         $router->add('POST', '/auth/logout', fn (ApiRequest $request): ApiResponse => $this->logout($request));
         $router->add('POST', '/auth/password/forgot', fn (ApiRequest $request): ApiResponse => $this->forgotPassword($request));
         $router->add('POST', '/auth/password/reset', fn (ApiRequest $request): ApiResponse => $this->resetPassword($request));
+        $router->add('POST', '/auth/password/change', fn (ApiRequest $request): ApiResponse => $this->changePassword($request));
         $router->add('POST', '/auth/delete', fn (ApiRequest $request): ApiResponse => $this->deleteAccount($request));
     }
 
@@ -80,6 +81,19 @@ final class AuthController
         return new ApiResponse(['ok' => true]);
     }
 
+    private function changePassword(ApiRequest $request): ApiResponse
+    {
+        [, $user] = $this->requireSession($request, true);
+        $this->auth->changePassword(
+            (int) $user['id'],
+            (int) $user['session_id'],
+            (string) ($request->body['currentPassword'] ?? ''),
+            (string) ($request->body['newPassword'] ?? '')
+        );
+
+        return new ApiResponse(['ok' => true]);
+    }
+
     private function me(ApiRequest $request): ApiResponse
     {
         $token = (string) ($request->cookies[self::COOKIE_NAME] ?? '');
@@ -122,6 +136,9 @@ final class AuthController
         }
 
         [, $user] = $this->requireSession($request, true);
+        if ((string) ($request->body['confirmation'] ?? '') !== 'ELIMINAR') {
+            throw new InvalidArgumentException('Escribe ELIMINAR para confirmar el borrado.');
+        }
         if (!password_verify((string) ($request->body['password'] ?? ''), (string) $user['password_hash'])) {
             throw new InvalidArgumentException('La contrasena actual no es correcta.');
         }

@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelector('#adminPackFilters')?.classList.toggle('hidden', !isAdmin);
         document.querySelector('#adminSchemeFilters')?.classList.toggle('hidden', !isAdmin);
         bindWorkspace();
+        applyPackLocation(false);
         await Promise.all([loadPacks(), loadColorSchemes()]);
         renderWorkspace();
         renderSchemeLibrary();
@@ -32,11 +33,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+window.addEventListener('popstate', () => applyPackLocation(false));
+
 window.addEventListener('beforeunload', (event) => {
     if (!categoriesDirty) return;
     event.preventDefault();
     event.returnValue = '';
 });
+
+function readPackLocation() {
+    const params = new URLSearchParams(location.search);
+    const sectionOptions = [{ section: 'packs' }, { section: 'schemes' }, { section: 'import' }];
+    const scopeOptions = [{ scope: 'user' }, { scope: 'system' }];
+    const requestedSection = params.get('section');
+    const requestedScope = params.get('scope');
+    return {
+        section: sectionOptions.some((option) => option.section === requestedSection) ? requestedSection : 'packs',
+        scope: scopeOptions.some((option) => option.scope === requestedScope) ? requestedScope : 'user'
+    };
+}
+
+function applyPackLocation(updateLocation = false) {
+    const state = readPackLocation();
+    activeSection = state.section;
+    const scope = packUser?.role === 'admin' ? state.scope : 'user';
+    adminPackFilter = scope;
+    adminSchemeFilter = scope;
+    switchSectionViewWithoutGuard(activeSection);
+    const packFilter = document.querySelector(`[data-pack-filter="${adminPackFilter}"]`);
+    const schemeFilter = document.querySelector(`[data-scheme-filter="${adminSchemeFilter}"]`);
+    if (packFilter) updatePressedButtons('[data-pack-filter]', packFilter);
+    if (schemeFilter) updatePressedButtons('[data-scheme-filter]', schemeFilter);
+    document.querySelector('.packs-shell')?.classList.remove('is-pack-detail');
+    document.querySelector('#packsWorkspace')?.classList.remove('is-detail-open');
+    updatePackBreadcrumb(activeSection === 'packs' ? selectedPack()?.name : activeSection === 'schemes' ? 'Esquemas de color' : 'Importar');
+    if (packs.length) renderWorkspace();
+    if (colorSchemes.length) renderSchemeLibrary();
+    if (updateLocation) updatePackLocation(true);
+}
+
+function updatePackLocation(replace = false) {
+    const url = new URL(location.href);
+    url.search = '';
+    url.searchParams.set('section', activeSection);
+    if (activeSection !== 'import') {
+        const scope = packUser?.role === 'admin'
+            ? (activeSection === 'schemes' ? adminSchemeFilter : adminPackFilter)
+            : 'user';
+        url.searchParams.set('scope', scope);
+    }
+    const method = replace ? 'replaceState' : 'pushState';
+    history[method]({ section: activeSection }, '', url);
+}
 
 function bindWorkspace() {
     document.querySelectorAll('[data-section-tab]').forEach((button) => button.addEventListener('click', () => switchSection(button.dataset.sectionTab)));
@@ -47,11 +95,13 @@ function bindWorkspace() {
         selectedPackId = null;
         updatePressedButtons('[data-pack-filter]', button);
         renderWorkspace();
+        updatePackLocation();
     }));
     document.querySelectorAll('[data-scheme-filter]').forEach((button) => button.addEventListener('click', () => {
         adminSchemeFilter = button.dataset.schemeFilter;
         updatePressedButtons('[data-scheme-filter]', button);
         renderSchemeLibrary();
+        updatePackLocation();
     }));
 
     document.querySelector('#newPackButton')?.addEventListener('click', (event) => openNewPackDialog(event.currentTarget));
@@ -270,7 +320,10 @@ function renderEditorTabs() {
 }
 
 function switchSection(sectionName) {
-    if (sectionName === activeSection) return;
+    if (sectionName === activeSection) {
+        updatePackLocation();
+        return;
+    }
     if (!canDiscardCategoryChanges()) return;
     activeSection = sectionName;
     document.querySelector('.packs-shell')?.classList.remove('is-pack-detail');
@@ -280,6 +333,7 @@ function switchSection(sectionName) {
     document.querySelector('#schemesSection')?.classList.toggle('hidden', sectionName !== 'schemes');
     document.querySelector('#importSection')?.classList.toggle('hidden', sectionName !== 'import');
     updatePackBreadcrumb(sectionName === 'packs' ? selectedPack()?.name : sectionName === 'schemes' ? 'Esquemas de color' : 'Importar');
+    updatePackLocation();
 }
 
 function openNewPackDialog(trigger) {
@@ -594,6 +648,7 @@ async function importPack(event) {
         document.querySelector('#importPreviewForm')?.reset();
         await loadPacks();
         switchSectionViewWithoutGuard('packs');
+        updatePackLocation(true);
         renderWorkspace();
         openMobilePackDetail();
         notifyPack('Pack importado como borrador privado.');

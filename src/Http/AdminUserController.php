@@ -30,10 +30,13 @@ final class AdminUserController
 
     private function update(ApiRequest $request): ApiResponse
     {
-        $this->requireAdmin($request, true);
+        $currentAdmin = $this->requireAdmin($request, true);
         $userId = (int) ($request->body['userId'] ?? 0);
         if ($userId < 1) {
             throw new ApiException(422, 'USER_ID_REQUIRED', 'Usuario no valido.');
+        }
+        if ($userId === (int) $currentAdmin['id']) {
+            throw new ApiException(409, 'SELF_ADMIN_CHANGE', 'No puedes cambiar tu propio rol o estado.');
         }
 
         try {

@@ -2974,3 +2974,721 @@ button:disabled {
 .danger-button {
     background: #a52020;
 }
+
+/* Cuenta: superficie enfocada y aislada del tablero. */
+.account-shell {
+    width: min(1040px, calc(100vw - 28px));
+    min-height: auto;
+    margin: 24px auto 64px;
+}
+
+.account-heading,
+.admin-workspace-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 24px;
+    margin: 18px 0 22px;
+}
+
+.account-heading h1,
+.admin-workspace-heading h1 {
+    margin: 2px 0 6px;
+    font-size: clamp(30px, 5vw, 46px);
+    letter-spacing: -0.035em;
+}
+
+.account-heading p,
+.admin-workspace-heading p {
+    max-width: 690px;
+    margin-bottom: 0;
+}
+
+.account-access {
+    width: min(100%, 680px);
+    margin: 32px auto 0;
+    overflow: hidden;
+    border: 1px solid #cfd8ea;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 22px 60px rgba(3, 26, 70, 0.11);
+}
+
+.account-access-intro {
+    padding: clamp(22px, 5vw, 34px) clamp(20px, 5vw, 38px) 18px;
+    background: linear-gradient(135deg, #f8faff, #fff);
+}
+
+.account-access-intro h2,
+.account-editor h2,
+.account-summary h2 {
+    margin: 2px 0 6px;
+}
+
+.account-access-tabs,
+.account-section-tabs,
+.admin-section-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 5px;
+    background: #edf1f8;
+    border-radius: 11px;
+}
+
+.account-access-tabs {
+    margin: 0 clamp(20px, 5vw, 38px);
+}
+
+.account-access-tabs button,
+.account-section-tabs button,
+.admin-section-tabs button {
+    flex: 1 1 0;
+    min-height: 42px;
+    color: var(--muted);
+    background: transparent;
+}
+
+.account-access-tabs button:hover,
+.account-section-tabs button:hover,
+.admin-section-tabs button:hover {
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.65);
+}
+
+.account-access-tabs button[aria-selected="true"],
+.account-section-tabs button[aria-selected="true"],
+.admin-section-tabs button[aria-selected="true"] {
+    color: var(--navy);
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(3, 26, 70, 0.12);
+}
+
+.account-access-panel {
+    padding: 24px clamp(20px, 5vw, 38px) clamp(24px, 5vw, 38px);
+}
+
+.account-access-panel form,
+.account-editor-panel form {
+    display: grid;
+    gap: 4px;
+}
+
+.account-access-panel form > button {
+    width: 100%;
+    min-height: 46px;
+    margin-top: 5px;
+}
+
+.field-help {
+    margin: -7px 0 10px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.account-inline-status,
+.admin-inline-status {
+    min-height: 22px;
+    margin: 4px 0;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.account-access > .account-inline-status {
+    min-height: 0;
+    margin: 14px clamp(20px, 5vw, 38px) -10px;
+}
+
+.account-inline-status.is-error,
+.admin-inline-status.is-error {
+    color: var(--bad);
+}
+
+.account-inline-status.is-success,
+.admin-inline-status.is-success {
+    color: var(--ok);
+}
+
+.account-workspace {
+    display: grid;
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.account-workspace[hidden] {
+    display: none;
+}
+
+.account-summary,
+.account-editor {
+    border: 1px solid #cfd8ea;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 16px 42px rgba(3, 26, 70, 0.08);
+}
+
+.account-summary {
+    position: sticky;
+    top: 98px;
+    padding: 26px;
+}
+
+.account-avatar,
+.admin-user-avatar {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 900;
+    background: linear-gradient(145deg, var(--accent), var(--navy));
+    border: 3px solid #dbe7ff;
+    border-radius: 50%;
+}
+
+.account-avatar {
+    width: 64px;
+    height: 64px;
+    margin: 14px 0;
+    font-size: 25px;
+}
+
+.account-email {
+    overflow-wrap: anywhere;
+}
+
+.account-badges span.is-success {
+    color: #0b6c34;
+    background: #e4f7eb;
+}
+
+.account-badges span.is-warning {
+    color: #875d00;
+    background: #fff4d6;
+}
+
+.account-editor {
+    overflow: hidden;
+}
+
+.account-section-tabs {
+    margin: 18px 18px 0;
+}
+
+.account-editor-panel {
+    padding: clamp(22px, 4vw, 34px);
+}
+
+.account-section-heading,
+.account-session-actions,
+.account-danger-card,
+.account-form-actions,
+.account-dialog-actions,
+.admin-dialog-actions,
+.admin-detail-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.account-pending,
+.admin-pending-changes {
+    color: #795500;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.account-form-actions {
+    justify-content: flex-end;
+    margin-top: 6px;
+}
+
+.account-session-actions,
+.account-danger-card {
+    margin-top: 24px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #f8faff;
+}
+
+.account-session-actions p,
+.account-danger-card p {
+    margin: 3px 0 0;
+    font-size: 13px;
+}
+
+.account-danger-card {
+    border-color: #efc7c7;
+    background: #fff8f8;
+}
+
+.account-dialog,
+.admin-confirm-dialog {
+    width: min(560px, calc(100vw - 28px));
+    padding: 0;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 28px 80px rgba(3, 26, 70, 0.3);
+}
+
+.account-dialog::backdrop,
+.admin-confirm-dialog::backdrop {
+    background: rgba(3, 16, 42, 0.62);
+}
+
+.account-dialog form,
+.admin-confirm-dialog form {
+    display: grid;
+    gap: 14px;
+    padding: clamp(22px, 5vw, 32px);
+}
+
+.account-dialog h2,
+.admin-confirm-dialog h2 {
+    margin: 2px 0 0;
+}
+
+.account-dialog-actions,
+.admin-dialog-actions {
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+/* Administración: lista y detalle sin heredar la cuadrícula histórica. */
+.admin-shell.admin-page-shell {
+    display: block;
+    width: min(1240px, calc(100vw - 28px));
+    min-height: auto;
+    margin: 24px auto 64px;
+}
+
+.admin-section-tabs {
+    width: min(100%, 420px);
+    margin-bottom: 18px;
+}
+
+.admin-filter-panel {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.7fr) repeat(4, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 14px;
+    border: 1px solid #d7deea;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(3, 26, 70, 0.05);
+}
+
+.admin-filter-panel label {
+    margin: 0;
+}
+
+.admin-workspace {
+    display: grid;
+    grid-template-columns: minmax(310px, 390px) minmax(0, 1fr);
+    min-height: 570px;
+    overflow: hidden;
+    border: 1px solid #cfd8ea;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 18px 50px rgba(3, 26, 70, 0.09);
+}
+
+.admin-user-list-panel {
+    border-right: 1px solid var(--line);
+    background: #f8faff;
+}
+
+.admin-list-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 18px 14px;
+}
+
+.admin-list-heading h2 {
+    margin: 2px 0 0;
+}
+
+.admin-result-count {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.admin-user-list-panel > .admin-inline-status {
+    padding: 0 18px;
+}
+
+.admin-user-list {
+    display: grid;
+    gap: 7px;
+    max-height: 620px;
+    padding: 0 10px 12px;
+    overflow: auto;
+}
+
+.admin-user-list-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 9px 11px;
+    width: 100%;
+    padding: 12px;
+    text-align: left;
+    color: var(--ink);
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: transparent;
+}
+
+.admin-user-list-item:hover {
+    color: var(--ink);
+    background: #eef3ff;
+}
+
+.admin-user-list-item.is-selected {
+    border-color: #a9c1f5;
+    background: #e8f0ff;
+    box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.admin-user-list-identity {
+    display: grid;
+    min-width: 0;
+}
+
+.admin-user-list-identity strong,
+.admin-user-list-identity small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-user-list-identity small {
+    margin-top: 2px;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.admin-user-list-badges {
+    display: flex;
+    grid-column: 2;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 3px 8px;
+    color: #33415f;
+    font-size: 11px;
+    font-weight: 800;
+    background: #e8edf7;
+    border-radius: 999px;
+}
+
+.status-badge.is-active {
+    color: #0b6c34;
+    background: #dff6e7;
+}
+
+.status-badge.is-disabled {
+    color: #942323;
+    background: #fae5e5;
+}
+
+.status-badge.is-pending {
+    color: #805a00;
+    background: #fff1c9;
+}
+
+.admin-list-empty,
+.admin-detail-empty {
+    display: grid;
+    place-items: center;
+    gap: 6px;
+    min-height: 230px;
+    padding: 30px;
+    text-align: center;
+    color: var(--muted);
+}
+
+.admin-list-empty span {
+    font-size: 13px;
+}
+
+.admin-user-detail {
+    min-width: 0;
+    padding: clamp(22px, 4vw, 38px);
+}
+
+.admin-back-button {
+    display: none;
+    margin-bottom: 18px;
+}
+
+.admin-detail-heading {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+}
+
+.admin-detail-heading h2 {
+    margin: 2px 0 3px;
+}
+
+.admin-user-avatar.is-large {
+    width: 62px;
+    height: 62px;
+    font-size: 24px;
+}
+
+.admin-user-metadata {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 22px 0;
+}
+
+.admin-user-metadata div {
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fafbfe;
+}
+
+.admin-user-metadata dt {
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.admin-user-metadata dd {
+    margin: 0;
+    font-weight: 800;
+}
+
+.admin-user-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.admin-self-note {
+    display: grid;
+    gap: 3px;
+    padding: 14px 16px;
+    color: #66500f;
+    background: #fff7dc;
+    border: 1px solid #ead28b;
+    border-radius: 10px;
+}
+
+.admin-self-note span {
+    font-size: 13px;
+}
+
+.admin-detail-actions {
+    justify-content: flex-end;
+    min-height: 46px;
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+}
+
+.admin-pending-changes {
+    margin-right: auto;
+}
+
+.admin-content-heading {
+    max-width: 720px;
+    margin: 26px 0 20px;
+}
+
+.admin-content-heading h2 {
+    margin: 3px 0 6px;
+}
+
+.admin-content-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.admin-content-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    min-height: 120px;
+    padding: 20px;
+    color: var(--ink);
+    text-decoration: none;
+    border: 1px solid #cfd8ea;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #fff, #f7f9ff);
+    box-shadow: 0 10px 30px rgba(3, 26, 70, 0.07);
+    transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.admin-content-card:hover {
+    transform: translateY(-2px);
+    border-color: #91afe9;
+    box-shadow: 0 16px 34px rgba(3, 26, 70, 0.12);
+}
+
+.admin-content-card span:nth-child(2) {
+    display: grid;
+    gap: 5px;
+}
+
+.admin-content-card small {
+    color: var(--muted);
+    line-height: 1.35;
+}
+
+.admin-content-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    color: #fff;
+    font-weight: 900;
+    background: var(--navy);
+    border-radius: 11px;
+    box-shadow: inset 0 -3px 0 var(--gold);
+}
+
+@media (max-width: 980px) {
+    .admin-filter-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-search-field {
+        grid-column: 1 / -1;
+    }
+
+    .admin-content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .account-shell,
+    .admin-shell.admin-page-shell {
+        width: min(100% - 16px, 640px);
+        margin-top: 16px;
+    }
+
+    .account-heading,
+    .admin-workspace-heading {
+        margin-top: 12px;
+    }
+
+    .account-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .account-summary {
+        position: static;
+    }
+
+    .account-section-heading,
+    .account-session-actions,
+    .account-danger-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .account-session-actions button,
+    .account-danger-card button,
+    .account-dialog-actions button,
+    .admin-dialog-actions button {
+        width: 100%;
+    }
+
+    .account-dialog-actions,
+    .admin-dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .admin-filter-panel {
+        grid-template-columns: 1fr 1fr;
+        padding: 10px;
+    }
+
+    .admin-workspace {
+        display: block;
+        min-height: 0;
+    }
+
+    .admin-user-list-panel {
+        border-right: 0;
+    }
+
+    .admin-user-detail {
+        display: none;
+        padding: 16px;
+    }
+
+    .admin-workspace.is-user-detail .admin-user-list-panel {
+        display: none;
+    }
+
+    .admin-workspace.is-user-detail .admin-user-detail {
+        display: block;
+    }
+
+    .admin-page-shell.is-user-detail > .breadcrumbs,
+    .admin-page-shell.is-user-detail > .admin-workspace-heading,
+    .admin-page-shell.is-user-detail > .admin-section-tabs,
+    .admin-page-shell.is-user-detail .admin-filter-panel {
+        display: none;
+    }
+
+    .admin-back-button {
+        display: inline-flex;
+    }
+
+    .admin-user-list {
+        max-height: none;
+    }
+
+    .admin-user-metadata,
+    .admin-user-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-detail-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-pending-changes {
+        margin-right: 0;
+    }
+}
+
+@media (max-width: 430px) {
+    .account-access-tabs button,
+    .account-section-tabs button,
+    .admin-section-tabs button {
+        padding-inline: 7px;
+        font-size: 13px;
+    }
+
+}

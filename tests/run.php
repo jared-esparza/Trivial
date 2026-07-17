@@ -263,6 +263,61 @@ $runner->test('password reset revokes existing sessions and logout revokes one s
     assertSameValue(null, $sessions->findUserByToken($secondSession['token']));
 });
 
+$runner->test('authenticated password change preserves current session and revokes the others', function (): void {
+    $pdo = migratedPdo();
+    $users = new UserRepository($pdo);
+    $sessions = new SessionRepository($pdo);
+    $auth = new AuthService($users, $sessions, new AccountTokenRepository($pdo), new TestMailer(), 'http://localhost');
+    $user = $users->create('change@example.com', password_hash('contrasena-segura', PASSWORD_DEFAULT));
+    $currentSession = $sessions->create($user['id']);
+    $otherSession = $sessions->create($user['id']);
+    $router = new ApiRouter();
+    (new AuthController($auth, $sessions))->registerRoutes($router);
+
+    $missingCsrf = $router->dispatch(new ApiRequest(
+        'POST',
+        '/auth/password/change',
+        ['currentPassword' => 'contrasena-segura', 'newPassword' => 'nueva-contrasena-segura'],
+        [],
+        ['rq_session' => $currentSession['token']]
+    ));
+    assertSameValue(403, $missingCsrf->status);
+
+    $wrongCurrent = $router->dispatch(new ApiRequest(
+        'POST',
+        '/auth/password/change',
+        ['currentPassword' => 'contrasena-incorrecta', 'newPassword' => 'nueva-contrasena-segura'],
+        [],
+        ['rq_session' => $currentSession['token']],
+        ['x-csrf-token' => $currentSession['csrfToken']]
+    ));
+    assertSameValue(422, $wrongCurrent->status);
+
+    $tooShort = $router->dispatch(new ApiRequest(
+        'POST',
+        '/auth/password/change',
+        ['currentPassword' => 'contrasena-segura', 'newPassword' => 'corta'],
+        [],
+        ['rq_session' => $currentSession['token']],
+        ['x-csrf-token' => $currentSession['csrfToken']]
+    ));
+    assertSameValue(422, $tooShort->status);
+
+    $changed = $router->dispatch(new ApiRequest(
+        'POST',
+        '/auth/password/change',
+        ['currentPassword' => 'contrasena-segura', 'newPassword' => 'nueva-contrasena-segura'],
+        [],
+        ['rq_session' => $currentSession['token']],
+        ['x-csrf-token' => $currentSession['csrfToken']]
+    ));
+    assertSameValue(200, $changed->status);
+    assertSameValue(true, $changed->payload['ok']);
+    assertTrueValue($sessions->findUserByToken($currentSession['token']) !== null, 'current session should remain valid');
+    assertSameValue(null, $sessions->findUserByToken($otherSession['token']));
+    assertTrueValue(password_verify('nueva-contrasena-segura', $users->findById($user['id'])['password_hash']));
+});
+
 $runner->test('user administration protects last admin and revokes disabled user sessions', function (): void {
     assertTrueValue(class_exists('UserAdminService'), 'UserAdminService should be available');
 
@@ -482,19 +537,45 @@ $runner->test('account ui and admin panel use session authentication without sha
     assertTrueValue(is_string($index) && is_string($admin) && is_string($api) && is_string($bootstrap));
     assertTrueValue(str_contains($index, 'NavigationView::renderHeader'), 'home should render role-aware account navigation');
     assertTrueValue(str_contains($index, 'assets/session-nav.js'), 'home should load shared navigation');
-    assertTrueValue(is_string($accountPage) && str_contains($accountPage, 'Login o registro'), 'account page should identify anonymous login/register state');
+    assertTrueValue(is_string($accountPage) && str_contains($accountPage, 'id="accountAccessTabs"'), 'account page should expose focused access tabs');
     assertTrueValue(str_contains($accountPage, 'name="displayName"'), 'account page should collect display name');
+    assertTrueValue(str_contains($accountPage, 'id="accountWorkspace"'), 'authenticated account should expose its workspace');
+    assertTrueValue(str_contains($accountPage, 'id="accountSectionTabs"'), 'authenticated account should separate profile and security');
+    assertTrueValue(str_contains($accountPage, 'id="passwordChangeForm"'), 'account security should expose password change');
+    assertTrueValue(str_contains($accountPage, 'id="deleteAccountDialog"'), 'account deletion should use a dedicated dialog');
+    assertTrueValue(str_contains($accountPage, 'name="confirmation"'), 'account deletion should require written confirmation');
     assertTrueValue(!str_contains($admin, 'name="adminKey"'), 'admin page should not ask for shared key');
     assertTrueValue(str_contains($bootstrap, 'new AdminUserController('), 'admin api should use modular role protected routes');
     assertTrueValue(!str_contains($api, "\$_GET['admin_key']"), 'admin key query authentication should be removed');
-    assertTrueValue(str_contains($admin, 'id="adminUsers"'), 'admin page should expose user management');
+    assertTrueValue(str_contains($admin, 'id="adminSectionTabs"'), 'admin page should expose users and content tabs');
+    assertTrueValue(str_contains($admin, 'id="adminWorkspace"'), 'admin page should expose a list detail workspace');
+    assertTrueValue(str_contains($admin, 'id="adminUserList"'), 'admin page should expose a compact user list');
+    assertTrueValue(str_contains($admin, 'id="adminUserDetail"'), 'admin page should expose contextual user detail');
+    assertTrueValue(str_contains($admin, 'id="adminContentSection"'), 'admin page should expose the content hub');
     $appJs = file_get_contents(__DIR__ . '/../public/assets/app.js');
-    assertTrueValue(is_string($appJs) && str_contains($appJs, 'renderAdminUsers'), 'admin script should render users');
+    assertTrueValue(is_string($appJs) && !str_contains($appJs, 'renderAdminUsers'), 'game client should not own admin user management');
+    assertTrueValue(is_file(__DIR__ . '/../public/assets/admin.js'), 'admin should use a focused client');
+    $adminJs = file_get_contents(__DIR__ . '/../public/assets/admin.js');
+    foreach (['renderAdminUserList', 'renderAdminUserDetail', '/admin/users/update', "classList.add('is-user-detail')", 'popstate'] as $contract) {
+        assertTrueValue(is_string($adminJs) && str_contains($adminJs, $contract), "admin client should implement {$contract}");
+    }
+    assertTrueValue(str_contains($adminJs, 'bindDialogEscape'), 'admin confirmation should handle Escape explicitly');
     assertTrueValue(is_file(__DIR__ . '/../public/packs.php'), 'pack management page should exist');
     assertTrueValue(is_file(__DIR__ . '/../public/assets/packs.js'), 'pack management script should exist');
     $account = file_get_contents(__DIR__ . '/../public/assets/account.js');
     assertTrueValue(is_string($account) && str_contains($account, '/auth/profile'), 'account should update display name');
-    assertTrueValue(str_contains($account, 'data-auth-title'), 'account should render clear auth state');
+    assertTrueValue(str_contains($account, '/auth/password/change'), 'account should change password');
+    assertTrueValue(str_contains($account, 'showAccountMode'), 'account should render one access task at a time');
+    assertTrueValue(str_contains($account, 'beforeunload'), 'account should warn about unsaved changes');
+    assertTrueValue(str_contains($account, 'bindDialogEscape'), 'account dialogs should handle Escape explicitly');
+    assertTrueValue(!str_contains($account, 'refreshSharedNav'), 'account should not call the removed shared navigation refresher');
+    assertTrueValue(str_contains($account, 'updateSharedNavDisplayName'), 'profile save should update the server-rendered navigation locally');
+
+    $styles = file_get_contents(__DIR__ . '/../public/assets/styles.css');
+    foreach (['.account-shell', '.account-access-tabs', '.account-workspace', '.admin-workspace', '.admin-user-list', '.admin-user-detail'] as $selector) {
+        assertTrueValue(is_string($styles) && str_contains($styles, $selector), "workspace styles should include {$selector}");
+    }
+    assertTrueValue(str_contains($styles, '.account-workspace[hidden]'), 'guest state should force the authenticated workspace to remain hidden');
 });
 
 $runner->test('admin user routes enforce role csrf and last-admin protection', function (): void {
@@ -522,19 +603,7 @@ $runner->test('admin user routes enforce role csrf and last-admin protection', f
     assertTrueValue(!isset($listed->payload['users'][0]['password_hash']));
     assertSameValue('admin', $listed->payload['users'][0]['displayName']);
 
-    $lastAdmin = $router->dispatch(new ApiRequest(
-        'POST',
-        '/admin/users/update',
-        ['userId' => $admin['id'], 'role' => 'user'],
-        [],
-        ['rq_session' => $adminSession['token']],
-        ['x-csrf-token' => $adminSession['csrfToken']]
-    ));
-    assertSameValue(409, $lastAdmin->status);
-    assertSameValue('LAST_ADMIN', $lastAdmin->payload['error']['code']);
-
-    $secondAdmin = $users->create('second@example.com', password_hash('contrasena-admin', PASSWORD_DEFAULT), 'admin');
-    $updated = $router->dispatch(new ApiRequest(
+    $selfChange = $router->dispatch(new ApiRequest(
         'POST',
         '/admin/users/update',
         ['userId' => $admin['id'], 'role' => 'user', 'status' => 'disabled'],
@@ -542,7 +611,22 @@ $runner->test('admin user routes enforce role csrf and last-admin protection', f
         ['rq_session' => $adminSession['token']],
         ['x-csrf-token' => $adminSession['csrfToken']]
     ));
+    assertSameValue(409, $selfChange->status);
+    assertSameValue('SELF_ADMIN_CHANGE', $selfChange->payload['error']['code']);
+    assertSameValue('admin', $users->findById($admin['id'])['role']);
+    assertSameValue('active', $users->findById($admin['id'])['status']);
+
+    $secondAdmin = $users->create('second@example.com', password_hash('contrasena-admin', PASSWORD_DEFAULT), 'admin');
+    $updated = $router->dispatch(new ApiRequest(
+        'POST',
+        '/admin/users/update',
+        ['userId' => $member['id'], 'role' => 'admin', 'status' => 'disabled'],
+        [],
+        ['rq_session' => $adminSession['token']],
+        ['x-csrf-token' => $adminSession['csrfToken']]
+    ));
     assertSameValue('disabled', $updated->payload['user']['status']);
+    assertSameValue('admin', $updated->payload['user']['role']);
     assertSameValue('admin', $users->findById($secondAdmin['id'])['role']);
 });
 
@@ -984,6 +1068,9 @@ $runner->test('pack management ui exposes a role aware responsive workspace', fu
     }
     assertTrueValue(str_contains($script, "packUser?.role !== 'admin'"), 'regular users should only see manageable personal packs');
     assertTrueValue(str_contains($script, "pack.kind === adminPackFilter"), 'administrators should filter their own and system packs');
+    foreach (['readPackLocation', 'updatePackLocation', 'popstate', "section: 'schemes'", "scope: 'system'"] as $deepLinkContract) {
+        assertTrueValue(str_contains($script, $deepLinkContract), "pack client should support deep links through {$deepLinkContract}");
+    }
     foreach (['.packs-shell', '.packs-workspace', '.packs-mobile-back', '.packs-category-grid', '.packs-question-row'] as $selector) {
         assertTrueValue(str_contains($styles, $selector), "pack styles should include {$selector}");
     }
@@ -1192,7 +1279,7 @@ $runner->test('account deletion anonymizes shared history and cleanup removes ex
     assertTrueValue($lastAdminProtected ?? false, 'last active admin should not be deleted');
 });
 
-$runner->test('account deletion route requires session csrf and current password', function (): void {
+$runner->test('account deletion route requires session csrf current password and written confirmation', function (): void {
     $pdo = migratedPdo();
     $users = new UserRepository($pdo);
     $sessions = new SessionRepository($pdo);
@@ -1209,8 +1296,14 @@ $runner->test('account deletion route requires session csrf and current password
     assertSameValue(422, $wrong->status);
     assertTrueValue($users->findById($user['id']) !== null);
 
-    $deleted = $router->dispatch(new ApiRequest(
+    $missingConfirmation = $router->dispatch(new ApiRequest(
         'POST', '/auth/delete', ['password' => 'contrasena-segura'], [], ['rq_session' => $session['token']], ['x-csrf-token' => $session['csrfToken']]
+    ));
+    assertSameValue(422, $missingConfirmation->status);
+    assertTrueValue($users->findById($user['id']) !== null);
+
+    $deleted = $router->dispatch(new ApiRequest(
+        'POST', '/auth/delete', ['password' => 'contrasena-segura', 'confirmation' => 'ELIMINAR'], [], ['rq_session' => $session['token']], ['x-csrf-token' => $session['csrfToken']]
     ));
     assertSameValue(200, $deleted->status);
     assertSameValue(null, $users->findById($user['id']));
@@ -1612,7 +1705,8 @@ $runner->test('navigation renderer exposes destinations by role without late ses
         'email_verified_at' => '2026-07-16T08:00:00Z',
         'csrf_token' => 'csrf-admin',
     ], 'admin', 'admin.php');
-    assertTrueValue(str_contains($admin, 'Administración'), 'administrator should see administration in profile utilities');
+    assertTrueValue(str_contains($admin, '>Administración<'), 'administrator should see administration in primary navigation');
+    assertSameValue(2, substr_count($admin, 'href="admin.php"'));
     assertTrueValue(str_contains($admin, '&lt;Admin Local&gt;'), 'display name should be escaped');
     assertTrueValue(!str_contains($admin, '<Admin Local>'), 'raw display name must never be rendered');
     assertTrueValue(str_contains($admin, 'data-profile-menu'), 'identified users should receive a profile menu');
@@ -1635,6 +1729,12 @@ $runner->test('navigation return targets only allow local application destinatio
     assertSameValue('packs.php', NavigationView::safeReturnTarget('packs.php'));
     assertSameValue('history.php', NavigationView::safeReturnTarget('history.php'));
     assertSameValue('admin.php', NavigationView::safeReturnTarget('admin.php'));
+    assertSameValue('admin.php?section=content', NavigationView::safeReturnTarget('admin.php?section=content'));
+    assertSameValue('packs.php?section=packs&scope=system', NavigationView::safeReturnTarget('packs.php?section=packs&scope=system'));
+    assertSameValue('packs.php?section=schemes&scope=system', NavigationView::safeReturnTarget('packs.php?section=schemes&scope=system'));
+    assertSameValue('packs.php?section=import', NavigationView::safeReturnTarget('packs.php?section=import'));
+    assertSameValue('./', NavigationView::safeReturnTarget('packs.php?section=unknown&scope=system'));
+    assertSameValue('./', NavigationView::safeReturnTarget('admin.php?section=users&next=https://example.com'));
     assertSameValue('./?room=ABC123', NavigationView::safeReturnTarget('./?room=ABC123'));
 });
 

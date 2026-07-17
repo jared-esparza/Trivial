@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
     bindHomeNavigation();
     bindGameForms();
     loadAvailablePacks();
-    bindAdminForms();
     bindFullscreenControls();
     bindPreferencesOverlayControls();
     const params = new URLSearchParams(window.location.search);
@@ -255,19 +254,6 @@ function updateFullscreenButton() {
     button.setAttribute('title', isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa');
 }
 
-function bindAdminForms() {
-    const users = document.querySelector('#adminUsers');
-    if (users) {
-        fetch(`${apiBase}/auth/me`)
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.user?.role === 'admin') return loadAdminUsers(data.csrfToken ?? null);
-                return null;
-            })
-            .catch(() => toast('No se pudo comprobar la sesion.'));
-    }
-}
-
 async function apiFetch(path, payload, extraHeaders = {}) {
     const response = await fetch(apiBase + path, {
         method: 'POST',
@@ -335,57 +321,6 @@ function renderRoomColorPreview(form) {
     const revision = pack?.currentRevision ?? pack?.draftRevision;
     const colors = scheme?.colors ?? (revision?.categories ?? []).map((category) => category.color);
     preview.innerHTML = colors.map((color) => `<i class="color-swatch" title="${escapeAttr(color)}" style="background:${escapeAttr(color)}"></i>`).join('');
-}
-
-async function loadAdminUsers(csrfToken) {
-    const response = await fetch(`${apiBase}/admin/users`);
-    const json = await response.json();
-    if (!response.ok) throw new Error(apiErrorMessage(json, 'No se pudieron cargar los usuarios.'));
-    renderAdminUsers(json.users, csrfToken);
-}
-
-function renderAdminUsers(users, csrfToken) {
-    const box = document.querySelector('#adminUsers');
-    if (!box) return;
-    box.innerHTML = users.map((user) => `
-        <article class="question-item admin-user-row" data-user-id="${Number(user.id)}">
-            <div class="admin-user-identity">
-                <strong>${escapeHtml(user.displayName ?? user.email)}</strong>
-                <p class="admin-user-email">${escapeHtml(user.email)}</p>
-                <p class="muted">${user.emailVerified ? 'Verificado' : 'Pendiente de verificar'}</p>
-            </div>
-            <label>Rol
-                <select data-user-field="role">
-                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>Usuario</option>
-                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
-                </select>
-            </label>
-            <label>Estado
-                <select data-user-field="status">
-                    <option value="active" ${user.status === 'active' ? 'selected' : ''}>Activo</option>
-                    <option value="disabled" ${user.status === 'disabled' ? 'selected' : ''}>Desactivado</option>
-                </select>
-            </label>
-        </article>
-    `).join('');
-
-    box.querySelectorAll('[data-user-field]').forEach((select) => {
-        select.addEventListener('change', async () => {
-            const row = select.closest('[data-user-id]');
-            const payload = {
-                userId: Number(row.dataset.userId),
-                [select.dataset.userField]: select.value
-            };
-            try {
-                await apiFetch('/admin/users/update', payload, { 'X-CSRF-Token': csrfToken });
-                toast('Usuario actualizado.');
-                await loadAdminUsers(csrfToken);
-            } catch (error) {
-                toast(error.message);
-                await loadAdminUsers(csrfToken);
-            }
-        });
-    });
 }
 
 function apiErrorMessage(json, fallback) {

@@ -48,12 +48,13 @@ php bin/cleanup.php --days=30
 public/
   index.php                 Portada, configuracion y partida.
   api.php                   API de salas, acciones, estadisticas e historial.
-  account.php               Registro, login, verificacion, reset y borrado.
-  admin.php                 Administracion de usuarios y acceso a packs/esquemas.
+  account.php               Acceso por modos y workspace de perfil/seguridad.
+  admin.php                 Workspace lista-detalle de usuarios y hub de contenido.
   packs.php                 Espacio de trabajo de packs, esquemas e importacion.
   history.php               Historial e informes de la cuenta.
   assets/app.js             Cliente principal, tablero SVG y partida.
   assets/account.js         Cliente de cuenta.
+  assets/admin.js           Filtros, lista-detalle y guardado administrativo.
   assets/packs.js           Workspace responsive, editor, colores e import/export.
   assets/history.js         Cliente de historial.
   assets/session-nav.js     Dropdown de perfil, drawer movil y cierre de sesion.
@@ -99,12 +100,16 @@ tests/run.php               Suite PHP sin framework.
 - Verificacion y recuperacion usan tokens de un solo uso con caducidad.
 - Las funciones de packs e historial requieren cuenta verificada.
 - La cabecera se renderiza en PHP antes de enviar la pagina; `session-nav.js` no consulta `/auth/me` ni sustituye enlaces al cargar.
-- Invitado: `Jugar` y CTA `Entrar`. Usuario pendiente: `Jugar` y perfil con aviso. Usuario verificado: `Jugar`, `Packs`, `Historial` y perfil. Administracion vive dentro del perfil del rol `admin`.
+- Invitado: `Jugar` y CTA `Entrar`. Usuario pendiente: `Jugar` y perfil con aviso. Usuario verificado: `Jugar`, `Packs`, `Historial` y perfil. El rol administrador añade `Administración` a la navegación principal; `Mi cuenta` permanece en el menú de perfil.
 - En movil la cabecera mide 66 px y abre un drawer accesible; Escape, clic exterior y cierre explicito restauran el foco y desbloquean el scroll.
-- Login y registro vuelven a un destino local validado (`./`, Packs, Historial, Admin o sala); URLs externas, rutas ascendentes y barras invertidas caen en `./`.
+- Login y registro vuelven únicamente a destinos locales conocidos (`./`, Packs, Historial, Admin, combinaciones aprobadas de sus secciones o sala); URLs externas, consultas arbitrarias, rutas ascendentes y barras invertidas caen en `./`.
 - Packs, Historial, Cuenta y Administracion muestran migas de pan. Los detalles de pack e historial actualizan el ultimo nivel dinamicamente.
 - `.admin-shell` usa filas `max-content` y `align-content: start`: las migas miden 19 px y quedan a 16 px de la primera caja tanto en escritorio como en movil.
 - Administracion usa rol `admin`; no existe `admin_key` compartida.
+- `account.php` muestra un solo flujo de acceso mediante `?mode=login|register|forgot`. Tras iniciar sesión separa Perfil y Seguridad, usa guardado explícito y permite cambiar la contraseña conservando la sesión actual y revocando las demás.
+- El borrado de cuenta requiere contraseña y la confirmación exacta `ELIMINAR`, dentro de un diálogo que explica la anonimización y conservación de datos compartidos.
+- `admin.php?section=users|content` separa la gestión de usuarios del hub de contenido. Usuarios usa búsqueda y filtros locales, orden, lista-detalle responsive y un único guardado para rol y estado.
+- Un administrador ve su propia cuenta, pero frontend y backend bloquean cambios de su propio rol o estado. Degradar o desactivar a terceros requiere confirmación contextual.
 - El ultimo administrador activo no se puede degradar o desactivar.
 - Borrar cuenta revoca sesiones, desactiva packs y esquemas privados, elimina datos personales y desasocia el usuario, pero conserva historial compartido anonimizado.
 
@@ -125,6 +130,7 @@ tests/run.php               Suite PHP sin framework.
 - `Clasico` es el esquema inicial de packs nuevos y no se puede renombrar ni eliminar.
 - Cambiar solo nombres o colores conserva las preguntas; cambiar claves de categoria reinicia las preguntas del borrador.
 - JSON y CSV importados nunca deciden propietario o visibilidad; crean un borrador privado nuevo.
+- Packs reconoce y mantiene en historial los enlaces `?section=packs&scope=system`, `?section=schemes&scope=system` y `?section=import`; usuarios normales ignoran el scope de sistema.
 
 ### Salas y concurrencia
 
@@ -153,6 +159,7 @@ POST /api.php/auth/profile
 POST /api.php/auth/logout
 POST /api.php/auth/password/forgot
 POST /api.php/auth/password/reset
+POST /api.php/auth/password/change
 POST /api.php/auth/delete
 
 GET  /api.php/admin/users
@@ -181,6 +188,7 @@ GET  /api.php/me/games/{code}
 php tests/run.php
 node --check public/assets/app.js
 node --check public/assets/account.js
+node --check public/assets/admin.js
 node --check public/assets/packs.js
 node --check public/assets/history.js
 node --check public/assets/session-nav.js
@@ -188,13 +196,14 @@ node --check public/assets/session-nav.js
 
 Antes de tocar UI de partida, preservar las regresiones de geometria, fullscreen, overlays y marcador. Antes de tocar persistencia, probar migracion nueva sobre base vacia y segunda ejecucion idempotente.
 
-Referencia previa verificada el 2026-07-16: `85 passed, 0 failed`, lint PHP completo, checks Node y `git diff --check` limpio. La nueva UX de packs eleva la suite a 88 pruebas; ejecutar de nuevo toda la matriz antes de cerrar sus cambios locales.
+Referencia actual: la UX de Packs está integrada en `b492d2e`. El rediseño local de Cuenta y Administración eleva la suite a 89 pruebas; ejecutar de nuevo toda la matriz antes de cerrar sus cambios locales.
 
 ## Estado reciente
 
 - Rama de trabajo actual: `main`.
-- Cambios locales pendientes de revision: rediseño completo de `packs.php` como workspace responsive, CRUD de preguntas, previsualizacion de importaciones y biblioteca compacta de esquemas.
-- El tablero, `public/assets/app.js`, su geometria, overlays, marcador y fullscreen no forman parte del cambio de packs.
+- Cambios locales pendientes de revision: rediseño UX/UI de Cuenta y Administración, cambio de contraseña, confirmación reforzada de borrado, navegación principal de admin y enlaces profundos de Packs.
+- El rediseño de Packs ya está integrado en `b492d2e`. El cliente administrativo se extrajo a `public/assets/admin.js`; `public/assets/app.js` conserva únicamente las responsabilidades de portada, sala y tablero.
+- El tablero, su geometria, overlays, marcador y fullscreen no forman parte de estos cambios.
 - `dc102d2`: jerarquia unica de esquemas, biblioteca personal, colores de sala congelados y preferencias sin overrides locales.
 - `e4a291c`: display name, cuenta, navegacion compartida y mejoras de packs/admin.
 - `TODO_LIST.md` y `video/` son archivos locales no versionados y no forman parte de estos commits.
